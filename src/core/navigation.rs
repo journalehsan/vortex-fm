@@ -68,10 +68,15 @@ pub fn navigate_to_directory(path: PathBuf) {
 }
 
 pub fn switch_to_tab(tab_id: usize) {
+    crate::utils::simple_debug::debug_info("NAVIGATION", &format!("Switching to tab {}", tab_id));
+    
     if let Some(tab_manager_rc) = get_global_tab_manager() {
-        // First, get the active tab's navigation history
+        // Activate the tab and get its navigation history
         let navigation_history = {
-            let tab_manager = tab_manager_rc.borrow();
+            let mut tab_manager = tab_manager_rc.borrow_mut();
+            tab_manager.activate_tab(tab_id);
+            
+            // Get the navigation history from the newly activated tab
             if let Some(active_tab) = tab_manager.get_active_tab() {
                 Some(active_tab.navigation_history.clone())
             } else {
@@ -79,17 +84,21 @@ pub fn switch_to_tab(tab_id: usize) {
             }
         };
         
-        // Then activate the tab
-        let _path = tab_manager_rc.borrow_mut().activate_tab(tab_id);
-        
-        // Finally, update the global state
+        // Update the global state with the new tab's navigation history
         if let Some(nav_history) = navigation_history {
             if let Some(state_rc) = get_global_state() {
                 let mut state = state_rc.borrow_mut();
                 state.navigation_history = nav_history;
                 state.refresh_ui();
+                crate::utils::simple_debug::debug_info("NAVIGATION", &format!("Switched to tab {} with path: {}", tab_id, state.current_path().display()));
             }
         }
+        
+        // Clear selection when switching tabs
+        crate::core::selection::clear_selection();
+        
+        // Update tab bar UI to reflect title changes
+        crate::widgets::tab_bar::update_global_tab_bar();
     }
 }
 

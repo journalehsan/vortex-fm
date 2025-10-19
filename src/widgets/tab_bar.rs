@@ -90,9 +90,20 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     let tab_id = tab.id;
     
     let gesture = gtk::GestureClick::new();
-    gesture.connect_pressed(move |_, _n_press, _x, _y| {
-        crate::core::navigation::switch_to_tab(tab_id);
-        // TODO: Update tab bar UI
+    gesture.connect_pressed(move |_, n_press, _x, _y| {
+        if n_press == 1 {
+            // Single click - switch to tab
+            crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Switching to tab {}", tab_id));
+            crate::core::navigation::switch_to_tab(tab_id);
+            // Update tab bar UI
+            crate::widgets::tab_bar::update_global_tab_bar();
+        } else if n_press == 2 {
+            // Double click - also switch to tab (for consistency)
+            crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Double-click switching to tab {}", tab_id));
+            crate::core::navigation::switch_to_tab(tab_id);
+            // Update tab bar UI
+            crate::widgets::tab_bar::update_global_tab_bar();
+        }
     });
     tab_widget.add_controller(gesture);
     
