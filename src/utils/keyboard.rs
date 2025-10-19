@@ -1,5 +1,6 @@
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, gio, gdk};
+use glib::Propagation;
 
 pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     // Create action group
@@ -81,9 +82,9 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
         if key == gdk::Key::F4 {
             crate::utils::simple_debug::debug_info("KEYBOARD", "F4 key pressed - toggling terminal");
             crate::widgets::terminal_panel::toggle_terminal_panel();
-            gtk::Propagation::Stop
+            Propagation::Stop
         } else {
-            gtk::Propagation::Continue
+            Propagation::Continue
         }
     });
     window.add_controller(key_controller);
