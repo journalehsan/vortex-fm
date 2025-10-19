@@ -1,10 +1,73 @@
 use gtk::prelude::*;
-use gtk::{gio, glib, Application, ApplicationWindow, Box, Orientation, Paned, CssProvider, PopoverMenu};
+use gtk::{gio, glib, Application, ApplicationWindow, Box, Orientation, Paned, CssProvider};
 use std::path::PathBuf;
 use std::fs;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 const APP_ID: &str = "com.vortex.FileManager";
+const CONFIG_DIR: &str = ".local/config/vortex";
+const CONFIG_FILE: &str = "config.json";
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct VortexConfig {
+    single_click_to_open: bool,
+    show_hidden_files: bool,
+    default_view_mode: String, // "grid" or "list"
+    window_width: i32,
+    window_height: i32,
+    sidebar_width: i32,
+}
+
+impl Default for VortexConfig {
+    fn default() -> Self {
+        Self {
+            single_click_to_open: true,
+            show_hidden_files: false,
+            default_view_mode: "grid".to_string(),
+            window_width: 1200,
+            window_height: 800,
+            sidebar_width: 250,
+        }
+    }
+}
+
+impl VortexConfig {
+    fn load() -> Self {
+        let config_path = Self::get_config_path();
+        
+        if let Ok(config_data) = fs::read_to_string(&config_path) {
+            if let Ok(config) = serde_json::from_str(&config_data) {
+                return config;
+            }
+        }
+        
+        // If loading fails, create default config
+        let default_config = Self::default();
+        let _ = default_config.save();
+        default_config
+    }
+    
+    fn save(&self) -> Result<()> {
+        let config_path = Self::get_config_path();
+        
+        // Create config directory if it doesn't exist
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        
+        let config_data = serde_json::to_string_pretty(self)?;
+        fs::write(&config_path, config_data)?;
+        Ok(())
+    }
+    
+    fn get_config_path() -> PathBuf {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
+        PathBuf::from(home).join(CONFIG_DIR).join(CONFIG_FILE)
+    }
+}
 
 fn main() -> glib::ExitCode {
     // Create application
@@ -52,6 +115,33 @@ struct FileManagerState {
     current_path: PathBuf,
     history: Vec<PathBuf>,
     history_index: usize,
+    config: VortexConfig,
+    file_list_widget: Option<gtk::ScrolledWindow>,
+    path_label: Option<gtk::Label>,
+    status_bar: Option<gtk::Box>,
+}
+
+// Global state for navigation
+static mut GLOBAL_STATE: Option<Rc<RefCell<FileManagerState>>> = None;
+
+fn set_global_state(state: Rc<RefCell<FileManagerState>>) {
+    unsafe {
+        GLOBAL_STATE = Some(state);
+    }
+}
+
+fn get_global_state() -> Option<Rc<RefCell<FileManagerState>>> {
+    unsafe {
+        GLOBAL_STATE.clone()
+    }
+}
+
+fn navigate_to_directory(path: PathBuf) {
+    if let Some(state_rc) = get_global_state() {
+        let mut state = state_rc.borrow_mut();
+        state.navigate_to(path);
+        state.refresh_ui();
+    }
 }
 
 impl FileManagerState {
@@ -61,6 +151,10 @@ impl FileManagerState {
             current_path: PathBuf::from(&home),
             history: vec![PathBuf::from(home)],
             history_index: 0,
+            config: VortexConfig::load(),
+            file_list_widget: None,
+            path_label: None,
+            status_bar: None,
         }
     }
     
@@ -101,6 +195,139 @@ impl FileManagerState {
     fn go_up(&mut self) {
         if let Some(parent) = self.current_path.parent() {
             self.navigate_to(parent.to_path_buf());
+        }
+    }
+    
+    fn refresh_ui(&self) {
+        // Update path label
+        if let Some(path_label) = &self.path_label {
+            let current_path_str = self.current_path.to_string_lossy().to_string();
+            path_label.set_text(&current_path_str);
+        }
+        
+        // Update file list
+        if let Some(file_list_widget) = &self.file_list_widget {
+            self.update_file_list(file_list_widget);
+        }
+        
+        // Update status bar
+        if let Some(status_bar) = &self.status_bar {
+            self.update_status_bar(status_bar);
+        }
+    }
+    
+    fn update_file_list(&self, scrolled: &gtk::ScrolledWindow) {
+        // Clear existing content
+        if let Some(child) = scrolled.child() {
+            scrolled.set_child(None::<&gtk::Widget>);
+        }
+        
+        // Create new grid
+        let grid = gtk::Grid::new();
+        grid.set_row_spacing(12);
+        grid.set_column_spacing(12);
+        grid.set_margin_start(12);
+        grid.set_margin_end(12);
+        grid.set_margin_top(12);
+        grid.set_margin_bottom(12);
+        
+        // Read files from current directory
+        let mut files = Vec::new();
+        
+        if let Ok(entries) = fs::read_dir(&self.current_path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("Unknown")
+                    .to_string();
+                
+                // Skip hidden files if not configured to show them
+                if !self.config.show_hidden_files && name.starts_with('.') {
+                    continue;
+                }
+                
+                let (icon, file_type) = if path.is_dir() {
+                    ("📁", "Folder")
+                } else {
+                    match path.extension().and_then(|s| s.to_str()) {
+                        Some("txt") | Some("md") | Some("log") => ("📄", "Text File"),
+                        Some("jpg") | Some("jpeg") | Some("png") | Some("gif") | Some("bmp") => ("🖼️", "Image File"),
+                        Some("mp3") | Some("wav") | Some("flac") | Some("ogg") => ("🎵", "Audio File"),
+                        Some("mp4") | Some("avi") | Some("mkv") | Some("mov") => ("🎬", "Video File"),
+                        Some("zip") | Some("tar") | Some("gz") | Some("rar") => ("📦", "Archive File"),
+                        Some("sh") | Some("py") | Some("js") | Some("rs") | Some("c") | Some("cpp") => ("💻", "Script File"),
+                        Some("pdf") => ("📕", "PDF File"),
+                        Some("doc") | Some("docx") => ("📘", "Document File"),
+                        Some("xls") | Some("xlsx") => ("📊", "Spreadsheet File"),
+                        Some("ppt") | Some("pptx") => ("📽️", "Presentation File"),
+                        _ => ("📄", "File"),
+                    }
+                };
+                
+                files.push((icon, name, file_type, path));
+            }
+        }
+        
+        // Sort files: directories first, then files, both alphabetically
+        files.sort_by(|a, b| {
+            let a_is_dir = a.3.is_dir();
+            let b_is_dir = b.3.is_dir();
+            
+            match (a_is_dir, b_is_dir) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a.1.cmp(&b.1),
+            }
+        });
+        
+        // Add files to grid
+        let mut row = 0;
+        let mut col = 0;
+        const ITEMS_PER_ROW: i32 = 6;
+        
+        for (icon, name, file_type, path) in files {
+            let file_box = create_file_item(icon, &name, file_type, path, &self.config);
+            grid.attach(&file_box, col, row, 1, 1);
+            
+            col += 1;
+            if col >= ITEMS_PER_ROW {
+                col = 0;
+                row += 1;
+            }
+        }
+        
+        scrolled.set_child(Some(&grid));
+    }
+    
+    fn update_status_bar(&self, status_bar: &gtk::Box) {
+        // Count actual items in directory
+        let item_count = if let Ok(entries) = fs::read_dir(&self.current_path) {
+            if self.config.show_hidden_files {
+                entries.count()
+            } else {
+                entries.filter(|entry| {
+                    entry.as_ref()
+                        .map(|e| e.file_name().to_str().map(|name| !name.starts_with('.')).unwrap_or(false))
+                        .unwrap_or(false)
+                })
+                .count()
+            }
+        } else {
+            0
+        };
+        
+        let items_text = if item_count == 1 {
+            "1 item".to_string()
+        } else {
+            format!("{} items", item_count)
+        };
+        
+        // Update the items label in status bar
+        if let Some(child) = status_bar.last_child() {
+            if let Some(label) = child.downcast_ref::<gtk::Label>() {
+                label.set_text(&items_text);
+            }
         }
     }
 }
@@ -152,28 +379,28 @@ fn copy_dir_all(src: &PathBuf, dst: &PathBuf) -> Result<()> {
 
 fn build_ui(app: &Application) {
     // Create main window with split panes
+    let state = Rc::new(RefCell::new(FileManagerState::new()));
+    set_global_state(state.clone());
+    
     let window = ApplicationWindow::builder()
         .application(app)
         .title("Vortex FM")
-        .default_width(1200)
-        .default_height(800)
+        .default_width(state.borrow().config.window_width)
+        .default_height(state.borrow().config.window_height)
         .build();
 
-    // Create file manager state
-    let state = FileManagerState::new();
-    
     // Create the split pane layout (like Windows Explorer!)
     let main_paned = Paned::new(Orientation::Horizontal);
     
     // Left sidebar (20%)
-    let sidebar = create_sidebar(&state);
+    let sidebar = create_sidebar(&state.borrow());
     main_paned.set_start_child(Some(&sidebar));
     
     // Main content area (80%)
-    let content_area = create_content_area(&state);
+    let content_area = create_content_area(&mut state.borrow_mut());
     main_paned.set_end_child(Some(&content_area));
     
-    main_paned.set_position(250); // 250px sidebar width
+    main_paned.set_position(state.borrow().config.sidebar_width);
 
     window.set_child(Some(&main_paned));
     
@@ -204,6 +431,56 @@ fn create_sidebar(_state: &FileManagerState) -> Box {
     let music_btn = gtk::Button::with_label("🎵 Music");
     let videos_btn = gtk::Button::with_label("🎬 Videos");
     
+    // Connect navigation handlers
+    let home_path = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
+    
+    home_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            navigate_to_directory(PathBuf::from(&home_path));
+        }
+    });
+    
+    docs_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let docs_path = PathBuf::from(&home_path).join("Documents");
+            navigate_to_directory(docs_path);
+        }
+    });
+    
+    downloads_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let downloads_path = PathBuf::from(&home_path).join("Downloads");
+            navigate_to_directory(downloads_path);
+        }
+    });
+    
+    pictures_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let pictures_path = PathBuf::from(&home_path).join("Pictures");
+            navigate_to_directory(pictures_path);
+        }
+    });
+    
+    music_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let music_path = PathBuf::from(&home_path).join("Music");
+            navigate_to_directory(music_path);
+        }
+    });
+    
+    videos_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let videos_path = PathBuf::from(&home_path).join("Videos");
+            navigate_to_directory(videos_path);
+        }
+    });
+    
     sidebar.append(&home_btn);
     sidebar.append(&docs_btn);
     sidebar.append(&downloads_btn);
@@ -227,6 +504,57 @@ fn create_sidebar(_state: &FileManagerState) -> Box {
     let music_btn2 = gtk::Button::with_label("🎵 Music");
     let videos_btn2 = gtk::Button::with_label("🎬 Videos");
     
+    // Connect navigation handlers for This PC section
+    let home_path = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
+    
+    desktop_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let desktop_path = PathBuf::from(&home_path).join("Desktop");
+            navigate_to_directory(desktop_path);
+        }
+    });
+    
+    documents_btn.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let docs_path = PathBuf::from(&home_path).join("Documents");
+            navigate_to_directory(docs_path);
+        }
+    });
+    
+    downloads_btn2.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let downloads_path = PathBuf::from(&home_path).join("Downloads");
+            navigate_to_directory(downloads_path);
+        }
+    });
+    
+    pictures_btn2.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let pictures_path = PathBuf::from(&home_path).join("Pictures");
+            navigate_to_directory(pictures_path);
+        }
+    });
+    
+    music_btn2.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let music_path = PathBuf::from(&home_path).join("Music");
+            navigate_to_directory(music_path);
+        }
+    });
+    
+    videos_btn2.connect_clicked({
+        let home_path = home_path.clone();
+        move |_| {
+            let videos_path = PathBuf::from(&home_path).join("Videos");
+            navigate_to_directory(videos_path);
+        }
+    });
+    
     sidebar.append(&desktop_btn);
     sidebar.append(&documents_btn);
     sidebar.append(&downloads_btn2);
@@ -237,7 +565,7 @@ fn create_sidebar(_state: &FileManagerState) -> Box {
     sidebar
 }
 
-fn create_content_area(state: &FileManagerState) -> Box {
+fn create_content_area(state: &mut FileManagerState) -> Box {
     let content = Box::new(Orientation::Vertical, 0);
     
     // Path bar (like Windows Explorer)
@@ -252,10 +580,14 @@ fn create_content_area(state: &FileManagerState) -> Box {
     let status_bar = create_status_bar(state);
     content.append(&status_bar);
     
+    // Store references for later updates
+    state.file_list_widget = Some(file_list.clone());
+    state.status_bar = Some(status_bar.clone());
+    
     content
 }
 
-fn create_path_bar(state: &FileManagerState) -> Box {
+fn create_path_bar(state: &mut FileManagerState) -> Box {
     let path_bar = Box::new(Orientation::Horizontal, 8);
     path_bar.add_css_class("toolbar");
     path_bar.set_margin_start(8);
@@ -291,6 +623,9 @@ fn create_path_bar(state: &FileManagerState) -> Box {
     path_label.add_css_class("path-label");
     path_bar.append(&path_label);
     
+    // Store reference for later updates
+    state.path_label = Some(path_label.clone());
+    
     // Search box
     let search_entry = gtk::SearchEntry::new();
     search_entry.set_placeholder_text(Some("Search files..."));
@@ -305,80 +640,13 @@ fn create_file_list(state: &FileManagerState) -> gtk::ScrolledWindow {
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
     
-    // Create a grid for file icons (like Windows Explorer)
-    let grid = gtk::Grid::new();
-    grid.set_row_spacing(12);
-    grid.set_column_spacing(12);
-    grid.set_margin_start(12);
-    grid.set_margin_end(12);
-    grid.set_margin_top(12);
-    grid.set_margin_bottom(12);
+    // Use the state's method to populate the file list
+    state.update_file_list(&scrolled);
     
-    // Read actual files from the current directory
-    let mut files = Vec::new();
-    
-    if let Ok(entries) = fs::read_dir(&state.current_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let name = path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("Unknown")
-                .to_string();
-            
-            let (icon, file_type) = if path.is_dir() {
-                ("📁", "Folder")
-            } else {
-                match path.extension().and_then(|s| s.to_str()) {
-                    Some("txt") | Some("md") | Some("log") => ("📄", "Text File"),
-                    Some("jpg") | Some("jpeg") | Some("png") | Some("gif") | Some("bmp") => ("🖼️", "Image File"),
-                    Some("mp3") | Some("wav") | Some("flac") | Some("ogg") => ("🎵", "Audio File"),
-                    Some("mp4") | Some("avi") | Some("mkv") | Some("mov") => ("🎬", "Video File"),
-                    Some("zip") | Some("tar") | Some("gz") | Some("rar") => ("📦", "Archive File"),
-                    Some("sh") | Some("py") | Some("js") | Some("rs") | Some("c") | Some("cpp") => ("💻", "Script File"),
-                    Some("pdf") => ("📕", "PDF File"),
-                    Some("doc") | Some("docx") => ("📘", "Document File"),
-                    Some("xls") | Some("xlsx") => ("📊", "Spreadsheet File"),
-                    Some("ppt") | Some("pptx") => ("📽️", "Presentation File"),
-                    _ => ("📄", "File"),
-                }
-            };
-            
-            files.push((icon, name, file_type, path));
-        }
-    }
-    
-    // Sort files: directories first, then files, both alphabetically
-    files.sort_by(|a, b| {
-        let a_is_dir = a.3.is_dir();
-        let b_is_dir = b.3.is_dir();
-        
-        match (a_is_dir, b_is_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.1.cmp(&b.1),
-        }
-    });
-    
-    let mut row = 0;
-    let mut col = 0;
-    const ITEMS_PER_ROW: i32 = 6;
-    
-    for (icon, name, file_type, path) in files {
-        let file_box = create_file_item(icon, &name, file_type, path);
-        grid.attach(&file_box, col, row, 1, 1);
-        
-        col += 1;
-        if col >= ITEMS_PER_ROW {
-            col = 0;
-            row += 1;
-        }
-    }
-    
-    scrolled.set_child(Some(&grid));
     scrolled
 }
 
-fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf) -> gtk::Button {
+fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig) -> gtk::Button {
     let item_box = Box::new(Orientation::Vertical, 4);
     item_box.set_width_request(80);
     item_box.set_height_request(80);
@@ -408,15 +676,20 @@ fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf) -> 
     // Connect click handler
     let _name_clone = name.to_string();
     let path_clone = path.clone();
+    let _single_click = config.single_click_to_open;
+    
     button.connect_clicked(move |_| {
         if path_clone.is_dir() {
             println!("📁 Opening directory: {}", path_clone.display());
-            // TODO: Navigate to directory
+            navigate_to_directory(path_clone.clone());
         } else {
             println!("📄 Opening file: {}", path_clone.display());
             // TODO: Open file with default application
         }
     });
+    
+    // TODO: Add double-click handler if single click is disabled
+    // Note: GTK4 Button doesn't have connect_button_press_event, need different approach
     
     // Return the button
     button
