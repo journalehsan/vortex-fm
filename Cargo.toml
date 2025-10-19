@@ -10,6 +10,7 @@ glib = "0.20"
 gdk = "0.7"
 libadwaita = { version = "0.5", optional = true }
 tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
 
 [build-dependencies]
 glib-build-tools = "0.17"
