@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{ApplicationWindow, gio};
+use gtk::{ApplicationWindow, gio, gdk};
 
 pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     // Create action group
@@ -66,4 +66,15 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
         // TODO: Implement new folder functionality
     });
     app.add_action(&new_folder_action);
+    
+    // Terminal toggle action (Ctrl+`)
+    let terminal_toggle_action = gio::SimpleAction::new("toggle-terminal", None);
+    terminal_toggle_action.connect_activate(|_, _| {
+        crate::utils::simple_debug::debug_info("KEYBOARD", "Terminal toggle action triggered (Ctrl+`)");
+        // TODO: Implement terminal toggle functionality
+    });
+    app.add_action(&terminal_toggle_action);
+    
+    // TODO: Add key controller for terminal toggle when Key API issues are resolved
+    // For now, terminal can be toggled programmatically
 }

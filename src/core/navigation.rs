@@ -64,6 +64,9 @@ pub fn navigate_to_directory(path: PathBuf) {
         
         // Update tab bar UI to reflect title changes
         crate::widgets::tab_bar::update_global_tab_bar();
+        
+        // Sync terminal directory
+        crate::widgets::terminal_panel::sync_terminal_directory(&path);
     }
 }
 
@@ -99,6 +102,11 @@ pub fn switch_to_tab(tab_id: usize) {
         
         // Update tab bar UI to reflect title changes
         crate::widgets::tab_bar::update_global_tab_bar();
+        
+        // Sync terminal directory
+        if let Some(state_rc) = get_global_state() {
+            crate::widgets::terminal_panel::sync_terminal_directory(state_rc.borrow().current_path());
+        }
     }
 }
 

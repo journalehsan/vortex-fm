@@ -10,6 +10,7 @@ use crate::core::selection::{SelectionManager, set_global_selection_manager};
 use crate::widgets::modern_sidebar::create_modern_sidebar;
 use crate::widgets::tab_bar::create_tab_bar;
 use crate::widgets::details_panel::create_details_panel;
+use crate::widgets::terminal_panel::{create_terminal_panel, set_global_terminal_panel, set_global_terminal_revealer};
 use crate::views::content_area::create_content_area;
 use crate::utils::keyboard::setup_keyboard_shortcuts;
 
@@ -75,6 +76,12 @@ pub fn build_ui(app: &Application) {
     main_paned.set_position(state.borrow().config.sidebar_width);
     
     main_box.append(&main_paned);
+    
+    // Create terminal panel
+    let (terminal_panel, terminal_revealer) = create_terminal_panel();
+    set_global_terminal_panel(Rc::new(RefCell::new(terminal_panel)));
+    set_global_terminal_revealer(terminal_revealer.clone());
+    main_box.append(&terminal_revealer);
 
     window.set_child(Some(&main_box));
     

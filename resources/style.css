@@ -480,3 +480,19 @@ button:hover {
     background-color: #bbdefb;
     border-color: #1976d2;
 }
+
+/* Terminal Panel Styling */
+.terminal-panel {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    border-top: 1px solid #333333;
+}
+
+.terminal-panel textview {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+}
