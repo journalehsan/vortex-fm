@@ -488,6 +488,8 @@ button:hover {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 12px;
     border-top: 1px solid #333333;
+    min-height: 0;
+    max-height: 200px;
 }
 
 .terminal-panel textview {
@@ -495,4 +497,11 @@ button:hover {
     color: #ffffff;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 12px;
+}
+
+/* Hide terminal panel when not revealed */
+revealer:not([reveal-child="true"]) {
+    height: 0px !important;
+    min-height: 0px !important;
+    max-height: 0px !important;
 }
