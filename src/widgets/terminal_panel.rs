@@ -67,8 +67,9 @@ pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     terminal_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
     terminal_revealer.set_transition_duration(300);
     
-    // Set a reasonable height for the terminal panel when visible
+    // Set height only when visible - don't reserve space when hidden
     terminal_panel.widget.set_height_request(200);
+    terminal_revealer.set_height_request(0); // No height when hidden
     
     // Add some styling
     terminal_panel.widget.add_css_class("terminal-panel");
@@ -103,6 +104,16 @@ pub fn toggle_terminal_panel() {
         if let Some(revealer) = &GLOBAL_TERMINAL_REVEALER {
             let currently_visible = revealer.reveals_child();
             revealer.set_reveal_child(!currently_visible);
+            
+            // Set appropriate height based on visibility
+            if !currently_visible {
+                // Showing - set height to 200px
+                revealer.set_height_request(200);
+            } else {
+                // Hiding - set height to 0
+                revealer.set_height_request(0);
+            }
+            
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Terminal panel toggled: {}", !currently_visible));
         }
     }
