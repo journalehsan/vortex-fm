@@ -17,12 +17,12 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
         navigate_to_directory(path_clone.clone());
     });
     
-    // Open in new tab action (placeholder for now)
+    // Open in new tab action
     let new_tab_action = gio::SimpleAction::new("open-new-tab", None);
     let path_clone = path.clone();
     new_tab_action.connect_activate(move |_, _| {
         println!("📁 Opening folder in new tab: {}", path_clone.display());
-        // TODO: Implement tab functionality
+        crate::core::navigation::open_in_new_tab(path_clone.clone());
     });
     
     // Properties action

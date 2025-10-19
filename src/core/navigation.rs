@@ -2,9 +2,11 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::core::file_manager::FileManagerState;
+use crate::core::tab_manager::TabManager;
 
 // Global state for navigation
 static mut GLOBAL_STATE: Option<Rc<RefCell<FileManagerState>>> = None;
+static mut GLOBAL_TAB_MANAGER: Option<Rc<RefCell<TabManager>>> = None;
 
 pub fn set_global_state(state: Rc<RefCell<FileManagerState>>) {
     unsafe {
@@ -18,10 +20,85 @@ pub fn get_global_state() -> Option<Rc<RefCell<FileManagerState>>> {
     }
 }
 
+pub fn set_global_tab_manager(tab_manager: Rc<RefCell<TabManager>>) {
+    unsafe {
+        GLOBAL_TAB_MANAGER = Some(tab_manager);
+    }
+}
+
+pub fn get_global_tab_manager() -> Option<Rc<RefCell<TabManager>>> {
+    unsafe {
+        GLOBAL_TAB_MANAGER.as_ref().map(|tab_manager| tab_manager.clone())
+    }
+}
+
 pub fn navigate_to_directory(path: PathBuf) {
-    if let Some(state_rc) = get_global_state() {
-        let mut state = state_rc.borrow_mut();
-        state.navigate_to(path);
-        state.refresh_ui();
+    if let Some(tab_manager_rc) = get_global_tab_manager() {
+        // Navigate the active tab
+        tab_manager_rc.borrow_mut().navigate_active_tab_to(path.clone());
+        
+        // Update the tab title after navigation
+        tab_manager_rc.borrow_mut().update_active_tab_title();
+        
+        // Get the updated navigation history from the active tab
+        let navigation_history = {
+            let tab_manager = tab_manager_rc.borrow();
+            if let Some(active_tab) = tab_manager.get_active_tab() {
+                Some(active_tab.navigation_history.clone())
+            } else {
+                None
+            }
+        };
+        
+        // Update the global state to match the active tab
+        if let Some(nav_history) = navigation_history {
+            if let Some(state_rc) = get_global_state() {
+                let mut state = state_rc.borrow_mut();
+                state.navigation_history = nav_history;
+                state.refresh_ui();
+            }
+        }
+        
+        // Update tab bar UI to reflect title changes
+        crate::widgets::tab_bar::update_global_tab_bar();
+    }
+}
+
+pub fn switch_to_tab(tab_id: usize) {
+    if let Some(tab_manager_rc) = get_global_tab_manager() {
+        // First, get the active tab's navigation history
+        let navigation_history = {
+            let tab_manager = tab_manager_rc.borrow();
+            if let Some(active_tab) = tab_manager.get_active_tab() {
+                Some(active_tab.navigation_history.clone())
+            } else {
+                None
+            }
+        };
+        
+        // Then activate the tab
+        let _path = tab_manager_rc.borrow_mut().activate_tab(tab_id);
+        
+        // Finally, update the global state
+        if let Some(nav_history) = navigation_history {
+            if let Some(state_rc) = get_global_state() {
+                let mut state = state_rc.borrow_mut();
+                state.navigation_history = nav_history;
+                state.refresh_ui();
+            }
+        }
+    }
+}
+
+pub fn open_in_new_tab(path: PathBuf) {
+    if let Some(tab_manager_rc) = get_global_tab_manager() {
+        // Create new tab
+        let new_tab_id = tab_manager_rc.borrow_mut().add_tab(path.clone());
+        
+        // Switch to the new tab
+        switch_to_tab(new_tab_id);
+        
+        // Update tab bar UI
+        crate::widgets::tab_bar::update_global_tab_bar();
     }
 }

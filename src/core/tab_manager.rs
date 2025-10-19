@@ -5,28 +5,54 @@ use gtk::prelude::*;
 use gtk::{Box, Orientation, Button, Label, Notebook};
 use crate::core::file_manager::FileManagerState;
 use crate::core::config::VortexConfig;
+use crate::core::navigation_history::NavigationHistory;
 
 #[derive(Clone)]
 pub struct Tab {
     pub id: usize,
-    pub path: PathBuf,
+    pub navigation_history: NavigationHistory,
     pub title: String,
     pub is_active: bool,
 }
 
 impl Tab {
     pub fn new(id: usize, path: PathBuf) -> Self {
-        let title = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("Unknown")
-            .to_string();
+        let navigation_history = NavigationHistory::new(path.clone());
+        let title = Self::generate_title(&path);
         
         Self {
             id,
-            path,
+            navigation_history,
             title,
             is_active: false,
         }
+    }
+    
+    fn generate_title(path: &PathBuf) -> String {
+        // Generate a nice title based on the current path
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            // Capitalize first letter
+            let mut chars = file_name.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            }
+        } else {
+            "Home".to_string()
+        }
+    }
+    
+    pub fn update_title(&mut self) {
+        self.title = Self::generate_title(self.navigation_history.current());
+    }
+    
+    pub fn current_path(&self) -> &PathBuf {
+        self.navigation_history.current()
+    }
+    
+    pub fn navigate_to(&mut self, path: PathBuf) {
+        self.navigation_history.navigate_to(path);
+        self.update_title();
     }
 }
 
@@ -86,11 +112,22 @@ impl TabManager {
         }
     }
     
-    pub fn activate_tab(&mut self, tab_id: usize) {
+    pub fn activate_tab(&mut self, tab_id: usize) -> Option<PathBuf> {
         for tab in &mut self.tabs {
             tab.is_active = tab.id == tab_id;
         }
         self.active_tab_id = Some(tab_id);
+        
+        // Return the current path of the activated tab
+        self.get_active_tab().map(|t| t.current_path().clone())
+    }
+    
+    pub fn navigate_active_tab_to(&mut self, path: PathBuf) {
+        if let Some(active_id) = self.active_tab_id {
+            if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == active_id) {
+                tab.navigate_to(path);
+            }
+        }
     }
     
     pub fn get_active_tab(&self) -> Option<&Tab> {
@@ -98,6 +135,14 @@ impl TabManager {
     }
     
     pub fn get_active_path(&self) -> Option<PathBuf> {
-        self.get_active_tab().map(|t| t.path.clone())
+        self.get_active_tab().map(|t| t.current_path().clone())
+    }
+    
+    pub fn update_active_tab_title(&mut self) {
+        if let Some(active_id) = self.active_tab_id {
+            if let Some(tab) = self.tabs.iter_mut().find(|t| t.id == active_id) {
+                tab.update_title();
+            }
+        }
     }
 }

@@ -3,7 +3,7 @@ use gtk::{Application, ApplicationWindow, Orientation, Paned, Box};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::core::file_manager::FileManagerState;
-use crate::core::navigation::set_global_state;
+use crate::core::navigation::{set_global_state, set_global_tab_manager};
 use crate::core::tab_manager::TabManager;
 use crate::core::bookmarks::BookmarksManager;
 use crate::widgets::modern_sidebar::create_modern_sidebar;
@@ -18,12 +18,18 @@ pub fn build_ui(app: &Application) {
     
     // Create tab manager and bookmarks manager
     let tab_manager = Rc::new(RefCell::new(TabManager::new()));
+    set_global_tab_manager(tab_manager.clone());
     let bookmarks_manager = BookmarksManager::load();
     
     // Add initial tab
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
     let home_path = std::path::PathBuf::from(&home);
-    tab_manager.borrow_mut().add_tab(home_path);
+    let initial_tab_id = tab_manager.borrow_mut().add_tab(home_path);
+    
+    // Sync the global state with the initial tab
+    if let Some(active_tab) = tab_manager.borrow().get_active_tab() {
+        state.borrow_mut().navigation_history = active_tab.navigation_history.clone();
+    }
     
     let window = ApplicationWindow::builder()
         .application(app)
@@ -37,6 +43,7 @@ pub fn build_ui(app: &Application) {
     
     // Tab bar at the top
     let tab_bar = create_tab_bar(tab_manager.clone());
+    crate::widgets::tab_bar::set_global_tab_bar(tab_bar.clone());
     main_box.append(&tab_bar);
     
     // Create the split pane layout (like Windows Explorer!)

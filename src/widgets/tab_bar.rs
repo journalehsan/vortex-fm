@@ -86,14 +86,12 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     tab_widget.append(&close_btn);
     
     // Connect tab click handler using gesture
-    let path_clone = tab.path.clone();
     let tab_manager_clone = tab_manager.clone();
     let tab_id = tab.id;
     
     let gesture = gtk::GestureClick::new();
     gesture.connect_pressed(move |_, _n_press, _x, _y| {
-        tab_manager_clone.borrow_mut().activate_tab(tab_id);
-        navigate_to_directory(path_clone.clone());
+        crate::core::navigation::switch_to_tab(tab_id);
         // TODO: Update tab bar UI
     });
     tab_widget.add_controller(gesture);
@@ -122,6 +120,25 @@ pub fn update_tab_bar(tab_bar: &Box, tab_manager: TabManager) {
             for tab in &tab_manager.tabs {
                 let tab_widget = create_tab_widget(tab, Rc::new(RefCell::new(tab_manager.clone())));
                 container.append(&tab_widget);
+            }
+        }
+    }
+}
+
+// Global tab bar reference for updates
+static mut GLOBAL_TAB_BAR: Option<Box> = None;
+
+pub fn set_global_tab_bar(tab_bar: Box) {
+    unsafe {
+        GLOBAL_TAB_BAR = Some(tab_bar);
+    }
+}
+
+pub fn update_global_tab_bar() {
+    unsafe {
+        if let Some(tab_bar) = &GLOBAL_TAB_BAR {
+            if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                update_tab_bar(tab_bar, tab_manager_rc.borrow().clone());
             }
         }
     }
