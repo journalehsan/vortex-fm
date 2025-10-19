@@ -504,4 +504,17 @@ revealer:not([reveal-child="true"]) {
     height: 0px !important;
     min-height: 0px !important;
     max-height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    border: none !important;
+}
+
+/* Ensure terminal panel takes no space when hidden */
+revealer[visible="false"] {
+    height: 0px !important;
+    min-height: 0px !important;
+    max-height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    border: none !important;
 }

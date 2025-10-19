@@ -25,7 +25,7 @@ impl TerminalPanel {
         
         // Add some placeholder text
         let buffer = text_view.buffer();
-        buffer.set_text("Terminal Panel (VTE integration coming soon)\n\nThis will be a fully functional terminal\nthat syncs with the current directory.\n\nPress F4 to toggle this panel.");
+        buffer.set_text("🚀 Vortex Terminal Panel\n\nVTE integration coming soon!\nThis will be a fully functional terminal\nthat syncs with the current directory.\n\nPress F4 to toggle this panel.\n\nFeatures coming:\n• Real terminal emulation\n• Directory synchronization\n• Multiple terminal tabs\n• Custom themes");
         
         scrolled_window.set_child(Some(&text_view));
         
@@ -110,14 +110,14 @@ pub fn toggle_terminal_panel() {
                 revealer.set_visible(true);
                 revealer.set_height_request(200);
                 revealer.set_reveal_child(true);
+                crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel shown - VTE integration coming soon!");
             } else {
-                // Hiding - hide and set height to 0
+                // Hiding - completely hide and remove from layout
                 revealer.set_reveal_child(false);
+                revealer.set_visible(false);
                 revealer.set_height_request(0);
-                // Keep visible but with 0 height for smooth animation
+                crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel hidden");
             }
-            
-            crate::utils::simple_debug::debug_info("TERMINAL", &format!("Terminal panel toggled: {}", !currently_visible));
         }
     }
 }
