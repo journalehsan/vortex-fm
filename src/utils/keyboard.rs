@@ -67,11 +67,11 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     });
     app.add_action(&new_folder_action);
     
-    // Terminal toggle action (Ctrl+`)
+    // Terminal toggle action (F4)
     let terminal_toggle_action = gio::SimpleAction::new("toggle-terminal", None);
     terminal_toggle_action.connect_activate(|_, _| {
-        crate::utils::simple_debug::debug_info("KEYBOARD", "Terminal toggle action triggered (Ctrl+`)");
-        // TODO: Implement terminal toggle functionality
+        crate::utils::simple_debug::debug_info("KEYBOARD", "Terminal toggle action triggered (F4)");
+        crate::widgets::terminal_panel::toggle_terminal_panel(); // Call the toggle function
     });
     app.add_action(&terminal_toggle_action);
     
