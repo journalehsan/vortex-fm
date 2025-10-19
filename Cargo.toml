@@ -1,0 +1,15 @@
+[package]
+name = "vortex-fm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gtk = { version = "0.7", package = "gtk4" }
+gio = "0.20"
+glib = "0.20"
+gdk = "0.7"
+libadwaita = { version = "0.5", optional = true }
+tokio = { version = "1.0", features = ["full"] }
+
+[build-dependencies]
+glib-build-tools = "0.17"
