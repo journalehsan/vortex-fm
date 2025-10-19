@@ -18,7 +18,7 @@ fn main() -> glib::ExitCode {
         .build();
 
     app.connect_startup(|_| {
-        // load_css(); // Disabled for now due to GTK issues
+        // crate::utils::css::load_css(); // Temporarily disabled due to GTK issues
         println!("🚀 Vortex FM starting up...");
     });
 
