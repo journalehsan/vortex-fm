@@ -6,8 +6,10 @@ use crate::core::file_manager::FileManagerState;
 use crate::core::navigation::{set_global_state, set_global_tab_manager};
 use crate::core::tab_manager::TabManager;
 use crate::core::bookmarks::BookmarksManager;
+use crate::core::selection::{SelectionManager, set_global_selection_manager};
 use crate::widgets::modern_sidebar::create_modern_sidebar;
 use crate::widgets::tab_bar::create_tab_bar;
+use crate::widgets::details_panel::create_details_panel;
 use crate::views::content_area::create_content_area;
 use crate::utils::keyboard::setup_keyboard_shortcuts;
 
@@ -16,10 +18,13 @@ pub fn build_ui(app: &Application) {
     let state = Rc::new(RefCell::new(FileManagerState::new()));
     set_global_state(state.clone());
     
-    // Create tab manager and bookmarks manager
+    // Create tab manager, bookmarks manager, and selection manager
     let tab_manager = Rc::new(RefCell::new(TabManager::new()));
     set_global_tab_manager(tab_manager.clone());
     let bookmarks_manager = BookmarksManager::load();
+    
+    let selection_manager = Rc::new(RefCell::new(SelectionManager::new()));
+    set_global_selection_manager(selection_manager.clone());
     
     // Add initial tab
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
@@ -46,17 +51,27 @@ pub fn build_ui(app: &Application) {
     crate::widgets::tab_bar::set_global_tab_bar(tab_bar.clone());
     main_box.append(&tab_bar);
     
-    // Create the split pane layout (like Windows Explorer!)
+    // Create the main horizontal split pane
     let main_paned = Paned::new(Orientation::Horizontal);
     
     // Left sidebar (modern design)
     let sidebar = create_modern_sidebar(&bookmarks_manager);
     main_paned.set_start_child(Some(&sidebar));
     
-    // Main content area (80%)
-    let content_area = create_content_area(&mut state.borrow_mut());
-    main_paned.set_end_child(Some(&content_area));
+    // Create the content + details split pane
+    let content_details_paned = Paned::new(Orientation::Horizontal);
     
+    // Main content area
+    let content_area = create_content_area(&mut state.borrow_mut());
+    content_details_paned.set_start_child(Some(&content_area));
+    
+    // Right details panel
+    let details_panel = create_details_panel();
+    crate::widgets::details_panel::set_global_details_panel(details_panel.clone());
+    content_details_paned.set_end_child(Some(&details_panel));
+    content_details_paned.set_position(600); // Set initial position
+    
+    main_paned.set_end_child(Some(&content_details_paned));
     main_paned.set_position(state.borrow().config.sidebar_width);
     
     main_box.append(&main_paned);

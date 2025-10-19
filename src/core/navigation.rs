@@ -59,6 +59,9 @@ pub fn navigate_to_directory(path: PathBuf) {
             }
         }
         
+        // Clear selection when navigating to a new directory
+        crate::core::selection::clear_selection();
+        
         // Update tab bar UI to reflect title changes
         crate::widgets::tab_bar::update_global_tab_bar();
     }
