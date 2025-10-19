@@ -17,7 +17,7 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     status_bar.append(&status_label);
     
     // Count actual items in directory
-    let item_count = if let Ok(entries) = std::fs::read_dir(&state.current_path) {
+    let item_count = if let Ok(entries) = std::fs::read_dir(state.current_path()) {
         if state.config.show_hidden_files {
             entries.count()
         } else {

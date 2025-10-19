@@ -17,22 +17,52 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
     let up_btn = Button::from_icon_name("go-up-symbolic");
     let refresh_btn = Button::from_icon_name("view-refresh-symbolic");
     
-    // Disable buttons initially
-    back_btn.set_sensitive(false);
-    forward_btn.set_sensitive(false);
-    up_btn.set_sensitive(false);
+    // Set initial button states
+    back_btn.set_sensitive(state.can_go_back());
+    forward_btn.set_sensitive(state.can_go_forward());
+    up_btn.set_sensitive(state.can_go_up());
+    
+    // Connect navigation button handlers
+    back_btn.connect_clicked(move |_| {
+        if let Some(state_rc) = get_global_state() {
+            state_rc.borrow_mut().go_back();
+        }
+    });
+    
+    forward_btn.connect_clicked(move |_| {
+        if let Some(state_rc) = get_global_state() {
+            state_rc.borrow_mut().go_forward();
+        }
+    });
+    
+    up_btn.connect_clicked(move |_| {
+        if let Some(state_rc) = get_global_state() {
+            state_rc.borrow_mut().go_up();
+        }
+    });
+    
+    refresh_btn.connect_clicked(move |_| {
+        if let Some(state_rc) = get_global_state() {
+            state_rc.borrow().refresh_ui();
+        }
+    });
     
     path_bar.append(&back_btn);
     path_bar.append(&forward_btn);
     path_bar.append(&up_btn);
     path_bar.append(&refresh_btn);
     
+    // Store button references in state
+    state.back_button = Some(back_btn.clone());
+    state.forward_button = Some(forward_btn.clone());
+    state.up_button = Some(up_btn.clone());
+    
     // Separator
     let separator = Separator::new(Orientation::Vertical);
     path_bar.append(&separator);
     
     // Path display
-    let current_path_str = state.current_path.to_string_lossy().to_string();
+    let current_path_str = state.current_path().to_string_lossy().to_string();
     let path_label = Label::new(Some(&current_path_str));
     path_label.set_halign(gtk::Align::Start);
     path_label.set_hexpand(true);
@@ -55,7 +85,7 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
             
             // Update the file list with filtered results
             if let Some(file_list_widget) = &state.file_list_widget {
-                update_file_list_with_filter(file_list_widget, &state.current_path, &filter_text, &state.config);
+                update_file_list_with_filter(file_list_widget, state.current_path(), &filter_text, &state.config);
             }
         }
     });

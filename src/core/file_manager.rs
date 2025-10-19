@@ -1,78 +1,104 @@
 use std::path::PathBuf;
 use std::fs;
 use gtk::prelude::*;
-use gtk::{ScrolledWindow, Label, Box as GtkBox};
+use gtk::{ScrolledWindow, Label, Box as GtkBox, Button};
 use crate::core::config::VortexConfig;
+use crate::core::navigation_history::NavigationHistory;
 
 #[derive(Clone)]
 pub struct FileManagerState {
-    pub current_path: PathBuf,
-    pub history: Vec<PathBuf>,
-    pub history_index: usize,
+    pub navigation_history: NavigationHistory,
     pub config: VortexConfig,
     pub file_list_widget: Option<ScrolledWindow>,
     pub path_label: Option<Label>,
     pub status_bar: Option<GtkBox>,
+    pub back_button: Option<Button>,
+    pub forward_button: Option<Button>,
+    pub up_button: Option<Button>,
 }
 
 impl FileManagerState {
     pub fn new() -> Self {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
+        let home_path = PathBuf::from(&home);
         Self {
-            current_path: PathBuf::from(&home),
-            history: vec![PathBuf::from(home)],
-            history_index: 0,
+            navigation_history: NavigationHistory::new(home_path),
             config: VortexConfig::load(),
             file_list_widget: None,
             path_label: None,
             status_bar: None,
+            back_button: None,
+            forward_button: None,
+            up_button: None,
         }
     }
     
     pub fn navigate_to(&mut self, path: PathBuf) {
         if path.exists() && path.is_dir() {
-            self.current_path = path.clone();
-            // Add to history if it's different from current
-            if self.history.get(self.history_index) != Some(&path) {
-                self.history.truncate(self.history_index + 1);
-                self.history.push(path);
-                self.history_index = self.history.len() - 1;
-            }
+            self.navigation_history.navigate_to(path);
+            self.update_navigation_buttons();
+            self.refresh_ui();
         }
     }
     
-    pub fn can_go_back(&self) -> bool {
-        self.history_index > 0
-    }
-    
-    pub fn can_go_forward(&self) -> bool {
-        self.history_index < self.history.len() - 1
-    }
-    
     pub fn go_back(&mut self) {
-        if self.can_go_back() {
-            self.history_index -= 1;
-            self.current_path = self.history[self.history_index].clone();
+        if let Some(_path) = self.navigation_history.go_back() {
+            self.update_navigation_buttons();
+            self.refresh_ui();
         }
     }
     
     pub fn go_forward(&mut self) {
-        if self.can_go_forward() {
-            self.history_index += 1;
-            self.current_path = self.history[self.history_index].clone();
+        if let Some(_path) = self.navigation_history.go_forward() {
+            self.update_navigation_buttons();
+            self.refresh_ui();
         }
     }
     
     pub fn go_up(&mut self) {
-        if let Some(parent) = self.current_path.parent() {
-            self.navigate_to(parent.to_path_buf());
+        if let Some(_path) = self.navigation_history.go_up() {
+            self.update_navigation_buttons();
+            self.refresh_ui();
+        }
+    }
+    
+    pub fn can_go_back(&self) -> bool {
+        self.navigation_history.can_go_back()
+    }
+    
+    pub fn can_go_forward(&self) -> bool {
+        self.navigation_history.can_go_forward()
+    }
+    
+    pub fn can_go_up(&self) -> bool {
+        self.navigation_history.can_go_up()
+    }
+    
+    pub fn current_path(&self) -> &PathBuf {
+        self.navigation_history.current()
+    }
+    
+    fn update_navigation_buttons(&self) {
+        // Update back button
+        if let Some(back_btn) = &self.back_button {
+            back_btn.set_sensitive(self.can_go_back());
+        }
+        
+        // Update forward button
+        if let Some(forward_btn) = &self.forward_button {
+            forward_btn.set_sensitive(self.can_go_forward());
+        }
+        
+        // Update up button
+        if let Some(up_btn) = &self.up_button {
+            up_btn.set_sensitive(self.can_go_up());
         }
     }
     
     pub fn refresh_ui(&self) {
         // Update path label
         if let Some(path_label) = &self.path_label {
-            let current_path_str = self.current_path.to_string_lossy().to_string();
+            let current_path_str = self.current_path().to_string_lossy().to_string();
             path_label.set_text(&current_path_str);
         }
         
@@ -105,7 +131,7 @@ impl FileManagerState {
         // Read files from current directory
         let mut files = Vec::new();
         
-        if let Ok(entries) = fs::read_dir(&self.current_path) {
+        if let Ok(entries) = fs::read_dir(self.current_path()) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 let name = path.file_name()
@@ -173,7 +199,7 @@ impl FileManagerState {
     
     pub fn update_status_bar(&self, status_bar: &GtkBox) {
         // Count actual items in directory
-        let item_count = if let Ok(entries) = fs::read_dir(&self.current_path) {
+        let item_count = if let Ok(entries) = fs::read_dir(self.current_path()) {
             if self.config.show_hidden_files {
                 entries.count()
             } else {
