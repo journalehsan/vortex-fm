@@ -75,6 +75,16 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     });
     app.add_action(&terminal_toggle_action);
     
-    // TODO: Add key controller for terminal toggle when Key API issues are resolved
-    // For now, terminal can be toggled programmatically
+    // Add key controller for F4
+    let key_controller = gtk::EventControllerKey::new();
+    key_controller.connect_key_pressed(|_, key, _, _| {
+        if key.keyval() == gdk::Key::F4 {
+            crate::utils::simple_debug::debug_info("KEYBOARD", "F4 key pressed - toggling terminal");
+            crate::widgets::terminal_panel::toggle_terminal_panel();
+            gtk::Propagation::Stop
+        } else {
+            gtk::Propagation::Continue
+        }
+    });
+    window.add_controller(key_controller);
 }

@@ -25,7 +25,7 @@ impl TerminalPanel {
         
         // Add some placeholder text
         let buffer = text_view.buffer();
-        buffer.set_text("Terminal Panel (VTE integration coming soon)\n\nThis will be a fully functional terminal\nthat syncs with the current directory.\n\nPress Ctrl+` to toggle this panel.");
+        buffer.set_text("Terminal Panel (VTE integration coming soon)\n\nThis will be a fully functional terminal\nthat syncs with the current directory.\n\nPress F4 to toggle this panel.");
         
         scrolled_window.set_child(Some(&text_view));
         
@@ -67,8 +67,8 @@ pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     terminal_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
     terminal_revealer.set_transition_duration(300);
     
-    // Set a reasonable height for the terminal panel
-    terminal_revealer.set_height_request(200);
+    // Set a reasonable height for the terminal panel when visible
+    terminal_panel.widget.set_height_request(200);
     
     // Add some styling
     terminal_panel.widget.add_css_class("terminal-panel");
