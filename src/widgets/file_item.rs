@@ -1,8 +1,9 @@
 use gtk::prelude::*;
-use gtk::{Button, Box, Orientation, Label};
+use gtk::{Button, Box, Orientation, Label, GestureClick};
 use std::path::PathBuf;
 use crate::core::config::VortexConfig;
 use crate::core::navigation::navigate_to_directory;
+use crate::widgets::context_menu::{create_folder_context_menu, create_file_context_menu};
 
 pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig) -> Button {
     let item_box = Box::new(Orientation::Vertical, 4);
@@ -28,8 +29,21 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     let button = Button::new();
     button.set_child(Some(&item_box));
     
-    // TODO: Add context menu support
-    // Note: Context menus require more complex setup in GTK4
+    // Set up right-click gesture for context menu
+    let gesture = GestureClick::new();
+    gesture.set_button(3); // Right mouse button
+    let button_clone = button.clone();
+    let path_for_context = path.clone();
+    gesture.connect_pressed(move |_gesture, _n_press, _x, _y| {
+        let context_menu = if path_for_context.is_dir() {
+            create_folder_context_menu(path_for_context.clone())
+        } else {
+            create_file_context_menu(path_for_context.clone())
+        };
+        context_menu.set_parent(&button_clone);
+        context_menu.popup();
+    });
+    button.add_controller(gesture);
     
     // Connect click handler
     let _name_clone = name.to_string();
