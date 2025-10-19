@@ -108,11 +108,13 @@ fn create_sidebar_item(bookmark: &crate::core::bookmarks::Bookmark) -> ListBoxRo
     
     row.set_child(Some(&item_box));
     
-    // Connect click handler
+    // Connect click handler using gesture
     let path_clone = bookmark.path.clone();
-    row.connect_activate(move |_| {
+    let gesture = gtk::GestureClick::new();
+    gesture.connect_pressed(move |_, _n_press, _x, _y| {
         navigate_to_directory(path_clone.clone());
     });
+    row.add_controller(gesture);
     
     row
 }

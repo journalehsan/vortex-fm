@@ -15,16 +15,21 @@ pub fn create_tab_bar(tab_manager: Rc<RefCell<TabManager>>) -> Box {
     tab_bar.set_margin_bottom(4);
     
     // New tab button
-    let new_tab_btn = Button::from_icon_name("tab-new-symbolic");
+    let new_tab_btn = Button::with_label("+");
     new_tab_btn.add_css_class("tab-new-button");
     new_tab_btn.set_tooltip_text(Some("New Tab (Ctrl+T)"));
+    new_tab_btn.set_width_request(32);
+    new_tab_btn.set_height_request(32);
     
     let tab_manager_clone = tab_manager.clone();
+    let tab_bar_clone = tab_bar.clone();
     new_tab_btn.connect_clicked(move |_| {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
         let home_path = PathBuf::from(&home);
         tab_manager_clone.borrow_mut().add_tab(home_path);
-        // TODO: Update tab bar UI
+        
+        // Update the tab bar UI
+        update_tab_bar(&tab_bar_clone, tab_manager_clone.borrow().clone());
     });
     
     tab_bar.append(&new_tab_btn);
@@ -63,15 +68,17 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     title_label.set_hexpand(true);
     
     // Close button
-    let close_btn = Button::from_icon_name("window-close-symbolic");
+    let close_btn = Button::with_label("×");
     close_btn.add_css_class("tab-close-button");
     close_btn.set_tooltip_text(Some("Close Tab"));
+    close_btn.set_width_request(20);
+    close_btn.set_height_request(20);
     
     let tab_id = tab.id;
     let tab_manager_clone = tab_manager.clone();
     close_btn.connect_clicked(move |_| {
         tab_manager_clone.borrow_mut().close_tab(tab_id);
-        // TODO: Update tab bar UI
+        // TODO: Update tab bar UI - this would need the tab_bar reference
     });
     
     tab_widget.append(&icon_label);
