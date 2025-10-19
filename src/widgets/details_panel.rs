@@ -48,38 +48,79 @@ pub fn create_details_panel() -> Box {
 }
 
 pub fn update_details_panel(details_panel: &Box, file_path: Option<&PathBuf>) {
+    crate::utils::simple_debug::debug_debug("DETAILS_PANEL", &format!("Updating details panel with: {:?}", 
+        file_path.map(|p| p.display().to_string())));
+    
     // Find the content box (scrolled window's child)
     if let Some(scrolled) = details_panel.last_child() {
+        crate::utils::simple_debug::debug_trace("DETAILS_PANEL", &format!("Found scrolled window: {}", scrolled.type_()));
+        
         if let Some(scrolled_window) = scrolled.downcast_ref::<ScrolledWindow>() {
+            crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "ScrolledWindow downcast successful");
+            
             if let Some(viewport) = scrolled_window.child() {
+                crate::utils::simple_debug::debug_trace("DETAILS_PANEL", &format!("Found viewport: {}", viewport.type_()));
+                
                 if let Some(viewport_widget) = viewport.downcast_ref::<gtk::Viewport>() {
+                    crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "Viewport downcast successful");
+                    
                     if let Some(content_box) = viewport_widget.child() {
+                        crate::utils::simple_debug::debug_trace("DETAILS_PANEL", &format!("Found content box: {}", content_box.type_()));
+                        
                         if let Some(content) = content_box.downcast_ref::<Box>() {
+                            crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "Content box downcast successful");
+                            
                             // Clear existing content
+                            crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "Clearing existing content");
+                            
                             while let Some(child) = content.first_child() {
                                 content.remove(&child);
                             }
+                            
+                            crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "Content cleared successfully");
 
                             if let Some(path) = file_path {
+                                crate::utils::simple_debug::debug_info("DETAILS_PANEL", &format!("Processing file: {}", path.display()));
+                                
                                 // Show file details
                                 if let Ok(file_info) = get_file_info(path) {
+                                    crate::utils::simple_debug::debug_trace("DETAILS_PANEL", "File info retrieved successfully");
                                     create_file_details(content, &file_info);
                                 } else {
+                                    crate::utils::simple_debug::debug_error("DETAILS_PANEL", &format!("Failed to get file info for: {}", path.display()));
                                     create_error_details(content, "Could not read file information");
                                 }
                             } else {
+                                crate::utils::simple_debug::debug_info("DETAILS_PANEL", "Processing folder details");
+                                
                                 // Show current folder details
                                 if let Some(current_path) = get_current_folder_path() {
+                                    crate::utils::simple_debug::debug_trace("DETAILS_PANEL", &format!("Current folder: {}", current_path.display()));
                                     create_folder_details(content, &current_path);
                                 } else {
+                                    crate::utils::simple_debug::debug_warning("DETAILS_PANEL", "No current folder path found");
                                     create_no_selection_details(content);
                                 }
                             }
+                            
+                            crate::utils::simple_debug::debug_info("DETAILS_PANEL", "Details panel update complete");
+                        } else {
+                            crate::utils::simple_debug::debug_error("DETAILS_PANEL", "Failed to downcast content box to Box");
                         }
+                    } else {
+                        crate::utils::simple_debug::debug_error("DETAILS_PANEL", "No content box found in viewport");
                     }
+                } else {
+                    crate::utils::simple_debug::debug_error("DETAILS_PANEL", "Failed to downcast viewport to Viewport");
                 }
+            } else {
+                crate::utils::simple_debug::debug_error("DETAILS_PANEL", "No viewport found in scrolled window");
             }
+        } else {
+            crate::utils::simple_debug::debug_error("DETAILS_PANEL", "Failed to downcast to ScrolledWindow");
         }
+    } else {
+        crate::utils::simple_debug::debug_error("DETAILS_PANEL", "No scrolled window found in details panel");
     }
 }
 

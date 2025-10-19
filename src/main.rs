@@ -18,8 +18,11 @@ fn main() -> glib::ExitCode {
         .build();
 
     app.connect_startup(|_| {
+        // Initialize debug system
+        crate::utils::simple_debug::init_debug();
+        
         // crate::utils::css::load_css(); // Temporarily disabled due to GTK issues
-        println!("🚀 Vortex FM starting up...");
+        crate::utils::simple_debug::debug_info("MAIN", "Vortex FM starting up...");
     });
 
     app.connect_activate(build_ui);
