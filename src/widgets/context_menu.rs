@@ -2,8 +2,9 @@ use gtk::prelude::*;
 use gtk::{PopoverMenu, gio};
 use std::path::PathBuf;
 use crate::core::navigation::navigate_to_directory;
-// use crate::core::file_operations::*; // Will be used later
 use crate::utils::file_ops::open_with_system;
+use crate::widgets::properties_dialog::show_properties_dialog;
+use crate::widgets::file_operations_dialog::{show_rename_dialog, show_delete_confirmation, show_copy_dialog, show_move_dialog};
 
 pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
     let menu = gio::Menu::new();
@@ -69,7 +70,7 @@ pub fn create_file_context_menu(path: PathBuf) -> PopoverMenu {
     let path_clone = path.clone();
     copy_action.connect_activate(move |_, _| {
         println!("📋 Copying file: {}", path_clone.display());
-        // TODO: Implement copy to clipboard
+        show_copy_dialog(&path_clone);
     });
     
     // Cut action
@@ -77,7 +78,7 @@ pub fn create_file_context_menu(path: PathBuf) -> PopoverMenu {
     let path_clone = path.clone();
     cut_action.connect_activate(move |_, _| {
         println!("✂️ Cutting file: {}", path_clone.display());
-        // TODO: Implement cut to clipboard
+        show_move_dialog(&path_clone);
     });
     
     // Rename action
@@ -129,17 +130,6 @@ pub fn create_file_context_menu(path: PathBuf) -> PopoverMenu {
     popover
 }
 
-fn show_properties_dialog(path: &PathBuf) {
-    // TODO: Implement properties dialog
-    println!("Properties dialog for: {}", path.display());
-}
+// Properties dialog is now implemented in properties_dialog.rs
 
-fn show_rename_dialog(path: &PathBuf) {
-    // TODO: Implement rename dialog
-    println!("Rename dialog for: {}", path.display());
-}
-
-fn show_delete_confirmation(path: &PathBuf) {
-    // TODO: Implement delete confirmation dialog
-    println!("Delete confirmation for: {}", path.display());
-}
+// File operations dialogs are now implemented in file_operations_dialog.rs
