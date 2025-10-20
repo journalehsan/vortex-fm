@@ -123,6 +123,8 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     let tab_id = tab.id;
     
     let gesture = gtk::GestureClick::new();
+    // Accept all mouse buttons (0 = any) so middle-click is captured
+    gesture.set_button(0);
     gesture.connect_pressed(move |g, n_press, _x, _y| {
         // Middle-click closes tab
         let button = g.current_button();
