@@ -129,6 +129,7 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     // DIVIDER
     let divider = Separator::new(Orientation::Vertical);
     divider.set_valign(gtk::Align::Center);
+    divider.set_height_request(52); // match thumbnail height for clean alignment
     content.append(&divider);
     
     // MIDDLE: Details (3 rows - tighter spacing)
@@ -156,6 +157,7 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     // DIVIDER
     let divider2 = Separator::new(Orientation::Vertical);
     divider2.set_valign(gtk::Align::Center);
+    divider2.set_height_request(52); // match thumbnail height for clean alignment
     content.append(&divider2);
     
     // RIGHT: Additional Info (tighter spacing)

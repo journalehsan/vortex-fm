@@ -585,6 +585,13 @@ button:hover {
     padding-bottom: 2px; /* tighter vertical spacing */
 }
 
+/* Subtle vertical separators inside details panel */
+.details-panel separator {
+    margin-left: 6px;
+    margin-right: 6px;
+    opacity: 0.85;
+}
+
 .details-thumbnail-compact {
     border-radius: 6px;
     border: 1px solid #e0e0e0;
