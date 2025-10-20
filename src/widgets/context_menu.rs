@@ -44,6 +44,8 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
             );
             manager_rc.borrow_mut().add_bookmark(bookmark);
             let _ = manager_rc.borrow().save();
+            // Refresh sidebar to show new bookmark
+            crate::widgets::modern_sidebar::refresh_sidebar();
         }
     });
     
