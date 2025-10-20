@@ -2,6 +2,7 @@ use gtk::prelude::*;
 use gtk::{PopoverMenu, gio};
 use std::path::PathBuf;
 use crate::core::navigation::navigate_to_directory;
+use crate::core::bookmarks::{Bookmark, get_global_bookmarks_manager};
 use crate::utils::file_ops::open_with_system;
 use crate::widgets::properties_dialog::show_properties_dialog;
 use crate::widgets::file_operations_dialog::{show_rename_dialog, show_delete_confirmation, show_copy_dialog, show_move_dialog};
@@ -25,6 +26,27 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
         crate::core::navigation::open_in_new_tab(path_clone.clone());
     });
     
+    // Add to Quick Access action
+    let quick_access_action = gio::SimpleAction::new("add-quick-access", None);
+    let path_clone = path.clone();
+    quick_access_action.connect_activate(move |_, _| {
+        println!("⭐ Adding folder to Quick Access: {}", path_clone.display());
+        if let Some(manager_rc) = get_global_bookmarks_manager() {
+            let folder_name = path_clone.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("Folder")
+                .to_string();
+            let bookmark = Bookmark::new(
+                folder_name,
+                path_clone.clone(),
+                "📁".to_string(),
+                "Quick Access".to_string(),
+            );
+            manager_rc.borrow_mut().add_bookmark(bookmark);
+            let _ = manager_rc.borrow().save();
+        }
+    });
+    
     // Properties action
     let properties_action = gio::SimpleAction::new("properties", None);
     let path_clone = path.clone();
@@ -36,6 +58,7 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
     // Add menu items
     menu.append(Some("Open"), Some("folder.open"));
     menu.append(Some("Open in New Tab"), Some("folder.open-new-tab"));
+    menu.append(Some("Add to Quick Access"), Some("folder.add-quick-access"));
     menu.append(Some("Properties"), Some("folder.properties"));
     
     let popover = PopoverMenu::from_model(Some(&menu));
@@ -45,6 +68,7 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
     let action_group = gio::SimpleActionGroup::new();
     action_group.add_action(&open_action);
     action_group.add_action(&new_tab_action);
+    action_group.add_action(&quick_access_action);
     action_group.add_action(&properties_action);
     
     popover.insert_action_group("folder", Some(&action_group));

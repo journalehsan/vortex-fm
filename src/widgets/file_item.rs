@@ -1,9 +1,10 @@
 use gtk::prelude::*;
-use gtk::{Button, Box, Orientation, Label, GestureClick, Picture};
+use gtk::{Button, Box, Orientation, Label, GestureClick, Picture, DragSource, gdk};
 use std::path::PathBuf;
 use crate::core::config::VortexConfig;
 use crate::core::navigation::navigate_to_directory;
 use crate::core::selection::{select_file, clear_selection, get_global_selection_manager};
+use crate::core::bookmarks::{Bookmark, get_global_bookmarks_manager};
 use crate::widgets::context_menu::{create_folder_context_menu, create_file_context_menu};
 use crate::utils::thumbnails::get_global_thumbnail_manager;
 
@@ -118,6 +119,20 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     });
     
     button.add_controller(gesture);
+    
+    // Add drag source for folders (for drag-and-drop to Quick Access)
+    if path.is_dir() {
+        let drag_source = DragSource::new();
+        drag_source.set_actions(gdk::DragAction::COPY);
+        
+        let path_clone_drag = path.clone();
+        drag_source.connect_prepare(move |_source, _x, _y| {
+            let content = gdk::ContentProvider::for_value(&path_clone_drag.to_string_lossy().to_string().to_value());
+            Some(content)
+        });
+        
+        button.add_controller(drag_source);
+    }
     
     // Return the button
     button

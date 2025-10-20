@@ -1,11 +1,11 @@
 use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button, Separator, ScrolledWindow, ListBox, ListBoxRow};
 use gtk::{gdk, gio};
-use gtk::{TreeView, TreeViewColumn, CellRendererText, TreeStore};
+use gtk::{TreeView, TreeViewColumn, CellRendererText, TreeStore, DropTarget};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use crate::core::bookmarks::{BookmarksManager, get_global_bookmarks_manager};
+use crate::core::bookmarks::{BookmarksManager, Bookmark, get_global_bookmarks_manager};
 use crate::core::config::VortexConfig;
 use crate::core::navigation::navigate_to_directory;
 use crate::views::content_area::switch_to_home_view;
@@ -88,6 +88,43 @@ fn create_sidebar_section(title: &str, bookmarks: &[&crate::core::bookmarks::Boo
     for bookmark in bookmarks {
         let item = create_sidebar_item(bookmark);
         list_box.append(&item);
+    }
+    
+    // Add drop target for Quick Access section
+    if title == "Quick Access" {
+        let drop_target = DropTarget::new(String::static_type(), gdk::DragAction::COPY);
+        let list_box_weak = list_box.downgrade();
+        drop_target.connect_drop(move |_target, value, _x, _y| {
+            if let Ok(path_str) = value.get::<String>() {
+                let path = PathBuf::from(&path_str);
+                if path.is_dir() {
+                    if let Some(list) = list_box_weak.upgrade() {
+                        // Add to Quick Access
+                        if let Some(manager_rc) = get_global_bookmarks_manager() {
+                            let folder_name = path.file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("Folder")
+                                .to_string();
+                            let bookmark = Bookmark::new(
+                                folder_name,
+                                path.clone(),
+                                "📁".to_string(),
+                                "Quick Access".to_string(),
+                            );
+                            manager_rc.borrow_mut().add_bookmark(bookmark.clone());
+                            let _ = manager_rc.borrow().save();
+                            
+                            // Add visual item to list
+                            let item = create_sidebar_item(&bookmark);
+                            list.append(&item);
+                            println!("✅ Added folder to Quick Access: {}", path.display());
+                        }
+                    }
+                }
+            }
+            true
+        });
+        list_box.add_controller(drop_target);
     }
     
     section.append(&list_box);
