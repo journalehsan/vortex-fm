@@ -67,6 +67,88 @@ window {
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     border-bottom: 1px solid #e8eaed;
     min-height: 40px;
+    margin-left: 220px; /* Account for sidebar width */
+}
+
+/* Dynamic tab bar sidebar width classes */
+.tab-bar.sidebar-width-small {
+    margin-left: 120px !important;
+}
+
+.tab-bar.sidebar-width-medium {
+    margin-left: 160px !important;
+}
+
+.tab-bar.sidebar-width-large {
+    margin-left: 200px !important;
+}
+
+.tab-bar.sidebar-width-xlarge {
+    margin-left: 240px !important;
+}
+
+.tab-bar.sidebar-width-xxlarge {
+    margin-left: 280px !important;
+}
+
+/* Responsive tab bar margins */
+@media (max-width: 1280px) {
+    .tab-bar { margin-left: 180px; }
+}
+@media (max-width: 1100px) {
+    .tab-bar { margin-left: 140px; }
+}
+@media (max-width: 900px) {
+    .tab-bar { margin-left: 100px; }
+}
+@media (max-width: 760px) {
+    .tab-bar { margin-left: 64px; }
+}
+@media (max-width: 640px) {
+    .tab-bar { margin-left: 32px; }
+}
+
+/* Navigation buttons (Home/Browse) */
+.nav-buttons {
+    margin-left: 220px; /* Account for sidebar width */
+}
+
+/* Dynamic navigation button sidebar width classes */
+.nav-buttons.sidebar-width-small {
+    margin-left: 120px !important;
+}
+
+.nav-buttons.sidebar-width-medium {
+    margin-left: 160px !important;
+}
+
+.nav-buttons.sidebar-width-large {
+    margin-left: 200px !important;
+}
+
+.nav-buttons.sidebar-width-xlarge {
+    margin-left: 240px !important;
+}
+
+.nav-buttons.sidebar-width-xxlarge {
+    margin-left: 280px !important;
+}
+
+/* Responsive navigation button margins */
+@media (max-width: 1280px) {
+    .nav-buttons { margin-left: 180px; }
+}
+@media (max-width: 1100px) {
+    .nav-buttons { margin-left: 140px; }
+}
+@media (max-width: 900px) {
+    .nav-buttons { margin-left: 100px; }
+}
+@media (max-width: 760px) {
+    .nav-buttons { margin-left: 64px; }
+}
+@media (max-width: 640px) {
+    .nav-buttons { margin-left: 32px; }
 }
 
 .tabs-container {
@@ -529,6 +611,27 @@ revealer[visible="false"] {
     background: linear-gradient(135deg, #f8f9fa 0%, #e8f0fe 100%);
     padding: 16px;
     margin-left: 220px; /* default sidebar width */
+}
+
+/* Dynamic sidebar width classes */
+.sidebar-width-small {
+    margin-left: 120px !important;
+}
+
+.sidebar-width-medium {
+    margin-left: 160px !important;
+}
+
+.sidebar-width-large {
+    margin-left: 200px !important;
+}
+
+.sidebar-width-xlarge {
+    margin-left: 240px !important;
+}
+
+.sidebar-width-xxlarge {
+    margin-left: 280px !important;
 }
 
 /* Responsive Grid Layout */

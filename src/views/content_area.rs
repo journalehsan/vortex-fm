@@ -12,10 +12,24 @@ static mut GLOBAL_STACK: Option<Rc<RefCell<Stack>>> = None;
 static mut GLOBAL_HOME_BTN: Option<Button> = None;
 static mut GLOBAL_BROWSER_BTN: Option<Button> = None;
 static mut GLOBAL_HOME_CONTAINER: Option<ScrolledWindow> = None;
+static mut GLOBAL_TAB_BAR: Option<Box> = None;
+static mut GLOBAL_NAV_BUTTONS: Option<Box> = None;
 
 pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
     unsafe {
         GLOBAL_STACK = Some(stack);
+    }
+}
+
+pub fn set_global_tab_bar(tab_bar: Box) {
+    unsafe {
+        GLOBAL_TAB_BAR = Some(tab_bar);
+    }
+}
+
+pub fn set_global_nav_buttons(nav_buttons: Box) {
+    unsafe {
+        GLOBAL_NAV_BUTTONS = Some(nav_buttons);
     }
 }
 
@@ -79,6 +93,7 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     
     // Add navigation buttons
     let nav_box = Box::new(Orientation::Horizontal, 8);
+    nav_box.set_css_classes(&["nav-buttons"]);
     nav_box.set_margin_start(8);
     nav_box.set_margin_end(8);
     nav_box.set_margin_top(8);
@@ -112,6 +127,7 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
         GLOBAL_HOME_BTN = Some(home_btn.clone());
         GLOBAL_BROWSER_BTN = Some(browser_btn.clone());
         GLOBAL_HOME_CONTAINER = Some(home_scrolled.clone());
+        GLOBAL_NAV_BUTTONS = Some(nav_box.clone());
     }
     
     // Store references for later updates
@@ -130,4 +146,47 @@ fn create_file_list(state: &FileManagerState) -> ScrolledWindow {
     state.update_file_list(&scrolled);
     
     scrolled
+}
+
+// Function to update responsive margins based on sidebar width
+pub fn update_responsive_margins(sidebar_width: i32) {
+    unsafe {
+        let width_class = get_sidebar_width_class(sidebar_width);
+        let all_width_classes = [
+            "sidebar-width-small",
+            "sidebar-width-medium",
+            "sidebar-width-large",
+            "sidebar-width-xlarge",
+            "sidebar-width-xxlarge",
+        ];
+
+        // Update home screen container
+        if let Some(home_container) = &GLOBAL_HOME_CONTAINER {
+            for cls in &all_width_classes { home_container.remove_css_class(cls); }
+            home_container.add_css_class(width_class);
+        }
+
+        // Update tab bar
+        if let Some(tab_bar) = &GLOBAL_TAB_BAR {
+            for cls in &all_width_classes { tab_bar.remove_css_class(cls); }
+            tab_bar.add_css_class(width_class);
+        }
+
+        // Update navigation buttons
+        if let Some(nav_buttons) = &GLOBAL_NAV_BUTTONS {
+            for cls in &all_width_classes { nav_buttons.remove_css_class(cls); }
+            nav_buttons.add_css_class(width_class);
+        }
+    }
+}
+
+// Helper function to determine CSS class based on sidebar width
+fn get_sidebar_width_class(width: i32) -> &'static str {
+    match width {
+        0..=100 => "sidebar-width-small",
+        101..=150 => "sidebar-width-medium",
+        151..=200 => "sidebar-width-large",
+        201..=250 => "sidebar-width-xlarge",
+        _ => "sidebar-width-xxlarge",
+    }
 }

@@ -11,7 +11,7 @@ use crate::widgets::modern_sidebar::create_modern_sidebar;
 use crate::widgets::tab_bar::create_tab_bar;
 use crate::widgets::details_panel::create_details_panel;
 use crate::widgets::terminal_panel::{create_terminal_panel, set_global_terminal_panel, set_global_terminal_revealer};
-use crate::views::content_area::create_content_area;
+use crate::views::content_area::{create_content_area, set_global_tab_bar, set_global_nav_buttons, update_responsive_margins};
 use crate::utils::keyboard::setup_keyboard_shortcuts;
 
 pub fn build_ui(app: &Application) {
@@ -50,6 +50,7 @@ pub fn build_ui(app: &Application) {
     // Tab bar at the top
     let tab_bar = create_tab_bar(tab_manager.clone());
     crate::widgets::tab_bar::set_global_tab_bar(tab_bar.clone());
+    set_global_tab_bar(tab_bar.clone());
     main_box.append(&tab_bar);
     
     // Create the main horizontal split pane
@@ -75,6 +76,15 @@ pub fn build_ui(app: &Application) {
     main_paned.set_end_child(Some(&content_details_paned));
     main_paned.set_position(state.borrow().config.sidebar_width);
     
+    // Connect paned position changes to update responsive margins
+    main_paned.connect_position_notify({
+        let content_area = content_area.clone();
+        move |paned| {
+            let sidebar_width = paned.position();
+            update_responsive_margins(sidebar_width);
+        }
+    });
+    
     main_box.append(&main_paned);
     
     // Create terminal panel
@@ -87,6 +97,9 @@ pub fn build_ui(app: &Application) {
     
     // Add keyboard shortcuts
     setup_keyboard_shortcuts(&window);
+    
+    // Set initial responsive margins based on current sidebar width
+    update_responsive_margins(state.borrow().config.sidebar_width);
     
     window.present();
 }
