@@ -529,6 +529,39 @@ revealer[visible="false"] {
     background: linear-gradient(135deg, #f8f9fa 0%, #e8f0fe 100%);
     padding: 16px;
 }
+
+/* Responsive Grid Layout */
+.home-screen grid {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Grid responsiveness - adjust columns based on available space */
+@media (min-width: 1200px) {
+    .home-screen grid {
+        /* 4 columns for directories, 3 for drives on large screens */
+    }
+}
+
+@media (max-width: 1199px) {
+    .home-screen grid {
+        /* 3 columns for directories, 2 for drives on medium screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .home-screen grid {
+        /* 2 columns on small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .home-screen grid {
+        /* 1 column on very small screens */
+    }
+}
 /* Home inactive (when Browser is active) */
 .home-inactive {
     filter: saturate(0.8) brightness(0.97);
@@ -566,70 +599,92 @@ revealer[visible="false"] {
     padding: 16px;
 }
 
-/* Directory Items */
+/* Directory Items - Grid Layout */
 .directory-item {
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 4px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 2px solid transparent;
     transition: all 0.2s ease;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .directory-item:hover {
     background: #f8f9fa;
-    transform: translateX(4px);
+    border-color: #1a73e8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(26, 115, 232, 0.15);
 }
 
 .directory-icon {
-    font-size: 20px;
-    margin-right: 12px;
+    font-size: 32px;
+    margin-bottom: 8px;
 }
 
 .directory-name {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: #2c2c2c;
+    text-align: center;
+    line-height: 1.3;
 }
 
-/* Drive Items */
+/* Drive Items - Windows Explorer Style */
 .drive-item {
     padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    background: #f8f9fa;
-    border: 1px solid #e8eaed;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 2px solid #e8eaed;
     transition: all 0.2s ease;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
 }
 
 .drive-item:hover {
-    background: #e8f0fe;
+    background: #f8f9fa;
     border-color: #1a73e8;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+    box-shadow: 0 4px 16px rgba(26, 115, 232, 0.15);
 }
 
 .drive-icon {
-    font-size: 24px;
-    margin-right: 12px;
+    font-size: 32px;
+    margin-right: 8px;
 }
 
 .drive-name {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #2c2c2c;
+    margin-bottom: 8px;
 }
 
 .drive-usage {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #1a73e8;
+    margin-bottom: 4px;
+}
+
+.drive-usage-small {
+    font-size: 11px;
+    color: #5f6368;
 }
 
 .drive-space-info {
-    font-size: 12px;
+    font-size: 11px;
     color: #5f6368;
     margin-top: 4px;
+    line-height: 1.3;
 }
 
 /* Progress Bar Colors */

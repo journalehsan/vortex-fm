@@ -132,7 +132,14 @@ impl HomeScreen {
     }
 
     fn create_home_directories() -> Box {
-        let content = Box::new(Orientation::Vertical, 4);
+        let content = Box::new(Orientation::Vertical, 8);
+        
+        // Create a responsive grid for directories
+        let grid = gtk::Grid::new();
+        grid.set_row_spacing(12);
+        grid.set_column_spacing(12);
+        grid.set_hexpand(true);
+        grid.set_halign(Align::Fill);
         
         // Standard Linux home directories
         let home_dirs = vec![
@@ -146,32 +153,45 @@ impl HomeScreen {
             ("Public", "🌐", "Public"),
         ];
         
-        for (name, icon, xdg_name) in home_dirs {
+        // Add directories to grid with responsive layout
+        for (i, (name, icon, xdg_name)) in home_dirs.iter().enumerate() {
             let dir_item = Self::create_directory_item(name, icon, xdg_name);
-            content.append(&dir_item);
+            
+            // Calculate grid position (responsive columns)
+            let col = i % 4; // 4 columns max
+            let row = i / 4;
+            
+            grid.attach(&dir_item, col as i32, row as i32, 1, 1);
         }
         
+        content.append(&grid);
         content
     }
 
-    fn create_directory_item(name: &str, icon: &str, _xdg_name: &str) -> Box {
-        let item = Box::new(Orientation::Horizontal, 12);
-        item.set_margin_start(16);
+    fn create_directory_item(name: &str, icon: &str, _xdg_name: &str) -> Button {
+        let item = Box::new(Orientation::Vertical, 8);
+        item.set_margin_start(8);
         item.set_margin_end(8);
-        item.set_margin_top(4);
-        item.set_margin_bottom(4);
+        item.set_margin_top(8);
+        item.set_margin_bottom(8);
         item.set_css_classes(&["directory-item"]);
+        item.set_halign(Align::Center);
+        item.set_hexpand(true);
+        item.set_size_request(120, 100);
         
         // Icon
         let icon_label = Label::new(Some(icon));
         icon_label.set_css_classes(&["directory-icon"]);
-        icon_label.set_size_request(32, 32);
+        icon_label.set_size_request(48, 48);
+        icon_label.set_halign(Align::Center);
         
         // Name
         let name_label = Label::new(Some(name));
         name_label.set_css_classes(&["directory-name"]);
-        name_label.set_halign(Align::Start);
+        name_label.set_halign(Align::Center);
         name_label.set_hexpand(true);
+        name_label.set_wrap(true);
+        name_label.set_max_width_chars(12);
         
         item.append(&icon_label);
         item.append(&name_label);
@@ -199,23 +219,34 @@ impl HomeScreen {
             switch_to_browser_view();
         });
         
-        // Create container
-        let container = Box::new(Orientation::Vertical, 0);
-        container.append(&clickable_item);
-        container
+        clickable_item
     }
 
     fn create_storage_drives() -> Box {
         let content = Box::new(Orientation::Vertical, 8);
         
+        // Create a responsive grid for drives
+        let grid = gtk::Grid::new();
+        grid.set_row_spacing(12);
+        grid.set_column_spacing(12);
+        grid.set_hexpand(true);
+        grid.set_halign(Align::Fill);
+        
         // Get mounted drives
         let drives = Self::get_mounted_drives();
         
-        for drive in drives {
-            let drive_item = Self::create_drive_item(&drive);
-            content.append(&drive_item);
+        // Add drives to grid with responsive layout
+        for (i, drive) in drives.iter().enumerate() {
+            let drive_item = Self::create_drive_item(drive);
+            
+            // Calculate grid position (responsive columns)
+            let col = i % 3; // 3 columns max for drives
+            let row = i / 3;
+            
+            grid.attach(&drive_item, col as i32, row as i32, 1, 1);
         }
         
+        content.append(&grid);
         content
     }
 
@@ -333,40 +364,45 @@ impl HomeScreen {
         }
     }
 
-    fn create_drive_item(drive: &DriveInfo) -> Box {
-        let item = Box::new(Orientation::Vertical, 8);
-        item.set_margin_start(16);
+    fn create_drive_item(drive: &DriveInfo) -> Button {
+        let item = Box::new(Orientation::Vertical, 12);
+        item.set_margin_start(8);
         item.set_margin_end(8);
-        item.set_margin_top(4);
-        item.set_margin_bottom(4);
+        item.set_margin_top(8);
+        item.set_margin_bottom(8);
         item.set_css_classes(&["drive-item"]);
+        item.set_halign(Align::Fill);
+        item.set_hexpand(true);
+        item.set_size_request(200, 140);
         
-        // Drive header
-        let header = Box::new(Orientation::Horizontal, 12);
+        // Drive icon and name header
+        let header = Box::new(Orientation::Horizontal, 8);
+        header.set_halign(Align::Start);
         
         // Drive icon based on drive type
         let drive_icon = Self::get_drive_icon(&drive.name, &drive.path);
         let icon_label = Label::new(Some(&drive_icon));
         icon_label.set_css_classes(&["drive-icon"]);
-        icon_label.set_size_request(32, 32);
+        icon_label.set_size_request(40, 40);
         
         // Drive name
         let name_label = Label::new(Some(&drive.name));
         name_label.set_css_classes(&["drive-name"]);
         name_label.set_halign(Align::Start);
         name_label.set_hexpand(true);
-        
-        // Usage percentage
-        let usage_label = Label::new(Some(&format!("{:.1}%", drive.usage_percent)));
-        usage_label.set_css_classes(&["drive-usage"]);
+        name_label.set_wrap(true);
+        name_label.set_max_width_chars(15);
         
         header.append(&icon_label);
         header.append(&name_label);
-        header.append(&usage_label);
         
-        // Progress bar
+        // Progress bar with usage percentage
+        let progress_container = Box::new(Orientation::Vertical, 4);
+        
         let progress = ProgressBar::new();
         progress.set_fraction(drive.usage_percent / 100.0);
+        progress.set_vexpand(false);
+        progress.set_size_request(-1, 8);
         
         // Set color based on usage
         let color_class = match drive.usage_percent {
@@ -378,17 +414,27 @@ impl HomeScreen {
         };
         progress.set_css_classes(&[color_class]);
         
+        // Usage percentage
+        let usage_label = Label::new(Some(&format!("{:.1}% used", drive.usage_percent)));
+        usage_label.set_css_classes(&["drive-usage"]);
+        usage_label.set_halign(Align::Start);
+        usage_label.set_css_classes(&["drive-usage-small"]);
+        
+        progress_container.append(&progress);
+        progress_container.append(&usage_label);
+        
         // Space info
         let space_info = Label::new(Some(&format!(
-            "{} / {}",
-            Self::format_bytes(drive.used_space),
+            "{} free of {}",
+            Self::format_bytes(drive.total_space - drive.used_space),
             Self::format_bytes(drive.total_space)
         )));
         space_info.set_css_classes(&["drive-space-info"]);
         space_info.set_halign(Align::Start);
+        space_info.set_wrap(true);
         
         item.append(&header);
-        item.append(&progress);
+        item.append(&progress_container);
         item.append(&space_info);
         
         // Make clickable
@@ -404,10 +450,7 @@ impl HomeScreen {
             switch_to_browser_view();
         });
         
-        // Create container
-        let container = Box::new(Orientation::Vertical, 0);
-        container.append(&clickable_item);
-        container
+        clickable_item
     }
 
     fn create_recent_files_placeholder() -> Box {
