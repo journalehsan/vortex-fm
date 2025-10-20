@@ -36,10 +36,7 @@ fn main() -> glib::ExitCode {
          build_ui(app);
      });
     
-    // Schedule deferred refresh processing on idle
-    glib::idle_add_once(|| {
-        crate::views::content_area::process_deferred_refresh();
-    });
+    // Deferred refresh is now handled in refresh_active_view()
  
     app.run()
 }

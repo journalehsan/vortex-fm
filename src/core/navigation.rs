@@ -33,10 +33,13 @@ pub fn get_global_tab_manager() -> Option<Rc<RefCell<TabManager>>> {
 }
 
 pub fn navigate_to_directory(path: PathBuf) {
+    crate::utils::simple_debug::debug_info("NAVIGATION", &format!("navigate_to_directory called with path: {}", path.display()));
     if let Some(tab_manager_rc) = get_global_tab_manager() {
+        crate::utils::simple_debug::debug_info("NAVIGATION", "Navigating active tab");
         // Navigate the active tab
         tab_manager_rc.borrow_mut().navigate_active_tab_to(path.clone());
         
+        crate::utils::simple_debug::debug_info("NAVIGATION", "Updating active tab title");
         // Update the tab title after navigation
         tab_manager_rc.borrow_mut().update_active_tab_title();
         
@@ -50,15 +53,23 @@ pub fn navigate_to_directory(path: PathBuf) {
             }
         };
         
+        crate::utils::simple_debug::debug_info("NAVIGATION", "Updating global state");
         // Update the global state to match the active tab
         if let Some(nav_history) = navigation_history {
             if let Some(state_rc) = get_global_state() {
                 let mut state = state_rc.borrow_mut();
                 state.navigation_history = nav_history;
+                crate::utils::simple_debug::debug_info("NAVIGATION", "Calling state.refresh_ui()");
                 state.refresh_ui();
+                crate::utils::simple_debug::debug_info("NAVIGATION", "state.refresh_ui() completed");
+            } else {
+                crate::utils::simple_debug::debug_info("NAVIGATION", "ERROR: Could not get global state!");
             }
+        } else {
+            crate::utils::simple_debug::debug_info("NAVIGATION", "ERROR: No navigation history available!");
         }
         
+        crate::utils::simple_debug::debug_info("NAVIGATION", "Clearing selection");
         // Clear selection when navigating to a new directory
         crate::core::selection::clear_selection();
         

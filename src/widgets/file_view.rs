@@ -47,8 +47,13 @@ impl FileView {
     }
 
     pub fn update(&mut self, state: &FileManagerState) {
+        crate::utils::simple_debug::debug_info("FILE_VIEW", "update() called");
         if let Some(adapter) = self.adapter.as_mut() {
+            crate::utils::simple_debug::debug_info("FILE_VIEW", "Calling adapter.update()");
             adapter.update(state);
+            crate::utils::simple_debug::debug_info("FILE_VIEW", "adapter.update() completed");
+        } else {
+            crate::utils::simple_debug::debug_info("FILE_VIEW", "ERROR: No adapter available in update()!");
         }
     }
 
@@ -114,6 +119,65 @@ impl FileViewAdapter for ListViewAdapter {
 
     fn refresh(&mut self, _state: &FileManagerState) {
         // no-op placeholder
+    }
+
+    fn update(&mut self, state: &FileManagerState) {
+        crate::utils::simple_debug::debug_info("LIST_ADAPTER", "update() called");
+        // In-place update: rebuild the list without replacing the entire widget
+        if let Some(root) = &self.root {
+            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "Clearing existing list items");
+            // Clear existing list
+            while let Some(child) = root.first_child() {
+                root.remove(&child);
+            }
+            
+            let list = ListBox::new();
+            list.set_selection_mode(gtk::SelectionMode::None);
+
+            let mut files = Vec::new();
+            if let Ok(entries) = fs::read_dir(state.current_path()) {
+                crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("Reading directory: {}", state.current_path().display()));
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    if !state.config.show_hidden_files && name.starts_with('.') { continue; }
+                    files.push((name, path));
+                }
+            } else {
+                crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("ERROR: Could not read directory: {}", state.current_path().display()));
+            }
+            
+            crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("Found {} files", files.len()));
+            files.sort_by(|a, b| {
+                let a_is_dir = a.1.is_dir();
+                let b_is_dir = b.1.is_dir();
+                match (a_is_dir, b_is_dir) {
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                    _ => a.0.cmp(&b.0),
+                }
+            });
+
+            for (name, _path) in files {
+                let row = ListBoxRow::new();
+                let row_box = GtkBox::new(Orientation::Horizontal, 8);
+                let name_label = Label::new(Some(&name));
+                name_label.set_xalign(0.0);
+                name_label.set_hexpand(true);
+                row_box.append(&name_label);
+                row.set_child(Some(&row_box));
+                list.append(&row);
+            }
+
+            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "Appending new list to root");
+            root.append(&list);
+            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "update() completed successfully");
+        } else {
+            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "ERROR: root is None in update()!");
+        }
     }
 }
 
@@ -192,9 +256,87 @@ impl FileViewAdapter for GridViewAdapter {
         w
     }
 
-    fn refresh(&mut self, _state: &FileManagerState) { }
+    fn refresh(&mut self, _state: &FileManagerState) {
+        // no-op placeholder
+    }
 
-    fn set_icon_size(&mut self, size: i32) { self.icon_size = size; }
+    fn update(&mut self, state: &FileManagerState) {
+        crate::utils::simple_debug::debug_info("GRID_ADAPTER", "update() called");
+        // In-place update: clear and rebuild flowbox without replacing entire widget
+        if let Some(root) = &self.root {
+            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "Clearing existing grid items");
+            // Clear existing children
+            while let Some(child) = root.first_child() {
+                root.remove(&child);
+            }
+            
+            let flow = FlowBox::new();
+            flow.set_selection_mode(gtk::SelectionMode::None);
+            flow.set_row_spacing(12);
+            flow.set_column_spacing(12);
+            flow.set_margin_start(12);
+            flow.set_margin_end(12);
+            flow.set_margin_top(12);
+            flow.set_margin_bottom(12);
+
+            let mut files = Vec::new();
+            if let Ok(entries) = fs::read_dir(state.current_path()) {
+                crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("Reading directory: {}", state.current_path().display()));
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    if !state.config.show_hidden_files && name.starts_with('.') { continue; }
+                    let (icon, file_type) = if path.is_dir() {
+                        ("📁", "Folder")
+                    } else {
+                        match path.extension().and_then(|s| s.to_str()) {
+                            Some("txt") | Some("md") | Some("log") => ("📄", "Text File"),
+                            Some("jpg") | Some("jpeg") | Some("png") | Some("gif") | Some("bmp") => ("🖼️", "Image File"),
+                            Some("mp3") | Some("wav") | Some("flac") | Some("ogg") => ("🎵", "Audio File"),
+                            Some("mp4") | Some("avi") | Some("mkv") | Some("mov") => ("🎬", "Video File"),
+                            Some("zip") | Some("tar") | Some("gz") | Some("rar") => ("📦", "Archive File"),
+                            Some("sh") | Some("py") | Some("js") | Some("rs") | Some("c") | Some("cpp") => ("💻", "Script File"),
+                            Some("pdf") => ("📕", "PDF File"),
+                            Some("doc") | Some("docx") => ("📘", "Document File"),
+                            Some("xls") | Some("xlsx") => ("📊", "Spreadsheet File"),
+                            Some("ppt") | Some("pptx") => ("📽️", "Presentation File"),
+                            _ => ("📄", "File"),
+                        }
+                    };
+                    files.push((icon, name, file_type, path));
+                }
+            } else {
+                crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("ERROR: Could not read directory: {}", state.current_path().display()));
+            }
+            
+            crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("Found {} files", files.len()));
+            files.sort_by(|a, b| {
+                let a_is_dir = a.3.is_dir();
+                let b_is_dir = b.3.is_dir();
+                match (a_is_dir, b_is_dir) {
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                    _ => a.1.cmp(&b.1),
+                }
+            });
+
+            for (icon, name, file_type, path) in files {
+                let btn = crate::widgets::file_item::create_file_item(icon, &name, file_type, path, &state.config);
+                let child = FlowBoxChild::new();
+                child.set_child(Some(&btn));
+                flow.insert(&child, -1);
+            }
+
+            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "Appending new flowbox to root");
+            root.append(&flow);
+            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "update() completed successfully");
+        } else {
+            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "ERROR: root is None in update()!");
+        }
+    }
 }
 
 

@@ -114,14 +114,18 @@ impl FileManagerState {
     }
     
     pub fn refresh_ui(&self) {
+        crate::utils::simple_debug::debug_info("FILE_MANAGER", "refresh_ui() called");
         // Update path label
         if let Some(path_label) = &self.path_label {
             let current_path_str = self.current_path().to_string_lossy().to_string();
             path_label.set_text(&current_path_str);
+            crate::utils::simple_debug::debug_info("FILE_MANAGER", &format!("Updated path label to: {}", current_path_str));
         }
         
+        crate::utils::simple_debug::debug_info("FILE_MANAGER", "Calling refresh_active_view()");
         // Refresh active adapter-based file view (if present)
         crate::views::content_area::refresh_active_view();
+        crate::utils::simple_debug::debug_info("FILE_MANAGER", "refresh_active_view() completed");
         
         // Update status bar
         if let Some(status_bar) = &self.status_bar {
