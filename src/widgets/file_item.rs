@@ -14,9 +14,14 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
 }
 
 pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig, icon_size: i32) -> Button {
-    // Use fixed dimensions like home screen - not based on icon size
-    let item_width = 120; // Fixed width
-    let item_height = 100; // Fixed height
+    // Calculate dynamic tile dimensions based on icon size
+    let base_width = 120;
+    let base_height = 100;
+    
+    // Scale tile size based on icon size (16px = 0.5x, 256px = 2x)
+    let scale_factor = (icon_size as f32 / 64.0).max(0.5).min(2.0);
+    let item_width = (base_width as f32 * scale_factor) as i32;
+    let item_height = (base_height as f32 * scale_factor) as i32;
     
     let item_box = Box::new(Orientation::Vertical, 4);
     item_box.set_width_request(item_width);

@@ -135,21 +135,14 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         size_display_clone.set_text(&size_text);
         
         // Update the global file view icon size and refresh
-        println!("🔧 Slider changed to: {}px (raw: {}px)", *nearest_size, raw_value);
         if let Some(state_rc) = crate::core::navigation::get_global_state() {
             let state_ref = state_rc.borrow().clone();
             if let Some(fv) = crate::views::content_area::get_global_file_view() {
-                println!("   ✅ Setting file view icon size to: {}px", *nearest_size);
                 // First set the icon size
                 fv.borrow_mut().set_icon_size(*nearest_size);
                 // Then refresh to rebuild with new icon size
                 fv.borrow_mut().refresh(&state_ref);
-                println!("   ✅ Grid refreshed");
-            } else {
-                println!("   ❌ No global file view found");
             }
-        } else {
-            println!("   ❌ No global state found");
         }
     });
     

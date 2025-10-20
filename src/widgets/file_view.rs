@@ -169,27 +169,39 @@ impl FileViewAdapter for GridViewAdapter {
         
         // Create fixed grid layout (like Qt's HLayout/VLayout)
         let grid = Grid::new();
-        grid.set_row_spacing(12);
-        grid.set_column_spacing(12);
-        grid.set_margin_start(16);
-        grid.set_margin_end(16);
-        grid.set_margin_top(16);
-        grid.set_margin_bottom(16);
+        
+        // Calculate dynamic spacing based on icon size
+        let icon_pixels = self.icon_size.to_pixels();
+        let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
+        let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
+        
+        grid.set_row_spacing(spacing as u32);
+        grid.set_column_spacing(spacing as u32);
+        grid.set_margin_start(margin);
+        grid.set_margin_end(margin);
+        grid.set_margin_top(margin);
+        grid.set_margin_bottom(margin);
         grid.set_halign(gtk::Align::Start);
         grid.set_valign(gtk::Align::Start);
         
-        // Calculate items per row based on available width
-        // Each item is 120px + 12px spacing = 132px
-        // Let's assume we have at least 800px width, so 6 items per row
-        const ITEMS_PER_ROW: i32 = 6;
+        // Calculate items per row based on icon size and available width
+        // Base tile size scales with icon size
+        let base_tile_width = 120;
+        let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
+        let tile_width = (base_tile_width as f32 * scale_factor) as i32;
+        let total_item_width = tile_width + spacing;
+        
+        // Assume 1200px available width, calculate items per row
+        let available_width = 1200;
+        let items_per_row = (available_width / total_item_width).max(1);
         
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
         
         // Add files to grid with fixed positions
         for (index, file_entry) in files.iter().enumerate() {
-            let row = (index as i32) / ITEMS_PER_ROW;
-            let col = (index as i32) % ITEMS_PER_ROW;
+            let row = (index as i32) / items_per_row;
+            let col = (index as i32) % items_per_row;
             
             let btn = crate::widgets::file_item::create_file_item_with_size(
                 &file_entry.icon, 
@@ -206,14 +218,14 @@ impl FileViewAdapter for GridViewAdapter {
         
         // Add empty placeholder items to fill the grid and prevent dynamic sizing
         let total_items = files.len() as i32;
-        let total_rows = (total_items + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW; // Ceiling division
-        let total_cells = total_rows * ITEMS_PER_ROW;
+        let total_rows = (total_items + items_per_row - 1) / items_per_row; // Ceiling division
+        let total_cells = total_rows * items_per_row;
         let empty_items_needed = total_cells - total_items;
         
         for i in 0..empty_items_needed {
             let empty_item = self.create_empty_placeholder();
-            let row = (total_items + i) / ITEMS_PER_ROW;
-            let col = (total_items + i) % ITEMS_PER_ROW;
+            let row = (total_items + i) / items_per_row;
+            let col = (total_items + i) % items_per_row;
             grid.attach(&empty_item, col, row, 1, 1);
         }
         
@@ -239,15 +251,33 @@ impl FileViewAdapter for GridViewAdapter {
                 grid.remove(&child);
             }
             
-            const ITEMS_PER_ROW: i32 = 6;
+            // Calculate dynamic spacing and items per row based on icon size
+            let icon_pixels = self.icon_size.to_pixels();
+            let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
+            let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
+            
+            grid.set_row_spacing(spacing as u32);
+            grid.set_column_spacing(spacing as u32);
+            grid.set_margin_start(margin);
+            grid.set_margin_end(margin);
+            grid.set_margin_top(margin);
+            grid.set_margin_bottom(margin);
+            
+            // Calculate items per row based on icon size
+            let base_tile_width = 120;
+            let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
+            let tile_width = (base_tile_width as f32 * scale_factor) as i32;
+            let total_item_width = tile_width + spacing;
+            let available_width = 1200;
+            let items_per_row = (available_width / total_item_width).max(1);
             
             // Use the search utility to get filtered files
             let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
             
             // Add files to grid with fixed positions
             for (index, file_entry) in files.iter().enumerate() {
-                let row = (index as i32) / ITEMS_PER_ROW;
-                let col = (index as i32) % ITEMS_PER_ROW;
+                let row = (index as i32) / items_per_row;
+                let col = (index as i32) % items_per_row;
                 
                 let btn = crate::widgets::file_item::create_file_item_with_size(
                     &file_entry.icon, 
@@ -264,14 +294,14 @@ impl FileViewAdapter for GridViewAdapter {
             
             // Add empty placeholder items to fill the grid and prevent dynamic sizing
             let total_items = files.len() as i32;
-            let total_rows = (total_items + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW; // Ceiling division
-            let total_cells = total_rows * ITEMS_PER_ROW;
+            let total_rows = (total_items + items_per_row - 1) / items_per_row; // Ceiling division
+            let total_cells = total_rows * items_per_row;
             let empty_items_needed = total_cells - total_items;
             
             for i in 0..empty_items_needed {
                 let empty_item = self.create_empty_placeholder();
-                let row = (total_items + i) / ITEMS_PER_ROW;
-                let col = (total_items + i) % ITEMS_PER_ROW;
+                let row = (total_items + i) / items_per_row;
+                let col = (total_items + i) % items_per_row;
                 grid.attach(&empty_item, col, row, 1, 1);
             }
         }
@@ -286,7 +316,16 @@ impl GridViewAdapter {
     /// Create an empty placeholder widget to fill grid cells and prevent dynamic sizing
     fn create_empty_placeholder(&self) -> gtk::Widget {
         let placeholder = gtk::Box::new(Orientation::Vertical, 0);
-        placeholder.set_size_request(120, 100); // Same size as file items
+        
+        // Calculate dynamic size based on icon size
+        let icon_pixels = self.icon_size.to_pixels();
+        let base_width = 120;
+        let base_height = 100;
+        let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
+        let item_width = (base_width as f32 * scale_factor) as i32;
+        let item_height = (base_height as f32 * scale_factor) as i32;
+        
+        placeholder.set_size_request(item_width, item_height);
         placeholder.add_css_class("empty-placeholder");
         
         // Make it invisible but still take up space
