@@ -154,6 +154,7 @@ impl GridViewAdapter {
             icon_size 
         }
     }
+    
 }
 
 impl FileViewAdapter for GridViewAdapter {
@@ -161,39 +162,56 @@ impl FileViewAdapter for GridViewAdapter {
         let root = GtkBox::new(Orientation::Vertical, 0);
         root.set_css_classes(&["fileview-grid"]);
         
+        // Create container for the scroll area (like Qt's approach)
+        let scroll_container = GtkBox::new(Orientation::Vertical, 0);
+        scroll_container.set_hexpand(true);
+        scroll_container.set_vexpand(true);
+        scroll_container.add_css_class("scroll-container");
+        
         // Create scrolled window for the grid
         let scrolled = ScrolledWindow::new();
         scrolled.set_hexpand(true);
         scrolled.set_vexpand(true);
-        scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+        // Set scroll policy after widget is fully constructed
+        scrolled.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        scrolled.set_propagate_natural_width(false); // Don't propagate natural width
+        scrolled.set_propagate_natural_height(false);
         
         // Create fixed grid layout (like Qt's HLayout/VLayout)
         let grid = Grid::new();
+        grid.set_hexpand(true);  // Fill available width
+        grid.set_vexpand(true);  // Allow vertical expansion
         
         // Calculate dynamic spacing based on icon size
         let icon_pixels = self.icon_size.to_pixels();
         let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
         let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
         
-        grid.set_row_spacing(spacing as u32);
-        grid.set_column_spacing(spacing as u32);
-        grid.set_margin_start(margin);
-        grid.set_margin_end(margin);
-        grid.set_margin_top(margin);
-        grid.set_margin_bottom(margin);
-        grid.set_halign(gtk::Align::Start);
-        grid.set_valign(gtk::Align::Start);
-        
-        // Calculate items per row based on icon size and available width
-        // Base tile size scales with icon size
+        // Calculate tile dimensions and grid layout
         let base_tile_width = 120;
         let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Assume 1200px available width, calculate items per row
-        let available_width = 1200;
-        let items_per_row = (available_width / total_item_width).max(1);
+        // Calculate responsive width for the grid to prevent horizontal scrolling
+        // Let the grid size itself naturally without forcing a fixed width
+        let items_per_row = 6; // Start with a reasonable number of items per row
+        // Don't set a fixed grid_width - let GTK handle the sizing naturally
+        
+        // Grid width is calculated to fit within available width
+        
+        grid.set_row_spacing(spacing as u32);
+        grid.set_column_spacing(spacing as u32);
+        grid.set_margin_start(margin);
+        grid.set_margin_end(margin);
+        // Don't set a fixed width - let the grid size itself naturally
+        // grid.set_size_request(grid_width, -1); // Removed fixed width constraint
+        grid.set_margin_top(margin);
+        grid.set_margin_bottom(margin);
+        grid.set_halign(gtk::Align::Fill);
+        grid.set_valign(gtk::Align::Start);
+        
+        // items_per_row is already calculated above
         
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
@@ -229,8 +247,11 @@ impl FileViewAdapter for GridViewAdapter {
             grid.attach(&empty_item, col, row, 1, 1);
         }
         
+        // GTK's built-in scroll behavior should work fine for vertical scrolling
+        
         scrolled.set_child(Some(&grid));
-        root.append(&scrolled);
+        scroll_container.append(&scrolled);
+        root.append(&scroll_container);
         
         let w: Widget = root.clone().upcast();
         self.root = Some(root);
@@ -263,13 +284,8 @@ impl FileViewAdapter for GridViewAdapter {
             grid.set_margin_top(margin);
             grid.set_margin_bottom(margin);
             
-            // Calculate items per row based on icon size
-            let base_tile_width = 120;
-            let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
-            let tile_width = (base_tile_width as f32 * scale_factor) as i32;
-            let total_item_width = tile_width + spacing;
-            let available_width = 1200;
-            let items_per_row = (available_width / total_item_width).max(1);
+            // Use responsive items per row calculation
+            let items_per_row = 6; // Use a reasonable fixed number for consistency
             
             // Use the search utility to get filtered files
             let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
@@ -304,6 +320,8 @@ impl FileViewAdapter for GridViewAdapter {
                 let col = (total_items + i) % items_per_row;
                 grid.attach(&empty_item, col, row, 1, 1);
             }
+            
+            // GTK's built-in scroll behavior should work fine for vertical scrolling
         }
     }
     

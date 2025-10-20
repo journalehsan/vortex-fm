@@ -1193,3 +1193,39 @@ revealer {
     padding: 0;
     min-height: 250px;
 }
+
+/* Grid view container */
+.fileview-grid {
+    width: 100%;
+    min-width: 0; /* Important for proper shrinking */
+}
+
+/* Scroll container for grid view (Qt-style approach) */
+.scroll-container {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Ensure scrolled window behaves properly */
+scrolledwindow {
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Force vertical scrolling only for grid view */
+.fileview-grid scrolledwindow {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background: transparent;
+    border: none;
+}
+
+.fileview-grid scrolledwindow viewport {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background: transparent;
+}
