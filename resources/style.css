@@ -581,8 +581,21 @@ button:hover {
 .details-panel {
     background-color: #ffffff;
     border-top: 1px solid #e0e0e0;
-    padding-top: 2px; /* tighter vertical spacing */
-    padding-bottom: 2px; /* tighter vertical spacing */
+    padding-top: 50px; /* avoid extra vertical space */
+    padding-bottom: 0; /* avoid extra vertical space */
+    min-height: 0; /* let content define height */
+    vertical-align: middle;
+    align-items: center;
+    align-self: center;
+    justify-content: center;
+    justify-items: center;
+    justify-self: center;
+    justify-content: center;
+    justify-items: center;
+    justify-self: center;
+    justify-content: center;
+    justify-items: center;
+    justify-self: center;
 }
 
 /* Subtle vertical separators inside details panel */
@@ -609,12 +622,16 @@ button:hover {
     font-size: 11px;
     color: #555555;
     min-width: 58px; /* slightly narrower */
+    margin: 0; /* prevent extra line spacing */
+    line-height: 1.1; /* tighter row height */
 }
 
 .details-value-compact {
     font-size: 11px;
     color: #333333;
     text-overflow: ellipsis;
+    margin: 0; /* prevent extra line spacing */
+    line-height: 1.1; /* tighter row height */
 }
 
 .file-thumbnail {

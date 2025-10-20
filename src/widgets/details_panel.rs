@@ -274,7 +274,8 @@ fn create_property_row(parent: &Box, label: &str, value: &str) {
     
     let label_widget = Label::new(Some(label));
     label_widget.add_css_class("details-property-label");
-    label_widget.set_halign(gtk::Align::Start);
+    // Right-align labels for a neat column
+    label_widget.set_halign(gtk::Align::End);
     
     let value_widget = Label::new(Some(value));
     value_widget.add_css_class("details-property-value");
@@ -299,10 +300,11 @@ fn create_compact_row(label: &str, value: &str) -> Box {
     
     let value_widget = Label::new(Some(value));
     value_widget.add_css_class("details-value-compact");
+    // Let value expand and start-align within its space for consistent columns
     value_widget.set_halign(gtk::Align::Start);
     value_widget.set_valign(gtk::Align::Center);
+    value_widget.set_hexpand(true);
     value_widget.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    value_widget.set_hexpand(false);
     
     row.append(&label_widget);
     row.append(&value_widget);
