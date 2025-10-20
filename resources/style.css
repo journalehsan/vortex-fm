@@ -350,7 +350,7 @@ window {
 }
 
 .file-icon {
-    font-size: 32px;
+    /* font-size is set dynamically by IconManager based on icon size */
     margin-bottom: 6px;
 }
 

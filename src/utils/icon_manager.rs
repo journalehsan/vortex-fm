@@ -200,12 +200,14 @@ impl IconManager {
 
     /// Create an Image widget with the appropriate icon
     pub fn create_icon_widget(&self, path: &PathBuf, size: i32) -> gtk::Widget {
-        // Always use emoji fallback for now to avoid GTK initialization issues
+        // For now, always use emoji fallback to avoid GTK initialization issues
+        // TODO: Implement proper system icon support once GTK initialization is stable
         let fallback_icon = if path.is_dir() {
             "📁"
         } else {
             "📄"
         };
+        
         let label = gtk::Label::new(Some(fallback_icon));
         label.set_css_classes(&["file-icon"]);
         label.set_halign(gtk::Align::Center);
@@ -222,7 +224,7 @@ impl IconManager {
             _ => (fallback_icon, 24),
         };
         
-        label.set_markup(&format!("<span font-size='{}'>{}</span>", font_size, emoji));
+        label.set_markup(&format!("<span font_size='{}pt'>{}</span>", font_size, emoji));
         
         // Return a container with the label instead of image
         let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -238,8 +240,8 @@ static mut ICON_MANAGER: Option<Mutex<IconManager>> = None;
 pub fn get_global_icon_manager() -> &'static Mutex<IconManager> {
     unsafe {
         INIT.call_once(|| {
-            // Always create a dummy manager that will fall back to emoji
-            // This avoids any GTK initialization issues
+            // Use dummy manager to avoid GTK initialization issues
+            // TODO: Switch to real implementation once GTK initialization is stable
             ICON_MANAGER = Some(Mutex::new(IconManager::dummy()));
         });
         ICON_MANAGER.as_ref().unwrap()
