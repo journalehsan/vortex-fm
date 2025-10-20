@@ -75,6 +75,7 @@ pub fn process_deferred_refresh() {
                 let state_ref = state_rc.borrow().clone();
                 if let Some(fv) = &GLOBAL_FILE_VIEW {
                     fv.borrow_mut().refresh(&state_ref);
+                    fv.borrow_mut().update(&state_ref);
                 }
             }
         }

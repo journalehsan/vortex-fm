@@ -46,6 +46,12 @@ impl FileView {
         }
     }
 
+    pub fn update(&mut self, state: &FileManagerState) {
+        if let Some(adapter) = self.adapter.as_mut() {
+            adapter.update(state);
+        }
+    }
+
     pub fn set_icon_size(&mut self, size: i32) {
         if let Some(adapter) = self.adapter.as_mut() { adapter.set_icon_size(size); }
     }
