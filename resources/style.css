@@ -67,7 +67,6 @@ window {
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     border-bottom: 1px solid #e8eaed;
     min-height: 40px;
-    margin-left: 220px; /* Account for sidebar width */
 }
 
 /* Dynamic tab bar sidebar width classes */
@@ -91,26 +90,10 @@ window {
     margin-left: 280px !important;
 }
 
-/* Responsive tab bar margins */
-@media (max-width: 1280px) {
-    .tab-bar { margin-left: 180px; }
-}
-@media (max-width: 1100px) {
-    .tab-bar { margin-left: 140px; }
-}
-@media (max-width: 900px) {
-    .tab-bar { margin-left: 100px; }
-}
-@media (max-width: 760px) {
-    .tab-bar { margin-left: 64px; }
-}
-@media (max-width: 640px) {
-    .tab-bar { margin-left: 32px; }
-}
+/* Responsive tab bar margins are driven by sidebar-width-* classes set at runtime */
 
 /* Navigation buttons (Home/Browse) */
 .nav-buttons {
-    margin-left: 220px; /* Account for sidebar width */
 }
 
 /* Dynamic navigation button sidebar width classes */
@@ -134,22 +117,7 @@ window {
     margin-left: 280px !important;
 }
 
-/* Responsive navigation button margins */
-@media (max-width: 1280px) {
-    .nav-buttons { margin-left: 180px; }
-}
-@media (max-width: 1100px) {
-    .nav-buttons { margin-left: 140px; }
-}
-@media (max-width: 900px) {
-    .nav-buttons { margin-left: 100px; }
-}
-@media (max-width: 760px) {
-    .nav-buttons { margin-left: 64px; }
-}
-@media (max-width: 640px) {
-    .nav-buttons { margin-left: 32px; }
-}
+/* Responsive navigation button margins are driven by sidebar-width-* classes set at runtime */
 
 .tabs-container {
     background: transparent;
@@ -610,7 +578,6 @@ revealer[visible="false"] {
 .home-screen {
     background: linear-gradient(135deg, #f8f9fa 0%, #e8f0fe 100%);
     padding: 16px;
-    margin-left: 220px; /* default sidebar width */
 }
 
 /* Dynamic sidebar width classes */
@@ -642,23 +609,7 @@ revealer[visible="false"] {
     padding: 0;
 }
 
-/* Grid responsiveness - adjust columns based on available space */
-/* Reduce left margin on smaller widths so content doesn't hide */
-@media (max-width: 1280px) {
-    .home-screen { margin-left: 180px; }
-}
-@media (max-width: 1100px) {
-    .home-screen { margin-left: 140px; }
-}
-@media (max-width: 900px) {
-    .home-screen { margin-left: 100px; }
-}
-@media (max-width: 760px) {
-    .home-screen { margin-left: 64px; }
-}
-@media (max-width: 640px) {
-    .home-screen { margin-left: 32px; }
-}
+/* Grid responsiveness - adjust columns based on available space; left margin driven dynamically */
 /* Home inactive (when Browser is active) */
 .home-inactive {
     filter: saturate(0.8) brightness(0.97);

@@ -20,7 +20,7 @@ pub struct HomeScreen {
 impl HomeScreen {
     pub fn new() -> Self {
         let container = Box::new(Orientation::Vertical, 12);
-        container.set_margin_start(220); // Account for sidebar width
+        container.set_margin_start(16);
         container.set_margin_end(16);
         container.set_margin_top(16);
         container.set_margin_bottom(16);
