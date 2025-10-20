@@ -411,9 +411,9 @@ pub fn refresh_sidebar() {
                 // Rebuild the quick access section
                 if let Some(sidebar_rc) = GLOBAL_SIDEBAR.as_ref() {
                     if let Some(scrolled_parent) = sidebar_rc.borrow().first_child() {
-                        if let Ok(scrolled) = scrolled_parent.downcast_ref::<ScrolledWindow>() {
+                        if let Some(scrolled) = scrolled_parent.downcast_ref::<ScrolledWindow>() {
                             if let Some(content_box) = scrolled.child() {
-                                if let Ok(cb) = content_box.downcast_ref::<Box>() {
+                                if let Some(cb) = content_box.downcast_ref::<Box>() {
                                     // Find and rebuild Quick Access section (first child)
                                     if let Some(qa_section) = cb.first_child() {
                                         if let Some(next) = qa_section.next_sibling() {
