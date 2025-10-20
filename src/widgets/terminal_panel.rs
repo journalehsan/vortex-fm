@@ -26,6 +26,16 @@ impl TerminalPanel {
         output_view.set_wrap_mode(gtk::WrapMode::Word);
         output_view.style_context().add_class("terminal-output");
         
+        // Wrap output view in ScrolledWindow for scrolling
+        let scrolled_output = gtk::ScrolledWindow::new();
+        scrolled_output.set_child(Some(&output_view));
+        scrolled_output.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+        scrolled_output.set_hexpand(true);
+        scrolled_output.set_vexpand(true);
+        scrolled_output.set_min_content_height(100);
+        scrolled_output.set_max_content_height(400);
+        scrolled_output.style_context().add_class("terminal-scrolled");
+        
         // Create input Entry
         let input_entry = gtk::Entry::new();
         input_entry.set_placeholder_text(Some("Enter command..."));
@@ -33,7 +43,7 @@ impl TerminalPanel {
         
         // Create main container
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        main_box.append(&output_view);
+        main_box.append(&scrolled_output);
         main_box.append(&input_entry);
         
         // Create revealer for smooth show/hide
@@ -341,7 +351,7 @@ pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     terminal_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
     terminal_revealer.set_transition_duration(300);
     
-    // Set height for the terminal
+    // Set height for the terminal (scrolled window will handle the actual height)
     terminal_panel.output_view.set_height_request(200);
     
     (terminal_panel, terminal_revealer)

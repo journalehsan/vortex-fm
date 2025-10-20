@@ -981,6 +981,25 @@ revealer {
     outline: none;
 }
 
+.terminal-scrolled {
+    background-color: #1e1e1e;
+    border: none;
+    outline: none;
+}
+
+.terminal-scrolled scrollbar {
+    background-color: #2d2d2d;
+}
+
+.terminal-scrolled scrollbar slider {
+    background-color: #555555;
+    border-radius: 3px;
+}
+
+.terminal-scrolled scrollbar slider:hover {
+    background-color: #666666;
+}
+
 .terminal-input {
     background-color: #2d2d2d;
     color: #ffffff;
