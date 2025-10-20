@@ -67,6 +67,9 @@ pub fn build_ui(app: &Application) {
     // Create the main horizontal split pane
     let main_paned = Paned::new(Orientation::Horizontal);
     
+    // Initialize global sidebar BEFORE creating sidebar (so add_qa_list_box can register)
+    crate::widgets::modern_sidebar::init_global_sidebar(state.borrow().config.clone());
+    
     // Left sidebar (modern design)
     let sidebar = create_modern_sidebar(&bookmarks_manager_rc.borrow(), &state.borrow().config);
     crate::widgets::modern_sidebar::set_global_sidebar(sidebar.clone(), state.borrow().config.clone());

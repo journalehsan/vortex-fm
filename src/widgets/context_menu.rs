@@ -32,20 +32,29 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
     quick_access_action.connect_activate(move |_, _| {
         println!("⭐ Adding folder to Quick Access: {}", path_clone.display());
         if let Some(manager_rc) = get_global_bookmarks_manager() {
+            println!("   ✓ Got global bookmarks manager");
             let folder_name = path_clone.file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("Folder")
                 .to_string();
+            println!("   ✓ Folder name: {}", folder_name);
             let bookmark = Bookmark::new(
-                folder_name,
+                folder_name.clone(),
                 path_clone.clone(),
                 "📁".to_string(),
                 "Quick Access".to_string(),
             );
+            println!("   ✓ Bookmark created: {} -> {}", bookmark.name, bookmark.path.display());
             manager_rc.borrow_mut().add_bookmark(bookmark.clone());
-            let _ = manager_rc.borrow().save();
+            println!("   ✓ Bookmark added to manager");
+            let save_result = manager_rc.borrow().save();
+            println!("   ✓ Bookmark saved: {:?}", save_result);
             // Add directly to the UI
+            println!("   → Calling add_bookmark_to_qa_ui...");
             crate::widgets::modern_sidebar::add_bookmark_to_qa_ui(&bookmark);
+            println!("   ✓ add_bookmark_to_qa_ui completed");
+        } else {
+            println!("   ✗ Failed to get global bookmarks manager!");
         }
     });
     
