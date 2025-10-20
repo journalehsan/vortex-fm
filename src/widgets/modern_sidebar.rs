@@ -98,28 +98,32 @@ fn create_sidebar_section(title: &str, bookmarks: &[&crate::core::bookmarks::Boo
     // Add drop target for Quick Access section
     if title == "Quick Access" {
         let drop_target = DropTarget::new(String::static_type(), gdk::DragAction::COPY);
+        let list_box_weak = list_box.downgrade();
         drop_target.connect_drop(move |_target, value, _x, _y| {
             if let Ok(path_str) = value.get::<String>() {
                 let path = PathBuf::from(&path_str);
                 if path.is_dir() {
-                    // Add to Quick Access
-                    if let Some(manager_rc) = get_global_bookmarks_manager() {
-                        let folder_name = path.file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("Folder")
-                            .to_string();
-                        let bookmark = Bookmark::new(
-                            folder_name,
-                            path.clone(),
-                            "📁".to_string(),
-                            "Quick Access".to_string(),
-                        );
-                        manager_rc.borrow_mut().add_bookmark(bookmark);
-                        let _ = manager_rc.borrow().save();
-                        
-                        // Refresh sidebar to update all sections
-                        refresh_sidebar();
-                        println!("✅ Added folder to Quick Access: {}", path.display());
+                    if let Some(list) = list_box_weak.upgrade() {
+                        // Add to Quick Access
+                        if let Some(manager_rc) = get_global_bookmarks_manager() {
+                            let folder_name = path.file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("Folder")
+                                .to_string();
+                            let bookmark = Bookmark::new(
+                                folder_name,
+                                path.clone(),
+                                "📁".to_string(),
+                                "Quick Access".to_string(),
+                            );
+                            manager_rc.borrow_mut().add_bookmark(bookmark.clone());
+                            let _ = manager_rc.borrow().save();
+                            
+                            // Directly add to the visible list
+                            let item = create_sidebar_item(&bookmark);
+                            list.append(&item);
+                            println!("✅ Added folder to Quick Access: {}", path.display());
+                        }
                     }
                 }
             }
@@ -407,6 +411,24 @@ pub fn add_qa_list_box(list_box: &ListBox) {
     unsafe {
         if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
             qa_list_rc.borrow_mut().push(list_box.downgrade());
+        }
+    }
+}
+
+pub fn add_bookmark_to_qa_ui(bookmark: &Bookmark) {
+    unsafe {
+        if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
+            let mut list_boxes = qa_list_rc.borrow_mut();
+            list_boxes.retain(|weak_ref| {
+                if let Some(list) = weak_ref.upgrade() {
+                    // Directly add item to the list
+                    let item = create_sidebar_item(bookmark);
+                    list.append(&item);
+                    true
+                } else {
+                    false
+                }
+            });
         }
     }
 }

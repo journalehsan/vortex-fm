@@ -42,10 +42,10 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
                 "📁".to_string(),
                 "Quick Access".to_string(),
             );
-            manager_rc.borrow_mut().add_bookmark(bookmark);
+            manager_rc.borrow_mut().add_bookmark(bookmark.clone());
             let _ = manager_rc.borrow().save();
-            // Refresh sidebar to show new bookmark
-            crate::widgets::modern_sidebar::refresh_sidebar();
+            // Add directly to the UI
+            crate::widgets::modern_sidebar::add_bookmark_to_qa_ui(&bookmark);
         }
     });
     
