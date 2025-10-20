@@ -47,7 +47,8 @@ impl BottomPanel {
         let stack = Stack::new();
         stack.set_transition_type(gtk::StackTransitionType::SlideLeftRight);
         stack.set_transition_duration(200);
-        stack.set_vexpand(true);
+        // Don't expand vertically - let details height define the size
+        stack.set_vexpand(false);
         stack.set_hexpand(true);
         
         // Placeholders will be replaced with actual widgets via add_details_panel and add_terminal_panel
@@ -65,6 +66,14 @@ impl BottomPanel {
         let stack_clone = stack.clone();
         details_tab.connect_clicked(move |btn| {
             stack_clone.set_visible_child_name("details");
+            // Set height for compact details (info bar + tabs + details ~140px)
+            if let Some(parent) = stack_clone.parent() {
+                if let Some(container) = parent.downcast_ref::<Box>() {
+                    container.set_height_request(140);
+                    // Disable vexpand for details
+                    stack_clone.set_vexpand(false);
+                }
+            }
             btn.add_css_class("active-tab");
             // Remove active from terminal tab
             if let Some(parent) = btn.parent() {
@@ -83,8 +92,13 @@ impl BottomPanel {
         });
         
         let stack_clone = stack.clone();
+        let container_clone = container.clone();
         terminal_tab.connect_clicked(move |btn| {
             stack_clone.set_visible_child_name("terminal");
+            // Set height for terminal (info bar + tabs + terminal ~300px)
+            container_clone.set_height_request(300);
+            // Enable vexpand for terminal to fill space
+            stack_clone.set_vexpand(true);
             btn.add_css_class("active-tab");
             // Remove active from details tab
             if let Some(parent) = btn.parent() {
