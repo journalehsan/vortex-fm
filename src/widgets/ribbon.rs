@@ -64,7 +64,7 @@ pub fn create_ribbon_toolbar() -> Box {
     // Hamburger menu (right aligned)
     let more_menu = gio::Menu::new();
     more_menu.append(Some("Settings"), Some("app.settings"));
-    more_menu.append(Some("About"), Some("app.about"));
+    more_menu.append(Some("About Vortex FM"), Some("app.about"));
     let more_btn = MenuButton::new();
     more_btn.set_icon_name("open-menu-symbolic");
     more_btn.set_menu_model(Some(&more_menu));

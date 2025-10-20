@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Orientation, Paned, Box, HeaderBar};
+use gtk::{Application, ApplicationWindow, Orientation, Paned, Box, HeaderBar, gio};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::core::file_manager::FileManagerState;
@@ -13,6 +13,7 @@ use crate::widgets::details_panel::create_details_panel;
 use crate::widgets::terminal_panel::{create_terminal_panel, set_global_terminal_panel, set_global_terminal_revealer};
 use crate::views::content_area::{create_content_area, set_global_tab_bar, set_global_nav_buttons, update_responsive_margins};
 use crate::utils::keyboard::setup_keyboard_shortcuts;
+use crate::widgets::about_dialog::show_about_dialog;
 
 pub fn build_ui(app: &Application) {
     // Create main window with split panes
@@ -112,6 +113,16 @@ pub fn build_ui(app: &Application) {
     
     // Add keyboard shortcuts
     setup_keyboard_shortcuts(&window);
+    
+    // Add about action
+    let window_weak = window.downgrade();
+    let about_action = gio::SimpleAction::new("about", None);
+    about_action.connect_activate(move |_, _| {
+        if let Some(window) = window_weak.upgrade() {
+            show_about_dialog(Some(&window));
+        }
+    });
+    app.add_action(&about_action);
     
     // Set initial responsive margins based on current sidebar width
     update_responsive_margins(state.borrow().config.sidebar_width);
