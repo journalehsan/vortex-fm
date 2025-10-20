@@ -305,26 +305,37 @@ window {
     transform: translateY(0);
 }
 
-/* File Items */
+/* File Items - Improved Grid View */
 .file-item {
-    padding: 12px;
+    padding: 8px;
     border-radius: 8px;
-    background: #ffffff;
-    border: 1px solid #e8eaed;
+    background: transparent;
+    border: 2px solid transparent;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: none;
 }
 
 .file-item:hover {
-    background: #f8f9fa;
-    border-color: #1a73e8;
+    background: rgba(26, 115, 232, 0.08);
+    border-color: rgba(26, 115, 232, 0.3);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15);
 }
 
 .file-item:active {
-    background: #e8f0fe;
+    background: rgba(26, 115, 232, 0.12);
     transform: translateY(0);
+}
+
+.file-item.selected {
+    background: rgba(26, 115, 232, 0.15);
+    border-color: #1a73e8;
+    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
+}
+
+.file-item.selected:hover {
+    background: rgba(26, 115, 232, 0.2);
+    border-color: #1557b0;
 }
 
 .file-icon {
@@ -337,6 +348,91 @@ window {
     color: #2c2c2c;
     font-weight: 500;
     line-height: 1.3;
+    text-align: center;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Grid-specific styling */
+.grid-item {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.grid-item:hover {
+    background: rgba(26, 115, 232, 0.08);
+    transform: translateY(-1px);
+}
+
+.grid-item.selected {
+    background: rgba(26, 115, 232, 0.15);
+    border: 2px solid #1a73e8;
+}
+
+.file-button {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.file-button:hover {
+    background: transparent;
+}
+
+/* Icon size scale styling */
+.icon-size-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #5f6368;
+    margin-right: 8px;
+}
+
+.icon-size-scale {
+    margin: 0 8px;
+}
+
+.icon-size-scale slider {
+    background: #1a73e8;
+    border-radius: 3px;
+    min-height: 6px;
+}
+
+.icon-size-scale slider:hover {
+    background: #1557b0;
+}
+
+.icon-size-scale trough {
+    background: #e8eaed;
+    border-radius: 3px;
+    min-height: 6px;
+}
+
+/* File view grid container */
+.fileview-grid {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fileview-grid flowbox {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fileview-grid flowboxchild {
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
 }
 
 /* Status Bar */

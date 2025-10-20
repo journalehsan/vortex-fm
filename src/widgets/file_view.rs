@@ -127,32 +127,54 @@ impl FileViewAdapter for ListViewAdapter {
     }
 }
 
-// Placeholder GridView adapter
+// Improved GridView adapter with configurable icon sizes
 pub struct GridViewAdapter {
     root: Option<GtkBox>,
     icon_size: i32,
 }
 
-impl GridViewAdapter { pub fn new() -> Self { Self { root: None, icon_size: 64 } } }
+impl GridViewAdapter { 
+    pub fn new() -> Self { 
+        Self { root: None, icon_size: 64 } 
+    }
+    
+    pub fn with_icon_size(icon_size: i32) -> Self {
+        Self { root: None, icon_size }
+    }
+}
 
 impl FileViewAdapter for GridViewAdapter {
     fn build(&mut self, state: &FileManagerState) -> Widget {
         let root = GtkBox::new(Orientation::Vertical, 0);
         root.set_css_classes(&["fileview-grid"]);
+        
         let flow = FlowBox::new();
         flow.set_selection_mode(gtk::SelectionMode::None);
-        flow.set_row_spacing(12);
-        flow.set_column_spacing(12);
-        flow.set_margin_start(12);
-        flow.set_margin_end(12);
-        flow.set_margin_top(12);
-        flow.set_margin_bottom(12);
+        
+        // Improved spacing based on icon size
+        let spacing = (self.icon_size as f32 * 0.2) as i32;
+        flow.set_row_spacing(spacing as u32);
+        flow.set_column_spacing(spacing as u32);
+        flow.set_margin_start(16);
+        flow.set_margin_end(16);
+        flow.set_margin_top(16);
+        flow.set_margin_bottom(16);
+        
+        // Set homogeneous sizing for consistent grid
+        flow.set_homogeneous(true);
 
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
 
         for file_entry in files {
-            let btn = crate::widgets::file_item::create_file_item(&file_entry.icon, &file_entry.name, &file_entry.file_type, file_entry.path, &state.config);
+            let btn = crate::widgets::file_item::create_file_item_with_size(
+                &file_entry.icon, 
+                &file_entry.name, 
+                &file_entry.file_type, 
+                file_entry.path, 
+                &state.config,
+                self.icon_size
+            );
             let child = FlowBoxChild::new();
             child.set_child(Some(&btn));
             // Insert at end (-1) for gtk4-rs 0.7
@@ -179,18 +201,31 @@ impl FileViewAdapter for GridViewAdapter {
             
             let flow = FlowBox::new();
             flow.set_selection_mode(gtk::SelectionMode::None);
-            flow.set_row_spacing(12);
-            flow.set_column_spacing(12);
-            flow.set_margin_start(12);
-            flow.set_margin_end(12);
-            flow.set_margin_top(12);
-            flow.set_margin_bottom(12);
+            
+            // Improved spacing based on icon size
+            let spacing = (self.icon_size as f32 * 0.2) as i32;
+            flow.set_row_spacing(spacing as u32);
+            flow.set_column_spacing(spacing as u32);
+            flow.set_margin_start(16);
+            flow.set_margin_end(16);
+            flow.set_margin_top(16);
+            flow.set_margin_bottom(16);
+            
+            // Set homogeneous sizing for consistent grid
+            flow.set_homogeneous(true);
 
             // Use the search utility to get filtered files
             let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
 
             for file_entry in files {
-                let btn = crate::widgets::file_item::create_file_item(&file_entry.icon, &file_entry.name, &file_entry.file_type, file_entry.path, &state.config);
+                let btn = crate::widgets::file_item::create_file_item_with_size(
+                    &file_entry.icon, 
+                    &file_entry.name, 
+                    &file_entry.file_type, 
+                    file_entry.path, 
+                    &state.config,
+                    self.icon_size
+                );
                 let child = FlowBoxChild::new();
                 child.set_child(Some(&btn));
                 flow.insert(&child, -1);
@@ -198,6 +233,10 @@ impl FileViewAdapter for GridViewAdapter {
 
             root.append(&flow);
         }
+    }
+    
+    fn set_icon_size(&mut self, size: i32) {
+        self.icon_size = size;
     }
 }
 

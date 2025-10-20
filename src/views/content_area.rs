@@ -42,6 +42,10 @@ pub fn set_global_file_view(fv: Rc<RefCell<FileView>>) {
     unsafe { GLOBAL_FILE_VIEW = Some(fv); }
 }
 
+pub fn get_global_file_view() -> Option<Rc<RefCell<FileView>>> {
+    unsafe { GLOBAL_FILE_VIEW.clone() }
+}
+
 pub fn switch_view_to_list(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {

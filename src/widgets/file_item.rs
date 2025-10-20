@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Button, Box, Orientation, Label, GestureClick, Picture, DragSource, gdk};
+use gtk::{Button, Box, Orientation, Label, GestureClick, Picture, DragSource, gdk, Image, CheckButton};
 use std::path::PathBuf;
 use crate::core::config::VortexConfig;
 use crate::core::navigation::navigate_to_directory;
@@ -7,12 +7,22 @@ use crate::core::selection::{select_file, clear_selection, get_global_selection_
 use crate::core::bookmarks::{Bookmark, get_global_bookmarks_manager};
 use crate::widgets::context_menu::{create_folder_context_menu, create_file_context_menu};
 use crate::utils::thumbnails::get_global_thumbnail_manager;
+use crate::utils::icon_manager::get_global_icon_manager;
 
 pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig) -> Button {
-    let item_box = Box::new(Orientation::Vertical, 4);
-    item_box.set_width_request(80);
-    item_box.set_height_request(80);
+    create_file_item_with_size(icon, name, _file_type, path, config, 64)
+}
+
+pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig, icon_size: i32) -> Button {
+    // Calculate item dimensions based on icon size
+    let item_width = (icon_size as f32 * 1.5) as i32;
+    let item_height = (icon_size as f32 * 1.8) as i32;
+    
+    let item_box = Box::new(Orientation::Vertical, 6);
+    item_box.set_width_request(item_width);
+    item_box.set_height_request(item_height);
     item_box.add_css_class("file-item");
+    item_box.add_css_class("grid-item");
     
     // Check if this file is currently selected
     if let Some(selection_manager_rc) = get_global_selection_manager() {
@@ -21,45 +31,37 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
         }
     }
     
-    // Icon or thumbnail
-    let thumbnail_manager = get_global_thumbnail_manager();
-    let is_image = thumbnail_manager.is_image_file(&path);
+    // Icon container with proper centering
+    let icon_container = Box::new(Orientation::Vertical, 0);
+    icon_container.set_halign(gtk::Align::Center);
+    icon_container.set_valign(gtk::Align::Center);
+    icon_container.set_hexpand(true);
+    icon_container.set_vexpand(true);
     
-    if is_image {
-        // Show thumbnail for images
-        if let Some(thumbnail_path) = thumbnail_manager.get_thumbnail_or_placeholder(&path) {
-            let picture = Picture::for_filename(&thumbnail_path);
-            picture.add_css_class("file-thumbnail");
-            picture.set_width_request(32);
-            picture.set_height_request(32);
-            picture.set_can_shrink(false);
-            item_box.append(&picture);
-        } else {
-            // Fallback to emoji icon
-            let icon_label = Label::new(Some(icon));
-            icon_label.add_css_class("file-icon");
-            icon_label.set_halign(gtk::Align::Center);
-            item_box.append(&icon_label);
-        }
-    } else {
-        // File icon (using emoji for now, could be enhanced with real icons)
-        let icon_label = Label::new(Some(icon));
-        icon_label.add_css_class("file-icon");
-        icon_label.set_halign(gtk::Align::Center);
-        item_box.append(&icon_label);
-    }
+    // Use system icons instead of emojis
+    let icon_widget = get_global_icon_manager().create_icon_widget(&path, icon_size);
+    icon_widget.set_halign(gtk::Align::Center);
+    icon_widget.set_valign(gtk::Align::Center);
+    icon_container.append(&icon_widget);
     
-    // File name
+    item_box.append(&icon_container);
+    
+    // File name with proper text wrapping and ellipsis
     let name_label = Label::new(Some(name));
     name_label.add_css_class("file-name");
     name_label.set_halign(gtk::Align::Center);
     name_label.set_wrap(true);
-    name_label.set_max_width_chars(10);
+    name_label.set_wrap_mode(gtk::pango::WrapMode::Word);
+    name_label.set_max_width_chars(12);
+    name_label.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+    name_label.set_lines(2);
+    // name_label.set_line_wrap(true); // This method doesn't exist in GTK4
     item_box.append(&name_label);
     
     // Make it clickable
     let button = Button::new();
     button.set_child(Some(&item_box));
+    button.add_css_class("file-button");
     
     // Set up right-click gesture for context menu
     let gesture = GestureClick::new();
@@ -77,8 +79,7 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     });
     button.add_controller(gesture);
     
-    // Connect click handler with double-click detection
-    let _name_clone = name.to_string();
+    // Connect click handler with multi-selection support
     let path_clone = path.clone();
     let single_click_mode = config.single_click_to_open;
     
@@ -88,28 +89,68 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     
     gesture.connect_pressed(move |gesture, n_press, _x, _y| {
         if gesture.current_button() == 1 {
+            let modifiers = gesture.current_event_state();
+            let ctrl_pressed = modifiers.contains(gdk::ModifierType::CONTROL_MASK);
+            let shift_pressed = modifiers.contains(gdk::ModifierType::SHIFT_MASK);
+            
             if path_clone.is_dir() {
                 // For folders: single click opens if config allows
-                if n_press == 1 && single_click_mode {
+                if n_press == 1 && single_click_mode && !ctrl_pressed && !shift_pressed {
                     println!("📁 Opening directory: {}", path_clone.display());
                     navigate_to_directory(path_clone.clone());
                 }
                 // If double-click mode, open on double-click
-                else if n_press == 2 && !single_click_mode {
+                else if n_press == 2 && !single_click_mode && !ctrl_pressed && !shift_pressed {
                     println!("📁 Opening directory (double-click): {}", path_clone.display());
                     navigate_to_directory(path_clone.clone());
                 }
-                // Single-click select for folders too (to show details)
+                // Handle selection
                 if n_press == 1 {
-                    select_file(path_clone.clone());
-                    println!("📁 Selected folder: {}", path_clone.display());
+                    if ctrl_pressed {
+                        // Ctrl+click: toggle selection
+                        if let Some(selection_manager_rc) = get_global_selection_manager() {
+                            let mut selection_manager = selection_manager_rc.borrow_mut();
+                            if selection_manager.is_selected(&path_clone) {
+                                selection_manager.deselect_file(&path_clone);
+                            } else {
+                                selection_manager.select_file(path_clone.clone());
+                            }
+                        }
+                    } else if shift_pressed {
+                        // Shift+click: range selection (implement range selection logic)
+                        if let Some(selection_manager_rc) = get_global_selection_manager() {
+                            // For now, just select this item
+                            selection_manager_rc.borrow_mut().select_file(path_clone.clone());
+                        }
+                    } else {
+                        // Regular click: select this item
+                        select_file(path_clone.clone());
+                        println!("📁 Selected folder: {}", path_clone.display());
+                    }
                 }
             } else {
-                // For files: ALWAYS single-click selects (show details), never opens on single-click
+                // For files: handle selection and opening
                 if n_press == 1 {
-                    // Single click - select the file and show details
-                    select_file(path_clone.clone());
-                    println!("📄 Selected file: {}", path_clone.display());
+                    if ctrl_pressed {
+                        // Ctrl+click: toggle selection
+                        if let Some(selection_manager_rc) = get_global_selection_manager() {
+                            let mut selection_manager = selection_manager_rc.borrow_mut();
+                            if selection_manager.is_selected(&path_clone) {
+                                selection_manager.deselect_file(&path_clone);
+                            } else {
+                                selection_manager.select_file(path_clone.clone());
+                            }
+                        }
+                    } else if shift_pressed {
+                        // Shift+click: range selection
+                        if let Some(selection_manager_rc) = get_global_selection_manager() {
+                            selection_manager_rc.borrow_mut().select_file(path_clone.clone());
+                        }
+                    } else {
+                        // Regular click: select the file
+                        select_file(path_clone.clone());
+                        println!("📄 Selected file: {}", path_clone.display());
+                    }
                 } else if n_press == 2 {
                     // Double click - open the file
                     println!("📄 Opening file (double-click): {}", path_clone.display());

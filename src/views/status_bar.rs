@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Box, Orientation, Label, Button};
+use gtk::{Box, Orientation, Label, Button, Scale, Adjustment};
 use crate::core::file_manager::{FileManagerState, ViewMode};
 use crate::views::content_area::{switch_view_to_list, switch_view_to_grid};
 
@@ -94,6 +94,33 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     view_box.append(&list_view_btn);
     view_box.append(&grid_view_btn);
     status_bar.append(&view_box);
+    
+    // Add icon size slider for grid view
+    let icon_size_label = Label::new(Some("Icon Size:"));
+    icon_size_label.add_css_class("icon-size-label");
+    status_bar.append(&icon_size_label);
+    
+    let adjustment = Adjustment::new(64.0, 16.0, 256.0, 16.0, 32.0, 0.0);
+    let icon_size_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    icon_size_scale.set_draw_value(false);
+    icon_size_scale.set_width_request(120);
+    icon_size_scale.add_css_class("icon-size-scale");
+    
+    // Connect icon size change
+    icon_size_scale.connect_value_changed(move |scale| {
+        let new_size = scale.value() as i32;
+        // Update the global file view icon size
+        if let Some(state_rc) = crate::core::navigation::get_global_state() {
+            let state_ref = state_rc.borrow().clone();
+            if let Some(fv) = crate::views::content_area::get_global_file_view() {
+                fv.borrow_mut().set_icon_size(new_size);
+                // Refresh the view to apply new icon size
+                fv.borrow_mut().update(&state_ref);
+            }
+        }
+    });
+    
+    status_bar.append(&icon_size_scale);
     
     status_bar
 }
