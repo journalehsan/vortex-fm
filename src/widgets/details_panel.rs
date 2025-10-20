@@ -20,6 +20,7 @@ pub fn create_details_panel() -> Box {
     content_box.set_margin_end(6);
     content_box.set_margin_top(2);
     content_box.set_margin_bottom(2);
+    content_box.set_valign(gtk::Align::Center);
     // Let content box size naturally
     content_box.set_height_request(-1);
     
@@ -107,23 +108,27 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
             picture.set_width_request(52);
             picture.set_height_request(52);
             picture.set_can_shrink(false);
+            picture.set_valign(gtk::Align::Center);
             left_box.append(&picture);
         } else {
             let icon_label = Label::new(Some(&get_file_icon(&file_info.file_type)));
             icon_label.add_css_class("details-file-icon-compact");
             icon_label.set_halign(gtk::Align::Center);
+            icon_label.set_valign(gtk::Align::Center);
             left_box.append(&icon_label);
         }
     } else {
         let icon_label = Label::new(Some(&get_file_icon(&file_info.file_type)));
         icon_label.add_css_class("details-file-icon-compact");
         icon_label.set_halign(gtk::Align::Center);
+        icon_label.set_valign(gtk::Align::Center);
         left_box.append(&icon_label);
     }
     content.append(&left_box);
     
     // DIVIDER
     let divider = Separator::new(Orientation::Vertical);
+    divider.set_valign(gtk::Align::Center);
     content.append(&divider);
     
     // MIDDLE: Details (3 rows - tighter spacing)
@@ -150,6 +155,7 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     
     // DIVIDER
     let divider2 = Separator::new(Orientation::Vertical);
+    divider2.set_valign(gtk::Align::Center);
     content.append(&divider2);
     
     // RIGHT: Additional Info (tighter spacing)
@@ -185,6 +191,7 @@ fn create_folder_details(content: &Box, folder_path: &PathBuf) {
     let icon_label = Label::new(Some("📁"));
     icon_label.add_css_class("details-file-icon-compact");
     icon_label.set_halign(gtk::Align::Center);
+    icon_label.set_valign(gtk::Align::Center);
     left_box.append(&icon_label);
     content.append(&left_box);
     
@@ -280,15 +287,18 @@ fn create_property_row(parent: &Box, label: &str, value: &str) {
 
 fn create_compact_row(label: &str, value: &str) -> Box {
     let row = Box::new(Orientation::Horizontal, 2);
+    row.set_valign(gtk::Align::Center);
     
     let label_widget = Label::new(Some(label));
     label_widget.add_css_class("details-label-compact");
     label_widget.set_halign(gtk::Align::Start);
+    label_widget.set_valign(gtk::Align::Center);
     label_widget.set_width_request(70);
     
     let value_widget = Label::new(Some(value));
     value_widget.add_css_class("details-value-compact");
     value_widget.set_halign(gtk::Align::Start);
+    value_widget.set_valign(gtk::Align::Center);
     value_widget.set_ellipsize(gtk::pango::EllipsizeMode::End);
     value_widget.set_hexpand(false);
     
