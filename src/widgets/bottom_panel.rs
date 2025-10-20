@@ -14,14 +14,6 @@ impl BottomPanel {
         let container = Box::new(Orientation::Vertical, 0);
         container.add_css_class("bottom-panel");
         
-        // Top: Info bar showing [File Details] [Location Info] [Storage]
-        let info_bar = create_info_bar();
-        container.append(&info_bar);
-        
-        // Separator
-        let separator = Separator::new(Orientation::Horizontal);
-        container.append(&separator);
-        
         // Tab buttons for Details/Terminal
         let tabs_box = Box::new(Orientation::Horizontal, 0);
         tabs_box.add_css_class("bottom-panel-tabs");
@@ -66,10 +58,10 @@ impl BottomPanel {
         let stack_clone = stack.clone();
         details_tab.connect_clicked(move |btn| {
             stack_clone.set_visible_child_name("details");
-            // Set height for compact details (info bar + tabs + details ~140px)
+            // Set height for compact details (tabs + details ~156px)
             if let Some(parent) = stack_clone.parent() {
                 if let Some(container) = parent.downcast_ref::<Box>() {
-                    container.set_height_request(140);
+                    container.set_height_request(156);
                     // Disable vexpand for details
                     stack_clone.set_vexpand(false);
                 }
@@ -95,7 +87,7 @@ impl BottomPanel {
         let container_clone = container.clone();
         terminal_tab.connect_clicked(move |btn| {
             stack_clone.set_visible_child_name("terminal");
-            // Set height for terminal (info bar + tabs + terminal ~300px)
+            // Set height for terminal (tabs + terminal ~300px)
             container_clone.set_height_request(300);
             // Enable vexpand for terminal to fill space
             stack_clone.set_vexpand(true);
@@ -119,8 +111,10 @@ impl BottomPanel {
         container.append(&stack);
         
         // Set initial height for details (compact)
-        // Info bar (~45px) + separator (~1px) + tabs (~36px) + details (~120px) = ~200px
-        container.set_height_request(140);
+        // Tabs (~36px) + details (~120px) = ~156px
+        container.set_height_request(156);
+        
+        let info_bar = container.clone();
         
         BottomPanel {
             container,
@@ -144,82 +138,6 @@ impl BottomPanel {
         }
         self.stack.add_named(terminal_widget, Some("terminal"));
     }
-}
-
-fn create_info_bar() -> Box {
-    let info_bar = Box::new(Orientation::Horizontal, 16);
-    info_bar.add_css_class("info-bar");
-    info_bar.set_margin_start(12);
-    info_bar.set_margin_end(12);
-    info_bar.set_margin_top(8);
-    info_bar.set_margin_bottom(8);
-    
-    // Section 1: File Details
-    let file_details_box = create_info_section("File Details", vec![
-        ("Name:", "No file selected"),
-        ("Size:", "—"),
-        ("Type:", "—"),
-        ("Modified:", "—"),
-    ]);
-    info_bar.append(&file_details_box);
-    
-    // Separator
-    let sep1 = Separator::new(Orientation::Vertical);
-    info_bar.append(&sep1);
-    
-    // Section 2: Location Info
-    let location_info_box = create_info_section("Location Info", vec![
-        ("Location:", "—"),
-        ("Items:", "—"),
-        ("Selected:", "—"),
-    ]);
-    info_bar.append(&location_info_box);
-    
-    // Separator
-    let sep2 = Separator::new(Orientation::Vertical);
-    info_bar.append(&sep2);
-    
-    // Section 3: Storage
-    let storage_box = create_info_section("Storage", vec![
-        ("Usage:", "—"),
-        ("Free:", "—"),
-    ]);
-    info_bar.append(&storage_box);
-    
-    info_bar
-}
-
-fn create_info_section(title: &str, items: Vec<(&str, &str)>) -> Box {
-    let section = Box::new(Orientation::Vertical, 4);
-    section.add_css_class("info-section");
-    section.set_hexpand(true);
-    
-    // Section title
-    let title_label = Label::new(Some(title));
-    title_label.add_css_class("info-section-title");
-    title_label.set_halign(gtk::Align::Start);
-    section.append(&title_label);
-    
-    // Items
-    for (label, value) in items {
-        let item_box = Box::new(Orientation::Horizontal, 8);
-        
-        let label_widget = Label::new(Some(label));
-        label_widget.add_css_class("info-item-label");
-        label_widget.set_halign(gtk::Align::Start);
-        label_widget.set_width_request(80);
-        
-        let value_widget = Label::new(Some(value));
-        value_widget.add_css_class("info-item-value");
-        value_widget.set_halign(gtk::Align::Start);
-        value_widget.set_hexpand(true);
-        
-        item_box.append(&label_widget);
-        item_box.append(&value_widget);
-        section.append(&item_box);
-    }
-    
-    section
 }
 
 // Global bottom panel reference
