@@ -195,21 +195,37 @@ impl FileViewAdapter for GridViewAdapter {
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Use a more conservative available width calculation
-        // Typical main content area is around 600-700px after sidebar subtraction
-        let conservative_available_width = 600;
-        let items_per_row = (conservative_available_width / total_item_width).max(1);
-        let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+        // Dynamic column calculation - let GTK handle the sizing naturally
+        // Instead of trying to calculate exact content area, use a responsive approach
+        let min_columns = 2; // Minimum columns for small screens
+        let max_columns = 8; // Maximum columns for large screens
         
-        // Ensure grid doesn't exceed reasonable bounds
-        let max_grid_width = 1000; // Prevent excessive width
-        let final_grid_width = grid_width.min(max_grid_width);
+        // Calculate responsive items per row based on icon size
+        // This mimics Bootstrap's responsive breakpoints
+        let items_per_row = match icon_pixels {
+            16..=24 => min_columns.max(3), // Small icons: 2-3 columns
+            25..=32 => min_columns.max(4), // Medium icons: 3-4 columns  
+            33..=48 => min_columns.max(5), // Large icons: 4-5 columns
+            49..=64 => min_columns.max(6), // Extra large icons: 5-6 columns
+            _ => min_columns.max(4), // Default: 3-4 columns
+        };
+        
+        // Let the grid size itself naturally without fixed width constraints
+        // This prevents horizontal overflow and allows proper responsive behavior
+        let grid_width = -1; // Let GTK calculate the width naturally
+        
+        // Debug logging to diagnose column count issues
+        crate::utils::simple_debug::debug_info("GRID_VIEW", &format!(
+            "Icon size: {}px, Tile width: {}px, Items per row: {}, Grid width: auto",
+            icon_pixels, tile_width, items_per_row
+        ));
         
         grid.set_row_spacing(spacing as u32);
         grid.set_column_spacing(spacing as u32);
         grid.set_margin_start(margin);
         grid.set_margin_end(margin);
-        grid.set_size_request(final_grid_width, -1); // Fixed width to prevent horizontal overflow
+        // Don't set fixed width - let GTK handle sizing naturally to prevent horizontal overflow
+        // grid.set_size_request(grid_width, -1); // Removed fixed width constraint
         grid.set_margin_top(margin);
         grid.set_margin_bottom(margin);
         grid.set_halign(gtk::Align::Center); // Center the grid
@@ -289,21 +305,31 @@ impl FileViewAdapter for GridViewAdapter {
             let tile_width = (base_tile_width as f32 * scale_factor) as i32;
             let total_item_width = tile_width + spacing;
             
-            // Use a more conservative available width calculation
-            // Typical main content area is around 600-700px after sidebar subtraction
-            let conservative_available_width = 600;
-            let items_per_row = (conservative_available_width / total_item_width).max(1);
-            let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+            // Dynamic column calculation - responsive approach like Bootstrap
+            let min_columns = 2; // Minimum columns for small screens
+            let max_columns = 8; // Maximum columns for large screens
             
-            // Ensure grid doesn't exceed reasonable bounds
-            let max_grid_width = 1000; // Prevent excessive width
-            let final_grid_width = grid_width.min(max_grid_width);
+            // Calculate responsive items per row based on icon size
+            let items_per_row = match icon_pixels {
+                16..=24 => min_columns.max(3), // Small icons: 2-3 columns
+                25..=32 => min_columns.max(4), // Medium icons: 3-4 columns  
+                33..=48 => min_columns.max(5), // Large icons: 4-5 columns
+                49..=64 => min_columns.max(6), // Extra large icons: 5-6 columns
+                _ => min_columns.max(4), // Default: 3-4 columns
+            };
+            
+            // Debug logging to diagnose column count issues
+            crate::utils::simple_debug::debug_info("GRID_VIEW", &format!(
+                "Icon size: {}px, Tile width: {}px, Items per row: {}, Grid width: auto",
+                icon_pixels, tile_width, items_per_row
+            ));
             
             grid.set_row_spacing(spacing as u32);
             grid.set_column_spacing(spacing as u32);
             grid.set_margin_start(margin);
             grid.set_margin_end(margin);
-            grid.set_size_request(final_grid_width, -1); // Fixed width to prevent horizontal overflow
+            // Don't set fixed width - let GTK handle sizing naturally
+            // grid.set_size_request(grid_width, -1); // Removed fixed width constraint
             grid.set_margin_top(margin);
             grid.set_margin_bottom(margin);
             grid.set_halign(gtk::Align::Center); // Center the grid
