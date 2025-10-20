@@ -136,6 +136,11 @@ window {
     border-color: #1a73e8;
 }
 
+/* Active tab button helper */
+.active-tab {
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25);
+}
+
 /* Toolbar */
 .toolbar {
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
@@ -523,6 +528,10 @@ revealer[visible="false"] {
 .home-screen {
     background: linear-gradient(135deg, #f8f9fa 0%, #e8f0fe 100%);
     padding: 16px;
+}
+/* Home inactive (when Browser is active) */
+.home-inactive {
+    filter: saturate(0.8) brightness(0.97);
 }
 
 .home-section {

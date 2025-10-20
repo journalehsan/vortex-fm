@@ -7,8 +7,11 @@ use crate::widgets::home_screen::create_home_screen;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-// Global stack reference for switching views
+// Global refs for view switching and styling
 static mut GLOBAL_STACK: Option<Rc<RefCell<Stack>>> = None;
+static mut GLOBAL_HOME_BTN: Option<Button> = None;
+static mut GLOBAL_BROWSER_BTN: Option<Button> = None;
+static mut GLOBAL_HOME_CONTAINER: Option<ScrolledWindow> = None;
 
 pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
     unsafe {
@@ -18,9 +21,19 @@ pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
 
 pub fn switch_to_browser_view() {
     unsafe {
-        if let Some(stack) = &GLOBAL_STACK {
-            stack.borrow().set_visible_child_name("browser");
-        }
+        if let Some(stack) = &GLOBAL_STACK { stack.borrow().set_visible_child_name("browser"); }
+        if let Some(home_btn) = &GLOBAL_HOME_BTN { home_btn.set_css_classes(&["flat"]); }
+        if let Some(browser_btn) = &GLOBAL_BROWSER_BTN { browser_btn.set_css_classes(&["suggested-action", "active-tab"]); }
+        if let Some(home_container) = &GLOBAL_HOME_CONTAINER { home_container.set_css_classes(&["home-screen", "home-inactive"]); }
+    }
+}
+
+pub fn switch_to_home_view() {
+    unsafe {
+        if let Some(stack) = &GLOBAL_STACK { stack.borrow().set_visible_child_name("home"); }
+        if let Some(home_btn) = &GLOBAL_HOME_BTN { home_btn.set_css_classes(&["suggested-action", "active-tab"]); }
+        if let Some(browser_btn) = &GLOBAL_BROWSER_BTN { browser_btn.set_css_classes(&["flat"]); }
+        if let Some(home_container) = &GLOBAL_HOME_CONTAINER { home_container.set_css_classes(&["home-screen"]); }
     }
 }
 
@@ -37,10 +50,15 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     set_global_stack(stack_rc.clone());
     let stack = stack_rc.borrow().clone();
     
-    // Home screen
+    // Home screen (wrapped in scrolled window)
     let home_screen = create_home_screen();
-    home_screen.set_css_classes(&["home-screen"]);
-    stack.add_named(&home_screen, Some("home"));
+    let home_scrolled = ScrolledWindow::new();
+    home_scrolled.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+    home_scrolled.set_hexpand(true);
+    home_scrolled.set_vexpand(true);
+    home_scrolled.set_child(Some(&home_screen));
+    home_scrolled.set_css_classes(&["home-screen"]);
+    stack.add_named(&home_scrolled, Some("home"));
     
     // File browser view
     let file_browser = Box::new(Orientation::Vertical, 0);
@@ -68,22 +86,16 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     
     let home_btn = Button::new();
     home_btn.set_label("🏠 Home");
-    home_btn.set_css_classes(&["suggested-action"]);
+    home_btn.set_css_classes(&["suggested-action", "active-tab"]);
     home_btn.connect_clicked({
-        let stack = stack.clone();
-        move |_| {
-            stack.set_visible_child_name("home");
-        }
+        move |_| { switch_to_home_view(); }
     });
     
     let browser_btn = Button::new();
     browser_btn.set_label("📁 Browser");
     browser_btn.set_css_classes(&["flat"]);
     browser_btn.connect_clicked({
-        let stack = stack.clone();
-        move |_| {
-            stack.set_visible_child_name("browser");
-        }
+        move |_| { switch_to_browser_view(); }
     });
     
     nav_box.append(&home_btn);
@@ -94,6 +106,13 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     
     // Start with home screen visible
     stack.set_visible_child_name("home");
+
+    // Store global ui refs for styling toggles
+    unsafe {
+        GLOBAL_HOME_BTN = Some(home_btn.clone());
+        GLOBAL_BROWSER_BTN = Some(browser_btn.clone());
+        GLOBAL_HOME_CONTAINER = Some(home_scrolled.clone());
+    }
     
     // Store references for later updates
     state.file_list_widget = Some(file_list.clone());
