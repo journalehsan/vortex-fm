@@ -31,6 +31,7 @@ pub struct FileManagerState {
     pub back_button: Option<Button>,
     pub forward_button: Option<Button>,
     pub up_button: Option<Button>,
+    pub current_filter: String,
 }
 
 impl FileManagerState {
@@ -48,6 +49,7 @@ impl FileManagerState {
             back_button: None,
             forward_button: None,
             up_button: None,
+            current_filter: String::new(),
         }
     }
     
@@ -219,6 +221,14 @@ impl FileManagerState {
         }
         
         scrolled.set_child(Some(&grid));
+    }
+    
+    pub fn set_filter(&mut self, filter: String) {
+        self.current_filter = filter;
+    }
+    
+    pub fn clear_filter(&mut self) {
+        self.current_filter.clear();
     }
     
     pub fn update_status_bar(&self, status_bar: &GtkBox) {

@@ -55,6 +55,7 @@ pub fn navigate_to_directory(path: PathBuf) {
             if let Some(state_rc) = get_global_state() {
                 let mut state = state_rc.borrow_mut();
                 state.navigation_history = nav_history;
+                state.clear_filter(); // Clear search filter when navigating
                 state.refresh_ui();
             }
         }
