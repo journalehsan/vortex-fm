@@ -193,22 +193,23 @@ impl FileViewAdapter for GridViewAdapter {
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Calculate responsive width for the grid to prevent horizontal scrolling
-        // Let the grid size itself naturally without forcing a fixed width
-        let items_per_row = 6; // Start with a reasonable number of items per row
-        // Don't set a fixed grid_width - let GTK handle the sizing naturally
+        // Calculate responsive items per row based on available width
+        // Use a reasonable minimum width for calculation (600px as fallback)
+        let available_width = 600; // This should be dynamically calculated, but we'll use a reasonable default
+        let items_per_row = (available_width / total_item_width).max(1);
         
-        // Grid width is calculated to fit within available width
+        // Calculate grid width to fit exactly the number of items per row
+        let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
         
         grid.set_row_spacing(spacing as u32);
         grid.set_column_spacing(spacing as u32);
         grid.set_margin_start(margin);
         grid.set_margin_end(margin);
-        // Don't set a fixed width - let the grid size itself naturally
-        // grid.set_size_request(grid_width, -1); // Removed fixed width constraint
+        // Set fixed width to prevent horizontal overflow
+        grid.set_size_request(grid_width, -1);
         grid.set_margin_top(margin);
         grid.set_margin_bottom(margin);
-        grid.set_halign(gtk::Align::Fill);
+        grid.set_halign(gtk::Align::Center); // Center the grid instead of filling
         grid.set_valign(gtk::Align::Start);
         
         // items_per_row is already calculated above
@@ -277,15 +278,29 @@ impl FileViewAdapter for GridViewAdapter {
             let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
             let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
             
+            // Calculate tile dimensions and grid layout
+            let base_tile_width = 120;
+            let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
+            let tile_width = (base_tile_width as f32 * scale_factor) as i32;
+            let total_item_width = tile_width + spacing;
+            
+            // Calculate responsive items per row based on available width
+            let available_width = 600; // Same default as in build()
+            let items_per_row = (available_width / total_item_width).max(1);
+            
+            // Calculate grid width to fit exactly the number of items per row
+            let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+            
             grid.set_row_spacing(spacing as u32);
             grid.set_column_spacing(spacing as u32);
             grid.set_margin_start(margin);
             grid.set_margin_end(margin);
+            // Set fixed width to prevent horizontal overflow
+            grid.set_size_request(grid_width, -1);
             grid.set_margin_top(margin);
             grid.set_margin_bottom(margin);
-            
-            // Use responsive items per row calculation
-            let items_per_row = 6; // Use a reasonable fixed number for consistency
+            grid.set_halign(gtk::Align::Center); // Center the grid instead of filling
+            grid.set_valign(gtk::Align::Start);
             
             // Use the search utility to get filtered files
             let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
