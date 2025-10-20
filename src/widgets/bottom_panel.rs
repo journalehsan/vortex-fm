@@ -118,6 +118,10 @@ impl BottomPanel {
         
         container.append(&stack);
         
+        // Set initial height for details (compact)
+        // Info bar (~45px) + separator (~1px) + tabs (~36px) + details (~120px) = ~200px
+        container.set_height_request(140);
+        
         BottomPanel {
             container,
             stack,
