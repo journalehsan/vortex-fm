@@ -39,7 +39,10 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     icon_container.set_vexpand(true);
     
     // Use system icons instead of emojis
-    let icon_widget = get_global_icon_manager().create_icon_widget(&path, icon_size);
+    let icon_widget = {
+        let manager = get_global_icon_manager().lock().unwrap();
+        manager.create_icon_widget(&path, icon_size)
+    };
     icon_widget.set_halign(gtk::Align::Center);
     icon_widget.set_valign(gtk::Align::Center);
     icon_container.append(&icon_widget);

@@ -1,32 +1,37 @@
 use std::path::PathBuf;
 use gtk::prelude::*;
-use gtk::{Image, Picture, gio};
+use gtk::{Image, gio};
 use std::collections::HashMap;
+use std::sync::{Once, Mutex};
+use std::cell::RefCell;
 
 /// IconManager facade for handling system icons and MIME types
 pub struct IconManager {
-    icon_cache: HashMap<String, gtk::IconPaintable>,
+    icon_cache: RefCell<HashMap<String, gtk::IconPaintable>>,
     icon_theme: gtk::IconTheme,
-    mime_type_cache: HashMap<String, String>,
+    mime_type_cache: RefCell<HashMap<String, String>>,
 }
 
 impl IconManager {
     pub fn new() -> Self {
         let icon_theme = gtk::IconTheme::for_display(&gtk::gdk::Display::default().unwrap());
         Self {
-            icon_cache: HashMap::new(),
+            icon_cache: RefCell::new(HashMap::new()),
             icon_theme,
-            mime_type_cache: HashMap::new(),
+            mime_type_cache: RefCell::new(HashMap::new()),
         }
     }
 
     /// Get system icon for a file path
-    pub fn get_file_icon(&mut self, path: &PathBuf, size: i32) -> Option<gtk::IconPaintable> {
+    pub fn get_file_icon(&self, path: &PathBuf, size: i32) -> Option<gtk::IconPaintable> {
         let mime_type = self.get_mime_type(path);
         let icon_name = self.get_icon_name_for_mime_type(&mime_type, path.is_dir());
         
-        if let Some(cached) = self.icon_cache.get(&format!("{}_{}", icon_name, size)) {
-            return Some(cached.clone());
+        {
+            let cache = self.icon_cache.borrow();
+            if let Some(cached) = cache.get(&format!("{}_{}", icon_name, size)) {
+                return Some(cached.clone());
+            }
         }
 
         let icon_paintable = self.icon_theme.lookup_icon(
@@ -39,14 +44,20 @@ impl IconManager {
         );
 
         // IconPaintable is always returned, just use it
-        self.icon_cache.insert(format!("{}_{}", icon_name, size), icon_paintable.clone());
+        {
+            let mut cache = self.icon_cache.borrow_mut();
+            cache.insert(format!("{}_{}", icon_name, size), icon_paintable.clone());
+        }
         Some(icon_paintable)
     }
 
     /// Get MIME type for a file
-    fn get_mime_type(&mut self, path: &PathBuf) -> String {
-        if let Some(cached) = self.mime_type_cache.get(path.to_str().unwrap_or("")) {
-            return cached.clone();
+    fn get_mime_type(&self, path: &PathBuf) -> String {
+        {
+            let cache = self.mime_type_cache.borrow();
+            if let Some(cached) = cache.get(path.to_str().unwrap_or("")) {
+                return cached.clone();
+            }
         }
 
         let mime_type = if path.is_dir() {
@@ -57,7 +68,10 @@ impl IconManager {
                 .to_string()
         };
 
-        self.mime_type_cache.insert(path.to_str().unwrap_or("").to_string(), mime_type.clone());
+        {
+            let mut cache = self.mime_type_cache.borrow_mut();
+            cache.insert(path.to_str().unwrap_or("").to_string(), mime_type.clone());
+        }
         mime_type
     }
 
@@ -126,7 +140,7 @@ impl IconManager {
     }
 
     /// Create an Image widget with the appropriate icon
-    pub fn create_icon_widget(&mut self, path: &PathBuf, size: i32) -> gtk::Widget {
+    pub fn create_icon_widget(&self, path: &PathBuf, size: i32) -> gtk::Widget {
         let image = Image::new();
         
         if let Some(icon_paintable) = self.get_file_icon(path, size) {
@@ -154,14 +168,15 @@ impl IconManager {
     }
 }
 
-// Global instance
-static mut ICON_MANAGER: Option<IconManager> = None;
+// Global instance using Once and Mutex for thread safety
+static INIT: Once = Once::new();
+static mut ICON_MANAGER: Option<Mutex<IconManager>> = None;
 
-pub fn get_global_icon_manager() -> &'static mut IconManager {
+pub fn get_global_icon_manager() -> &'static Mutex<IconManager> {
     unsafe {
-        if ICON_MANAGER.is_none() {
-            ICON_MANAGER = Some(IconManager::new());
-        }
-        ICON_MANAGER.as_mut().unwrap()
+        INIT.call_once(|| {
+            ICON_MANAGER = Some(Mutex::new(IconManager::new()));
+        });
+        ICON_MANAGER.as_ref().unwrap()
     }
 }
