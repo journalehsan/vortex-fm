@@ -162,20 +162,20 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     scroll_ctrl.connect_scroll(|_, _dx, dy| {
         if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
             let tabs = tab_manager_rc.borrow().tabs.clone();
-            if tabs.is_empty() { return Inhibit(false); }
+            if tabs.is_empty() { return false.into(); }
             let current_id_opt = tab_manager_rc.borrow().active_tab_id;
             if let Some(current_id) = current_id_opt {
                 let mut idx = tabs.iter().position(|t| t.id == current_id).unwrap_or(0) as isize;
-                if dy > 0.0 { idx += 1; } else if dy < 0.0 { idx -= 1; } else { return Inhibit(false); }
+                if dy > 0.0 { idx += 1; } else if dy < 0.0 { idx -= 1; } else { return false.into(); }
                 let len = tabs.len() as isize;
                 let idx = (idx.rem_euclid(len)) as usize;
                 let next_id = tabs[idx].id;
                 crate::core::navigation::switch_to_tab(next_id);
                 crate::widgets::tab_bar::update_global_tab_bar();
-                return Inhibit(true);
+                return true.into();
             }
         }
-        Inhibit(false)
+        false.into()
     });
     tab_widget.add_controller(scroll_ctrl);
     

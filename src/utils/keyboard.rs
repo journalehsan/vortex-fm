@@ -89,22 +89,24 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
             return gtk::glib::Propagation::Stop;
         }
 
-        // Ctrl+W: close current tab
+        // Ctrl+W: close current tab (defer to idle to avoid borrow conflicts)
         if ctrl && (key == Key::w || key == Key::W) {
-            if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
-                if let Some(active_id) = tab_manager_rc.borrow().active_tab_id {
-                    let (closed, next_path_opt) = {
-                        let closed_local = tab_manager_rc.borrow_mut().close_tab(active_id);
-                        (closed_local, tab_manager_rc.borrow().get_active_path())
-                    };
-                    crate::widgets::tab_bar::update_global_tab_bar();
-                    if let Some(path) = next_path_opt {
-                        gtk::glib::idle_add_once(move || {
+            gtk::glib::idle_add_once(move || {
+                if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                    // Snapshot active id in a read borrow scope
+                    let active_id_opt = { tab_manager_rc.borrow().active_tab_id };
+                    if let Some(active_id) = active_id_opt {
+                        // Close in a write borrow scope
+                        let _closed = tab_manager_rc.borrow_mut().close_tab(active_id);
+                        // Read next path in a separate read borrow scope
+                        let next_path_opt = { tab_manager_rc.borrow().get_active_path() };
+                        crate::widgets::tab_bar::update_global_tab_bar();
+                        if let Some(path) = next_path_opt {
                             crate::core::navigation::navigate_to_directory(path);
-                        });
+                        }
                     }
                 }
-            }
+            });
             return gtk::glib::Propagation::Stop;
         }
 
