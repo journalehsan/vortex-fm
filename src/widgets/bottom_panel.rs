@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Box, Orientation, Button, Stack, Label, ProgressBar, Separator};
+use gtk::{Box, Orientation, Button, Stack, Label, Separator};
 use std::rc::Rc;
 use std::cell::RefCell;
 
