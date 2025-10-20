@@ -647,7 +647,6 @@ button:hover {
     font-size: 12px;
     border-top: 1px solid #333333;
     min-height: 0;
-    max-height: 200px;
 }
 
 .terminal-panel textview {

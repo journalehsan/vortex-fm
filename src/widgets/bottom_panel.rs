@@ -13,6 +13,8 @@ impl BottomPanel {
     pub fn new() -> Self {
         let container = Box::new(Orientation::Vertical, 0);
         container.add_css_class("bottom-panel");
+        // Don't expand vertically - maintain compact height
+        container.set_vexpand(false);
         
         // Tab buttons for Details/Terminal
         let tabs_box = Box::new(Orientation::Horizontal, 0);
@@ -58,11 +60,10 @@ impl BottomPanel {
         let stack_clone = stack.clone();
         details_tab.connect_clicked(move |btn| {
             stack_clone.set_visible_child_name("details");
-            // Set height for compact details (tabs + details ~156px)
+            // Clear any fixed height so details can size naturally
             if let Some(parent) = stack_clone.parent() {
                 if let Some(container) = parent.downcast_ref::<Box>() {
-                    container.set_height_request(156);
-                    // Disable vexpand for details
+                    container.set_height_request(-1);
                     stack_clone.set_vexpand(false);
                 }
             }
@@ -89,8 +90,8 @@ impl BottomPanel {
             stack_clone.set_visible_child_name("terminal");
             // Set height for terminal (tabs + terminal ~300px)
             container_clone.set_height_request(300);
-            // Enable vexpand for terminal to fill space
-            stack_clone.set_vexpand(true);
+            // Don't expand - let height_request control the size
+            stack_clone.set_vexpand(false);
             btn.add_css_class("active-tab");
             // Remove active from details tab
             if let Some(parent) = btn.parent() {
@@ -110,9 +111,8 @@ impl BottomPanel {
         
         container.append(&stack);
         
-        // Set initial height for details (compact)
-        // Tabs (~36px) + details (~120px) = ~156px
-        container.set_height_request(156);
+        // Let initial height be determined by details content
+        container.set_height_request(-1);
         
         let info_bar = container.clone();
         

@@ -116,7 +116,8 @@ pub fn build_ui(app: &Application) {
     bottom_revealer.set_reveal_child(true); // Show by default
     bottom_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
     bottom_revealer.set_transition_duration(300);
-    bottom_revealer.set_height_request(280);
+    // Let revealer height be determined by its child; avoid fixed height that leaves gaps
+    bottom_revealer.set_height_request(-1);
     
     main_box.append(&bottom_revealer);
 

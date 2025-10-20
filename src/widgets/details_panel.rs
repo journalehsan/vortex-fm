@@ -7,7 +7,8 @@ use crate::utils::thumbnails::get_global_thumbnail_manager;
 pub fn create_details_panel() -> Box {
     let details_panel = Box::new(Orientation::Vertical, 0);
     details_panel.add_css_class("details-panel");
-    details_panel.set_height_request(120);
+    // Let details panel size to its content
+    details_panel.set_height_request(-1);
     details_panel.set_margin_start(0);
     details_panel.set_margin_end(0);
     details_panel.set_margin_top(0);
@@ -15,11 +16,12 @@ pub fn create_details_panel() -> Box {
 
     // Content container (horizontal layout: photo | details | info)
     let content_box = Box::new(Orientation::Horizontal, 0);
-    content_box.set_margin_start(8);
-    content_box.set_margin_end(8);
-    content_box.set_margin_top(8);
-    content_box.set_margin_bottom(8);
-    content_box.set_height_request(100);
+    content_box.set_margin_start(6);
+    content_box.set_margin_end(6);
+    content_box.set_margin_top(4);
+    content_box.set_margin_bottom(4);
+    // Let content box size naturally
+    content_box.set_height_request(-1);
     
     // Default "No selection" message
     let no_selection_label = Label::new(Some("No file selected"));
@@ -92,9 +94,9 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     let thumbnail_manager = get_global_thumbnail_manager();
     let is_image = thumbnail_manager.is_image_file(&file_info.path);
     
-    // LEFT: Thumbnail/Icon (80px)
+    // LEFT: Thumbnail/Icon (70px - compact)
     let left_box = Box::new(Orientation::Vertical, 0);
-    left_box.set_width_request(80);
+    left_box.set_width_request(70);
     left_box.set_halign(gtk::Align::Start);
     left_box.set_valign(gtk::Align::Center);
     
@@ -102,8 +104,8 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
         if let Some(thumbnail_path) = thumbnail_manager.get_thumbnail_or_placeholder(&file_info.path) {
             let picture = Picture::for_filename(&thumbnail_path);
             picture.add_css_class("details-thumbnail-compact");
-            picture.set_width_request(70);
-            picture.set_height_request(70);
+            picture.set_width_request(60);
+            picture.set_height_request(60);
             picture.set_can_shrink(false);
             left_box.append(&picture);
         } else {
@@ -124,10 +126,10 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     let divider = Separator::new(Orientation::Vertical);
     content.append(&divider);
     
-    // MIDDLE: Details (3 rows)
-    let middle_box = Box::new(Orientation::Vertical, 2);
-    middle_box.set_margin_start(8);
-    middle_box.set_margin_end(8);
+    // MIDDLE: Details (3 rows - tighter spacing)
+    let middle_box = Box::new(Orientation::Vertical, 1);
+    middle_box.set_margin_start(6);
+    middle_box.set_margin_end(6);
     middle_box.set_hexpand(true);
     middle_box.set_valign(gtk::Align::Center);
     
@@ -150,10 +152,10 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     let divider2 = Separator::new(Orientation::Vertical);
     content.append(&divider2);
     
-    // RIGHT: Additional Info
-    let right_box = Box::new(Orientation::Vertical, 2);
-    right_box.set_margin_start(8);
-    right_box.set_margin_end(8);
+    // RIGHT: Additional Info (tighter spacing)
+    let right_box = Box::new(Orientation::Vertical, 1);
+    right_box.set_margin_start(6);
+    right_box.set_margin_end(6);
     right_box.set_halign(gtk::Align::Start);
     right_box.set_valign(gtk::Align::Center);
     
@@ -174,9 +176,9 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
 }
 
 fn create_folder_details(content: &Box, folder_path: &PathBuf) {
-    // LEFT: Folder Icon (80px)
+    // LEFT: Folder Icon (70px - compact)
     let left_box = Box::new(Orientation::Vertical, 0);
-    left_box.set_width_request(80);
+    left_box.set_width_request(70);
     left_box.set_halign(gtk::Align::Start);
     left_box.set_valign(gtk::Align::Center);
     
@@ -190,10 +192,10 @@ fn create_folder_details(content: &Box, folder_path: &PathBuf) {
     let divider = Separator::new(Orientation::Vertical);
     content.append(&divider);
     
-    // MIDDLE: Folder Details (3 rows)
-    let middle_box = Box::new(Orientation::Vertical, 2);
-    middle_box.set_margin_start(8);
-    middle_box.set_margin_end(8);
+    // MIDDLE: Folder Details (3 rows - tighter spacing)
+    let middle_box = Box::new(Orientation::Vertical, 1);
+    middle_box.set_margin_start(6);
+    middle_box.set_margin_end(6);
     middle_box.set_hexpand(true);
     middle_box.set_valign(gtk::Align::Center);
     
@@ -221,10 +223,10 @@ fn create_folder_details(content: &Box, folder_path: &PathBuf) {
     let divider2 = Separator::new(Orientation::Vertical);
     content.append(&divider2);
     
-    // RIGHT: Additional Info
-    let right_box = Box::new(Orientation::Vertical, 2);
-    right_box.set_margin_start(8);
-    right_box.set_margin_end(8);
+    // RIGHT: Additional Info (tighter spacing)
+    let right_box = Box::new(Orientation::Vertical, 1);
+    right_box.set_margin_start(6);
+    right_box.set_margin_end(6);
     right_box.set_halign(gtk::Align::Start);
     right_box.set_valign(gtk::Align::Center);
     
