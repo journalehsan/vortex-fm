@@ -194,14 +194,22 @@ fn build_ellipsis_breadcrumb(components: &[&str], _max_visible: usize, breadcrum
     let separator = create_breadcrumb_separator();
     breadcrumb_box.append(&separator);
     
-    // Build last segments
-    for i in (total - show_last)..total {
-        if !current_path_str.is_empty() {
-            current_path_str.push('/');
+    // Build last segments - reconstruct the full path correctly
+    let mut last_segments_path = String::new();
+    for i in 0..(total - show_last) {
+        if !last_segments_path.is_empty() {
+            last_segments_path.push('/');
         }
-        current_path_str.push_str(components[i]);
+        last_segments_path.push_str(components[i]);
+    }
+    
+    for i in (total - show_last)..total {
+        if !last_segments_path.is_empty() {
+            last_segments_path.push('/');
+        }
+        last_segments_path.push_str(components[i]);
         
-        let btn = create_breadcrumb_button(components[i], &current_path_str);
+        let btn = create_breadcrumb_button(components[i], &last_segments_path);
         breadcrumb_box.append(&btn);
         
         if i < total - 1 {
