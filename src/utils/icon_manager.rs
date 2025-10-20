@@ -157,30 +157,20 @@ impl IconManager {
 
     /// Create an Image widget with the appropriate icon
     pub fn create_icon_widget(&self, path: &PathBuf, size: i32) -> gtk::Widget {
-        let image = Image::new();
-        
-        if let Some(icon_paintable) = self.get_file_icon(path, size) {
-            image.set_from_paintable(Some(&icon_paintable));
+        // Always use emoji fallback for now to avoid GTK initialization issues
+        let fallback_icon = if path.is_dir() {
+            "📁"
         } else {
-            // Ultimate fallback to emoji - create a label instead
-            let fallback_icon = if path.is_dir() {
-                "📁"
-            } else {
-                "📄"
-            };
-            let label = gtk::Label::new(Some(fallback_icon));
-            label.set_css_classes(&["file-icon"]);
-            label.set_halign(gtk::Align::Center);
-            label.set_valign(gtk::Align::Center);
-            // Return a container with the label instead of image
-            let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
-            container.append(&label);
-            return container.upcast();
-        }
-        
-        image.set_pixel_size(size);
-        image.set_css_classes(&["file-icon"]);
-        image.upcast()
+            "📄"
+        };
+        let label = gtk::Label::new(Some(fallback_icon));
+        label.set_css_classes(&["file-icon"]);
+        label.set_halign(gtk::Align::Center);
+        label.set_valign(gtk::Align::Center);
+        // Return a container with the label instead of image
+        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        container.append(&label);
+        container.upcast()
     }
 }
 
@@ -191,13 +181,9 @@ static mut ICON_MANAGER: Option<Mutex<IconManager>> = None;
 pub fn get_global_icon_manager() -> &'static Mutex<IconManager> {
     unsafe {
         INIT.call_once(|| {
-            // Only initialize if GTK is ready
-            if gtk::is_initialized() {
-                ICON_MANAGER = Some(Mutex::new(IconManager::new()));
-            } else {
-                // Create a dummy manager that will fall back to emoji
-                ICON_MANAGER = Some(Mutex::new(IconManager::dummy()));
-            }
+            // Always create a dummy manager that will fall back to emoji
+            // This avoids any GTK initialization issues
+            ICON_MANAGER = Some(Mutex::new(IconManager::dummy()));
         });
         ICON_MANAGER.as_ref().unwrap()
     }
