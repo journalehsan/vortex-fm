@@ -75,6 +75,14 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     });
     app.add_action(&terminal_toggle_action);
     
+    // Bottom panel toggle action (F3 or Ctrl+I)
+    let bottom_panel_toggle_action = gio::SimpleAction::new("toggle-bottom-panel", None);
+    bottom_panel_toggle_action.connect_activate(|_, _| {
+        crate::utils::simple_debug::debug_info("KEYBOARD", "Bottom panel toggle action triggered");
+        crate::widgets::bottom_panel::toggle_bottom_panel();
+    });
+    app.add_action(&bottom_panel_toggle_action);
+    
     // Add key controller for global shortcuts
     let key_controller = gtk::EventControllerKey::new();
     key_controller.connect_key_pressed(|_, key, keycode, state| {
@@ -86,6 +94,13 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
         if key == Key::F4 {
             crate::utils::simple_debug::debug_info("KEYBOARD", "F4 key pressed - toggling terminal");
             crate::widgets::terminal_panel::toggle_terminal_panel();
+            return gtk::glib::Propagation::Stop;
+        }
+        
+        // F3 or Ctrl+I: toggle bottom panel (details/terminal)
+        if key == Key::F3 || (ctrl && (key == Key::i || key == Key::I)) {
+            crate::utils::simple_debug::debug_info("KEYBOARD", "F3/Ctrl+I pressed - toggling bottom panel");
+            crate::widgets::bottom_panel::toggle_bottom_panel();
             return gtk::glib::Propagation::Stop;
         }
 

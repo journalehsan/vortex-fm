@@ -10,7 +10,8 @@ use crate::core::selection::{SelectionManager, set_global_selection_manager};
 use crate::widgets::modern_sidebar::create_modern_sidebar;
 use crate::widgets::tab_bar::create_tab_bar;
 use crate::widgets::details_panel::create_details_panel;
-use crate::widgets::terminal_panel::{create_terminal_panel, set_global_terminal_panel, set_global_terminal_revealer};
+use crate::widgets::terminal_panel::{create_terminal_panel, set_global_terminal_panel};
+use crate::widgets::bottom_panel::BottomPanel;
 use crate::views::content_area::{create_content_area, set_global_tab_bar, set_global_nav_buttons, update_responsive_margins};
 use crate::utils::keyboard::setup_keyboard_shortcuts;
 use crate::widgets::about_dialog::show_about_dialog;
@@ -76,20 +77,9 @@ pub fn build_ui(app: &Application) {
     crate::widgets::modern_sidebar::set_global_sidebar(sidebar.clone(), state.borrow().config.clone());
     main_paned.set_start_child(Some(&sidebar));
     
-    // Create the content + details split pane
-    let content_details_paned = Paned::new(Orientation::Horizontal);
-    
-    // Main content area
+    // Main content area (no right panel anymore - details moved to bottom)
     let content_area = create_content_area(&mut state.borrow_mut());
-    content_details_paned.set_start_child(Some(&content_area));
-    
-    // Right details panel
-    let details_panel = create_details_panel();
-    crate::widgets::details_panel::set_global_details_panel(details_panel.clone());
-    content_details_paned.set_end_child(Some(&details_panel));
-    content_details_paned.set_position(600); // Set initial position
-    
-    main_paned.set_end_child(Some(&content_details_paned));
+    main_paned.set_end_child(Some(&content_area));
     main_paned.set_position(state.borrow().config.sidebar_width);
     
     // Connect paned position changes to update responsive margins
@@ -103,11 +93,32 @@ pub fn build_ui(app: &Application) {
     
     main_box.append(&main_paned);
     
-    // Create terminal panel
-    let (terminal_panel, terminal_revealer) = create_terminal_panel();
+    // Create bottom panel (Details + Terminal stacked with info bar)
+    let bottom_panel = BottomPanel::new();
+    
+    // Create and add details panel to bottom panel
+    let details_panel = create_details_panel();
+    crate::widgets::details_panel::set_global_details_panel(details_panel.clone());
+    bottom_panel.set_details_panel(&details_panel);
+    
+    // Create and add terminal panel to bottom panel
+    let (terminal_panel, _terminal_revealer) = create_terminal_panel();
+    let terminal_widget = terminal_panel.widget.clone();
     set_global_terminal_panel(Rc::new(RefCell::new(terminal_panel)));
-    set_global_terminal_revealer(terminal_revealer.clone());
-    main_box.append(&terminal_revealer);
+    bottom_panel.set_terminal_panel(&terminal_widget);
+    
+    crate::widgets::bottom_panel::set_global_bottom_panel(bottom_panel.container.clone());
+    crate::widgets::bottom_panel::set_global_bottom_stack(bottom_panel.stack.clone());
+    
+    // Wrap bottom panel in a Revealer for smooth toggle animation
+    let bottom_revealer = gtk::Revealer::new();
+    bottom_revealer.set_child(Some(&bottom_panel.container));
+    bottom_revealer.set_reveal_child(true); // Show by default
+    bottom_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
+    bottom_revealer.set_transition_duration(300);
+    bottom_revealer.set_height_request(280);
+    
+    main_box.append(&bottom_revealer);
 
     window.set_child(Some(&main_box));
     

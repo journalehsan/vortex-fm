@@ -10,6 +10,7 @@ pub mod home_screen;
 pub mod file_view;
 pub mod ribbon;
 pub mod about_dialog;
+pub mod bottom_panel;
 
 pub use file_item::*;
 pub use context_menu::*;
@@ -23,3 +24,4 @@ pub use home_screen::*;
 pub use file_view::*;
 pub use ribbon::*;
 pub use about_dialog::*;
+pub use bottom_panel::*;
