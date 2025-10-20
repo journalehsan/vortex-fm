@@ -9,6 +9,7 @@ pub struct TerminalPanel {
     pub widget: gtk::Revealer,
     pub output_view: gtk::TextView,
     pub input_entry: gtk::Entry,
+    pub prompt_label: gtk::Label,
     pub visible: bool,
     pub current_directory: RefCell<PathBuf>,
     pub is_busy: RefCell<bool>,
@@ -36,14 +37,28 @@ impl TerminalPanel {
         scrolled_output.set_max_content_height(500);
         scrolled_output.style_context().add_class("terminal-scrolled");
         
+        // Get current directory
+        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+        
         // Create input Entry
         let input_entry = gtk::Entry::new();
         input_entry.set_placeholder_text(Some("Enter command..."));
         input_entry.style_context().add_class("terminal-input");
         
+        // Create prompt label with user@hostname:pwd$
+        let prompt_label = gtk::Label::new(Some(""));
+        prompt_label.style_context().add_class("terminal-prompt");
+        Self::update_prompt_label(&prompt_label, &current_dir);
+        
+        // Create input container with prompt and entry
+        let input_container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        input_container.append(&prompt_label);
+        input_container.append(&input_entry);
+        input_container.style_context().add_class("terminal-input-container");
+        
         // Create main container with input on top, output below
         let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        main_box.append(&input_entry);
+        main_box.append(&input_container);
         main_box.append(&scrolled_output);
         main_box.style_context().add_class("terminal-panel");
         
@@ -54,9 +69,6 @@ impl TerminalPanel {
         revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
         revealer.set_transition_duration(300);
         
-        // Get current directory
-        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
-        
         // Initialize terminal with welcome message
         Self::append_output(&output_view, &format!("Vortex Terminal v1.0\nCurrent directory: {}\nType 'help' for available commands.\n\n", current_dir.display()));
         Self::update_prompt(&input_entry, &current_dir);
@@ -65,6 +77,7 @@ impl TerminalPanel {
             widget: revealer,
             output_view,
             input_entry,
+            prompt_label,
             visible: false,
             current_directory: RefCell::new(current_dir),
             is_busy: RefCell::new(false),
@@ -83,17 +96,29 @@ impl TerminalPanel {
         output_view.scroll_to_mark(&mark, 0.0, false, 0.0, 0.0);
     }
     
-    fn update_prompt(input_entry: &gtk::Entry, current_dir: &PathBuf) {
+    fn update_prompt_label(prompt_label: &gtk::Label, current_dir: &PathBuf) {
+        let username = std::env::var("USER").unwrap_or_else(|_| "user".to_string());
+        let hostname = std::env::var("HOSTNAME")
+            .or_else(|_| std::env::var("HOST"))
+            .unwrap_or_else(|_| "localhost".to_string());
+        
         let dir_name = current_dir.file_name()
             .unwrap_or(std::ffi::OsStr::new("~"))
             .to_string_lossy();
-        let prompt = format!("{} $ ", dir_name);
-        input_entry.set_placeholder_text(Some(&prompt));
+        
+        let prompt = format!("{}@{}:{} $ ", username, hostname, dir_name);
+        prompt_label.set_text(&prompt);
+    }
+    
+    fn update_prompt(input_entry: &gtk::Entry, current_dir: &PathBuf) {
+        // Keep the entry placeholder simple since we now have a separate prompt label
+        input_entry.set_placeholder_text(Some("Enter command..."));
     }
     
     pub fn connect_events(&self) {
         let output_view = self.output_view.clone();
         let input_entry = self.input_entry.clone();
+        let prompt_label = self.prompt_label.clone();
         let current_dir = self.current_directory.clone();
         let command_history = self.command_history.clone();
         let history_index = self.history_index.clone();
@@ -103,7 +128,7 @@ impl TerminalPanel {
         input_entry.connect_activate(move |entry| {
             let command = entry.text().to_string();
             if !command.trim().is_empty() {
-                Self::execute_command(&output_view, &input_entry_clone, &current_dir, &command_history, &history_index, &command);
+                Self::execute_command(&output_view, &input_entry_clone, &prompt_label, &current_dir, &command_history, &history_index, &command);
                 entry.set_text("");
             }
         });
@@ -164,6 +189,7 @@ impl TerminalPanel {
     fn execute_command(
         output_view: &gtk::TextView, 
         input_entry: &gtk::Entry, 
+        prompt_label: &gtk::Label,
         current_dir: &RefCell<PathBuf>, 
         command_history: &RefCell<Vec<String>>, 
         history_index: &RefCell<usize>, 
@@ -232,6 +258,7 @@ impl TerminalPanel {
                     } else {
                         *current_dir.borrow_mut() = target_path.clone();
                         Self::append_output(output_view, &format!("Changed to: {}\n", target_path.display()));
+                        Self::update_prompt_label(prompt_label, &target_path);
                         Self::update_prompt(input_entry, &target_path);
                     }
                 } else {
@@ -299,8 +326,9 @@ impl TerminalPanel {
         // Update the current directory
         *self.current_directory.borrow_mut() = path.clone();
         
-        // Update prompt if visible
+        // Update prompt label and entry if visible
         if self.visible {
+            Self::update_prompt_label(&self.prompt_label, path);
             Self::update_prompt(&self.input_entry, path);
             Self::append_output(&self.output_view, &format!("Directory changed to: {}\n", path.display()));
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Synced terminal to: {}", path.display()));
@@ -324,6 +352,7 @@ impl TerminalPanel {
             Self::execute_command(
                 &self.output_view, 
                 &self.input_entry, 
+                &self.prompt_label,
                 &self.current_directory, 
                 &self.command_history, 
                 &self.history_index, 

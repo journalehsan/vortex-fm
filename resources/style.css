@@ -1001,26 +1001,48 @@ revealer {
     background-color: #666666;
 }
 
-.terminal-input {
-    background-color: #2d2d2d;
-    color: #ffffff;
+.terminal-input-container {
+    background-color: #1e1e1e;
     border: none;
-    border-bottom: 1px solid #444444;
-    font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
-    font-size: 12px;
-    padding: 8px;
-    outline: none;
+    margin: 0;
+    padding: 0;
     min-height: 40px;
 }
 
+.terminal-prompt {
+    background-color: #1e1e1e;
+    color: #00ff00;
+    font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 8px 8px 8px 12px;
+    border: none;
+    outline: none;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.terminal-input {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: none;
+    font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    font-size: 12px;
+    padding: 8px 12px 8px 0;
+    outline: none;
+    min-height: 40px;
+    flex: 1;
+}
+
 .terminal-input:focus {
-    background-color: #333333;
-    border-bottom: 1px solid #666666;
+    background-color: #1e1e1e;
+    border: none;
+    outline: none;
 }
 
 .terminal-panel {
     background-color: #1e1e1e;
-    border-top: 1px solid #404040;
+    border: none;
     margin: 0;
     padding: 0;
     min-height: 250px;
