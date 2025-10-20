@@ -85,6 +85,11 @@ fn create_sidebar_section(title: &str, bookmarks: &[&crate::core::bookmarks::Boo
     let list_box = ListBox::new();
     list_box.add_css_class("sidebar-list");
     
+    // Register this list box if it's Quick Access
+    if title == "Quick Access" {
+        add_qa_list_box(&list_box);
+    }
+    
     for bookmark in bookmarks {
         let item = create_sidebar_item(bookmark);
         list_box.append(&item);
@@ -392,14 +397,24 @@ fn get_mounted_devices() -> Vec<MountPoint> {
     mounts
 }
 
-// Global sidebar widget for refresh/update
+// Global sidebar widget for refresh/update - store references to all Quick Access list boxes
 static mut GLOBAL_SIDEBAR: Option<std::rc::Rc<std::cell::RefCell<Box>>> = None;
 static mut GLOBAL_SIDEBAR_CONFIG: Option<VortexConfig> = None;
+static mut GLOBAL_QA_LIST_BOXES: Option<std::rc::Rc<std::cell::RefCell<Vec<gtk::glib::WeakRef<ListBox>>>>> = None;
 
 pub fn set_global_sidebar(sidebar: Box, config: VortexConfig) {
     unsafe {
         GLOBAL_SIDEBAR = Some(std::rc::Rc::new(std::cell::RefCell::new(sidebar)));
         GLOBAL_SIDEBAR_CONFIG = Some(config);
+        GLOBAL_QA_LIST_BOXES = Some(std::rc::Rc::new(std::cell::RefCell::new(Vec::new())));
+    }
+}
+
+pub fn add_qa_list_box(list_box: &ListBox) {
+    unsafe {
+        if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
+            qa_list_rc.borrow_mut().push(list_box.downgrade());
+        }
     }
 }
 
@@ -407,33 +422,29 @@ pub fn refresh_sidebar() {
     if let Some(manager_rc) = get_global_bookmarks_manager() {
         let bookmarks_manager = manager_rc.borrow();
         unsafe {
-            if let (Some(config), Some(_sidebar_rc)) = (&GLOBAL_SIDEBAR_CONFIG, &GLOBAL_SIDEBAR) {
-                // Rebuild the quick access section
-                if let Some(sidebar_rc) = GLOBAL_SIDEBAR.as_ref() {
-                    if let Some(scrolled_parent) = sidebar_rc.borrow().first_child() {
-                        if let Some(scrolled) = scrolled_parent.downcast_ref::<ScrolledWindow>() {
-                            if let Some(content_box) = scrolled.child() {
-                                if let Some(cb) = content_box.downcast_ref::<Box>() {
-                                    // Find and rebuild Quick Access section (first child)
-                                    if let Some(qa_section) = cb.first_child() {
-                                        if let Some(next) = qa_section.next_sibling() {
-                                            // This is the first section, rebuild it
-                                            cb.remove(&qa_section);
-                                            let quick_access_section = create_sidebar_section("Quick Access", &bookmarks_manager.get_bookmarks_by_category("Quick Access"));
-                                            if let Some(list_widget) = quick_access_section.last_child() {
-                                                if let Some(list_box) = list_widget.downcast_ref::<ListBox>() {
-                                                    let welcome_row = create_welcome_item();
-                                                    list_box.insert(&welcome_row, 0);
-                                                }
-                                            }
-                                            cb.reorder_child_after(&quick_access_section, Some(&next));
-                                        }
-                                    }
-                                }
-                            }
+            if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
+                let mut list_boxes = qa_list_rc.borrow_mut();
+                list_boxes.retain(|weak_ref| {
+                    if let Some(list) = weak_ref.upgrade() {
+                        // Clear the list
+                        while let Some(child) = list.first_child() {
+                            list.remove(&child);
                         }
+                        
+                        // Re-add Welcome item
+                        let welcome_row = create_welcome_item();
+                        list.insert(&welcome_row, 0);
+                        
+                        // Re-add all Quick Access bookmarks
+                        for bookmark in bookmarks_manager.get_bookmarks_by_category("Quick Access") {
+                            let item = create_sidebar_item(bookmark);
+                            list.append(&item);
+                        }
+                        true
+                    } else {
+                        false
                     }
-                }
+                });
             }
         }
     }
