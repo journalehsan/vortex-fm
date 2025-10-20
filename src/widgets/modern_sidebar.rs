@@ -298,16 +298,26 @@ fn create_this_pc_section(config: &VortexConfig) -> Box {
     
     tree.append_column(&col);
 
-    // Connect activation to navigate
+    // Connect single-click for navigation (matching content area behavior)
     let store_clone = store.clone();
-    tree.connect_row_activated(move |_tv, path, _column| {
-        if let Some(iter) = store_clone.iter(path) {
-            if let Ok(path_value) = store_clone.get_value(&iter, 2).get::<String>() {
-                let pathbuf = PathBuf::from(path_value);
-                navigate_to_directory(pathbuf);
+    let tree_weak = tree.downgrade();
+    let gesture = gtk::GestureClick::new();
+    gesture.set_button(1); // Left mouse button
+    gesture.connect_pressed(move |gesture, n_press, _x, _y| {
+        if gesture.current_button() == 1 && n_press == 1 {
+            // Single click - navigate
+            if let Some(tv) = tree_weak.upgrade() {
+                let selection = tv.selection();
+                if let Some((_model, iter)) = selection.selected() {
+                    if let Ok(path_value) = store_clone.get_value(&iter, 2).get::<String>() {
+                        let pathbuf = PathBuf::from(path_value);
+                        navigate_to_directory(pathbuf);
+                    }
+                }
             }
         }
     });
+    tree.add_controller(gesture);
 
     section.append(&tree);
     section
