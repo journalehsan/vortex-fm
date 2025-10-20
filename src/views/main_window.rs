@@ -55,6 +55,8 @@ pub fn build_ui(app: &Application) {
     header.set_title_widget(Some(&tab_bar));
     header.set_show_title_buttons(true);
     window.set_titlebar(Some(&header));
+    // Render initial tab into the tab bar
+    crate::widgets::tab_bar::update_global_tab_bar();
     
     // Ribbon toolbar under header
     let ribbon = crate::widgets::ribbon::create_ribbon_toolbar();
