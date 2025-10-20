@@ -18,8 +18,8 @@ pub fn create_details_panel() -> Box {
     let content_box = Box::new(Orientation::Horizontal, 0);
     content_box.set_margin_start(6);
     content_box.set_margin_end(6);
-    content_box.set_margin_top(4);
-    content_box.set_margin_bottom(4);
+    content_box.set_margin_top(2);
+    content_box.set_margin_bottom(2);
     // Let content box size naturally
     content_box.set_height_request(-1);
     
@@ -96,7 +96,7 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
     
     // LEFT: Thumbnail/Icon (70px - compact)
     let left_box = Box::new(Orientation::Vertical, 0);
-    left_box.set_width_request(70);
+    left_box.set_width_request(64);
     left_box.set_halign(gtk::Align::Start);
     left_box.set_valign(gtk::Align::Center);
     
@@ -104,8 +104,8 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
         if let Some(thumbnail_path) = thumbnail_manager.get_thumbnail_or_placeholder(&file_info.path) {
             let picture = Picture::for_filename(&thumbnail_path);
             picture.add_css_class("details-thumbnail-compact");
-            picture.set_width_request(60);
-            picture.set_height_request(60);
+            picture.set_width_request(52);
+            picture.set_height_request(52);
             picture.set_can_shrink(false);
             left_box.append(&picture);
         } else {
@@ -178,7 +178,7 @@ fn create_file_details(content: &Box, file_info: &crate::utils::file_ops::FileIn
 fn create_folder_details(content: &Box, folder_path: &PathBuf) {
     // LEFT: Folder Icon (70px - compact)
     let left_box = Box::new(Orientation::Vertical, 0);
-    left_box.set_width_request(70);
+    left_box.set_width_request(64);
     left_box.set_halign(gtk::Align::Start);
     left_box.set_valign(gtk::Align::Center);
     
@@ -279,12 +279,12 @@ fn create_property_row(parent: &Box, label: &str, value: &str) {
 }
 
 fn create_compact_row(label: &str, value: &str) -> Box {
-    let row = Box::new(Orientation::Horizontal, 4);
+    let row = Box::new(Orientation::Horizontal, 2);
     
     let label_widget = Label::new(Some(label));
     label_widget.add_css_class("details-label-compact");
     label_widget.set_halign(gtk::Align::Start);
-    label_widget.set_width_request(75);
+    label_widget.set_width_request(70);
     
     let value_widget = Label::new(Some(value));
     value_widget.add_css_class("details-value-compact");
