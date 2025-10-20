@@ -93,21 +93,27 @@ impl TabManager {
     }
     
     pub fn close_tab(&mut self, tab_id: usize) -> bool {
+        crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Request to close tab_id={} (tabs={})", tab_id, self.tabs.len()));
         if let Some(pos) = self.tabs.iter().position(|t| t.id == tab_id) {
+            crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Found tab at index {}", pos));
             self.tabs.remove(pos);
             
             // If we closed the active tab, activate another one
             if self.active_tab_id == Some(tab_id) {
                 if !self.tabs.is_empty() {
                     let new_active = self.tabs.last().unwrap().id;
+                    crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Activating new tab_id={}", new_active));
                     self.activate_tab(new_active);
                 } else {
+                    crate::utils::simple_debug::debug_info("TAB_MANAGER", "No tabs left after close; clearing active_tab_id");
                     self.active_tab_id = None;
                 }
             }
             
+            crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Close success; tabs now={}", self.tabs.len()));
             true
         } else {
+            crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Tab id {} not found; close failed", tab_id));
             false
         }
     }

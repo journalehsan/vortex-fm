@@ -57,6 +57,11 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
         tab_widget.add_css_class("active");
     }
     
+    // Clickable area (icon + title)
+    let click_area = Box::new(Orientation::Horizontal, 4);
+    click_area.add_css_class("tab-click-area");
+    click_area.set_hexpand(true);
+    
     // Tab icon (folder icon)
     let icon_label = Label::new(Some("📁"));
     icon_label.add_css_class("tab-icon");
@@ -67,6 +72,9 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     title_label.set_halign(gtk::Align::Start);
     title_label.set_hexpand(true);
     
+    click_area.append(&icon_label);
+    click_area.append(&title_label);
+    
     // Close button
     let close_btn = Button::with_label("×");
     close_btn.add_css_class("tab-close-button");
@@ -75,14 +83,39 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     close_btn.set_height_request(20);
     
     let tab_id = tab.id;
-    let tab_manager_clone = tab_manager.clone();
     close_btn.connect_clicked(move |_| {
-        tab_manager_clone.borrow_mut().close_tab(tab_id);
-        // TODO: Update tab bar UI - this would need the tab_bar reference
+        crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Close button clicked for tab_id={}", tab_id));
+        if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+            let before_count = tab_manager_rc.borrow().tabs.len();
+            crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Tabs before close: {}", before_count));
+
+            // Close the tab and capture the next active path without overlapping borrows
+            let (closed, next_path_opt) = {
+                let closed_local = tab_manager_rc.borrow_mut().close_tab(tab_id);
+                (closed_local, tab_manager_rc.borrow().get_active_path())
+            };
+
+            crate::utils::simple_debug::debug_info("TAB_BAR", &format!("close_tab({}) -> {}", tab_id, closed));
+
+            // Refresh the tab bar UI
+            crate::widgets::tab_bar::update_global_tab_bar();
+
+            // Defer navigation to avoid borrow conflicts during signal emission
+            if let Some(path) = next_path_opt {
+                crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Scheduling navigation to: {}", path.display()));
+                gtk::glib::idle_add_once(move || {
+                    crate::core::navigation::navigate_to_directory(path);
+                });
+            } else {
+                crate::utils::simple_debug::debug_info("TAB_BAR", "No active tab after close");
+            }
+
+            let after_count = tab_manager_rc.borrow().tabs.len();
+            crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Tabs after close: {}", after_count));
+        }
     });
     
-    tab_widget.append(&icon_label);
-    tab_widget.append(&title_label);
+    tab_widget.append(&click_area);
     tab_widget.append(&close_btn);
     
     // Connect tab click handler using gesture
@@ -105,7 +138,7 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
             crate::widgets::tab_bar::update_global_tab_bar();
         }
     });
-    tab_widget.add_controller(gesture);
+    click_area.add_controller(gesture);
     
     tab_widget
 }
