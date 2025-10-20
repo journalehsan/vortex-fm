@@ -14,6 +14,7 @@ pub struct VortexConfig {
     pub window_width: i32,
     pub window_height: i32,
     pub sidebar_width: i32,
+    pub default_icon_size: i32, // Default icon size in pixels
 }
 
 impl Default for VortexConfig {
@@ -25,6 +26,7 @@ impl Default for VortexConfig {
             window_width: 1200,
             window_height: 800,
             sidebar_width: 250,
+            default_icon_size: 32, // Default to 32px
         }
     }
 }

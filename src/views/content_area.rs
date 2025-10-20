@@ -4,7 +4,7 @@ use crate::core::file_manager::FileManagerState;
 use crate::views::path_bar::create_path_bar;
 use crate::views::status_bar::create_status_bar;
 use crate::widgets::home_screen::create_home_screen;
-use crate::widgets::file_view::{FileView, ListViewAdapter, GridViewAdapter};
+use crate::widgets::file_view::{FileView, ListViewAdapter, GridViewAdapter, FileViewAdapter};
 use crate::core::file_manager::ViewMode;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -58,7 +58,9 @@ pub fn switch_view_to_list(state: &FileManagerState) {
 pub fn switch_view_to_grid(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {
-            fv.borrow_mut().set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
+            let mut adapter = GridViewAdapter::new();
+            adapter.set_icon_size(state.config.default_icon_size);
+            fv.borrow_mut().set_adapter(std::boxed::Box::new(adapter), state);
             GLOBAL_ACTIVE_VIEW = "grid";
         }
     }
@@ -149,7 +151,9 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     {
         let mut fv = file_view.borrow_mut();
         if state.current_view_mode == ViewMode::Grid {
-            fv.set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
+            let mut adapter = GridViewAdapter::new();
+            adapter.set_icon_size(state.config.default_icon_size);
+            fv.set_adapter(std::boxed::Box::new(adapter), state);
         } else {
             fv.set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
         }

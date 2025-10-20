@@ -101,19 +101,23 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     icon_size_label.add_css_class("icon-size-label");
     status_bar.append(&icon_size_label);
     
+    // Get the default icon size from config
+    let default_icon_size = state.config.default_icon_size as f64;
+    let size_text = format!("{}px", state.config.default_icon_size);
+    
     // Create size display label
-    let size_display_label = Label::new(Some("32px"));
+    let size_display_label = Label::new(Some(&size_text));
     size_display_label.add_css_class("icon-size-display");
     status_bar.append(&size_display_label);
     
-    let adjustment = Adjustment::new(32.0, 16.0, 256.0, 1.0, 1.0, 0.0);
+    let adjustment = Adjustment::new(default_icon_size, 16.0, 256.0, 1.0, 1.0, 0.0);
     let icon_size_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
     icon_size_scale.set_draw_value(false);
     icon_size_scale.set_width_request(120);
     icon_size_scale.add_css_class("icon-size-scale");
     
-    // Set the initial value explicitly to ensure position matches
-    icon_size_scale.set_value(32.0);
+    // Set the initial value from config
+    icon_size_scale.set_value(default_icon_size);
     
     // Connect icon size change
     let size_display_clone = size_display_label.clone();
@@ -136,12 +140,18 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         
         // Update the global file view icon size and refresh
         if let Some(state_rc) = crate::core::navigation::get_global_state() {
-            let state_ref = state_rc.borrow().clone();
+            let mut state_ref = state_rc.borrow_mut();
             if let Some(fv) = crate::views::content_area::get_global_file_view() {
                 // First set the icon size
                 fv.borrow_mut().set_icon_size(*nearest_size);
                 // Then refresh to rebuild with new icon size
                 fv.borrow_mut().refresh(&state_ref);
+                
+                // Save the new icon size to config
+                state_ref.config.default_icon_size = *nearest_size;
+                if let Err(e) = state_ref.config.save() {
+                    eprintln!("Failed to save icon size config: {}", e);
+                }
             }
         }
     });
