@@ -98,35 +98,28 @@ fn create_sidebar_section(title: &str, bookmarks: &[&crate::core::bookmarks::Boo
     // Add drop target for Quick Access section
     if title == "Quick Access" {
         let drop_target = DropTarget::new(String::static_type(), gdk::DragAction::COPY);
-        let list_box_weak = list_box.downgrade();
         drop_target.connect_drop(move |_target, value, _x, _y| {
             if let Ok(path_str) = value.get::<String>() {
                 let path = PathBuf::from(&path_str);
                 if path.is_dir() {
-                    if let Some(list) = list_box_weak.upgrade() {
-                        // Add to Quick Access
-                        if let Some(manager_rc) = get_global_bookmarks_manager() {
-                            let folder_name = path.file_name()
-                                .and_then(|n| n.to_str())
-                                .unwrap_or("Folder")
-                                .to_string();
-                            let bookmark = Bookmark::new(
-                                folder_name,
-                                path.clone(),
-                                "📁".to_string(),
-                                "Quick Access".to_string(),
-                            );
-                            manager_rc.borrow_mut().add_bookmark(bookmark.clone());
-                            let _ = manager_rc.borrow().save();
-                            
-                            // Add visual item to list
-                            let item = create_sidebar_item(&bookmark);
-                            list.append(&item);
-                            
-                            // Refresh sidebar to update all sections
-                            refresh_sidebar();
-                            println!("✅ Added folder to Quick Access: {}", path.display());
-                        }
+                    // Add to Quick Access
+                    if let Some(manager_rc) = get_global_bookmarks_manager() {
+                        let folder_name = path.file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("Folder")
+                            .to_string();
+                        let bookmark = Bookmark::new(
+                            folder_name,
+                            path.clone(),
+                            "📁".to_string(),
+                            "Quick Access".to_string(),
+                        );
+                        manager_rc.borrow_mut().add_bookmark(bookmark);
+                        let _ = manager_rc.borrow().save();
+                        
+                        // Refresh sidebar to update all sections
+                        refresh_sidebar();
+                        println!("✅ Added folder to Quick Access: {}", path.display());
                     }
                 }
             }
