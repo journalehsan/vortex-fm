@@ -200,6 +200,8 @@ impl IconManager {
 
     /// Create an Image widget with the appropriate icon
     pub fn create_icon_widget(&self, path: &PathBuf, size: i32) -> gtk::Widget {
+        println!("🎨 Creating icon widget with size: {}px for path: {}", size, path.display());
+        
         // Always use emoji fallback for now to avoid GTK initialization issues
         let fallback_icon = if path.is_dir() {
             "📁"
@@ -210,6 +212,14 @@ impl IconManager {
         label.set_css_classes(&["file-icon"]);
         label.set_halign(gtk::Align::Center);
         label.set_valign(gtk::Align::Center);
+        
+        // Set font size based on the size parameter to make emoji icons scale
+        let font_size = (size as f64 * 0.8) as i32; // Scale emoji to be slightly smaller than requested
+        let font_size = font_size.max(12); // Minimum 12px
+        println!("   📏 Calculated font size: {}px", font_size);
+        
+        label.set_markup(&format!("<span font-size='{}'>{}</span>", font_size, fallback_icon));
+        
         // Return a container with the label instead of image
         let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
         container.append(&label);
