@@ -47,13 +47,8 @@ impl FileView {
     }
 
     pub fn update(&mut self, state: &FileManagerState) {
-        crate::utils::simple_debug::debug_info("FILE_VIEW", "update() called");
         if let Some(adapter) = self.adapter.as_mut() {
-            crate::utils::simple_debug::debug_info("FILE_VIEW", "Calling adapter.update()");
             adapter.update(state);
-            crate::utils::simple_debug::debug_info("FILE_VIEW", "adapter.update() completed");
-        } else {
-            crate::utils::simple_debug::debug_info("FILE_VIEW", "ERROR: No adapter available in update()!");
         }
     }
 
@@ -122,10 +117,8 @@ impl FileViewAdapter for ListViewAdapter {
     }
 
     fn update(&mut self, state: &FileManagerState) {
-        crate::utils::simple_debug::debug_info("LIST_ADAPTER", "update() called");
         // In-place update: rebuild the list without replacing the entire widget
         if let Some(root) = &self.root {
-            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "Clearing existing list items");
             // Clear existing list
             while let Some(child) = root.first_child() {
                 root.remove(&child);
@@ -136,7 +129,6 @@ impl FileViewAdapter for ListViewAdapter {
 
             let mut files = Vec::new();
             if let Ok(entries) = fs::read_dir(state.current_path()) {
-                crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("Reading directory: {}", state.current_path().display()));
                 for entry in entries.flatten() {
                     let path = entry.path();
                     let name = path.file_name()
@@ -146,11 +138,8 @@ impl FileViewAdapter for ListViewAdapter {
                     if !state.config.show_hidden_files && name.starts_with('.') { continue; }
                     files.push((name, path));
                 }
-            } else {
-                crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("ERROR: Could not read directory: {}", state.current_path().display()));
             }
             
-            crate::utils::simple_debug::debug_info("LIST_ADAPTER", &format!("Found {} files", files.len()));
             files.sort_by(|a, b| {
                 let a_is_dir = a.1.is_dir();
                 let b_is_dir = b.1.is_dir();
@@ -172,11 +161,7 @@ impl FileViewAdapter for ListViewAdapter {
                 list.append(&row);
             }
 
-            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "Appending new list to root");
             root.append(&list);
-            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "update() completed successfully");
-        } else {
-            crate::utils::simple_debug::debug_info("LIST_ADAPTER", "ERROR: root is None in update()!");
         }
     }
 }
@@ -261,10 +246,8 @@ impl FileViewAdapter for GridViewAdapter {
     }
 
     fn update(&mut self, state: &FileManagerState) {
-        crate::utils::simple_debug::debug_info("GRID_ADAPTER", "update() called");
         // In-place update: clear and rebuild flowbox without replacing entire widget
         if let Some(root) = &self.root {
-            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "Clearing existing grid items");
             // Clear existing children
             while let Some(child) = root.first_child() {
                 root.remove(&child);
@@ -281,7 +264,6 @@ impl FileViewAdapter for GridViewAdapter {
 
             let mut files = Vec::new();
             if let Ok(entries) = fs::read_dir(state.current_path()) {
-                crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("Reading directory: {}", state.current_path().display()));
                 for entry in entries.flatten() {
                     let path = entry.path();
                     let name = path.file_name()
@@ -308,11 +290,8 @@ impl FileViewAdapter for GridViewAdapter {
                     };
                     files.push((icon, name, file_type, path));
                 }
-            } else {
-                crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("ERROR: Could not read directory: {}", state.current_path().display()));
             }
             
-            crate::utils::simple_debug::debug_info("GRID_ADAPTER", &format!("Found {} files", files.len()));
             files.sort_by(|a, b| {
                 let a_is_dir = a.3.is_dir();
                 let b_is_dir = b.3.is_dir();
@@ -330,11 +309,7 @@ impl FileViewAdapter for GridViewAdapter {
                 flow.insert(&child, -1);
             }
 
-            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "Appending new flowbox to root");
             root.append(&flow);
-            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "update() completed successfully");
-        } else {
-            crate::utils::simple_debug::debug_info("GRID_ADAPTER", "ERROR: root is None in update()!");
         }
     }
 }

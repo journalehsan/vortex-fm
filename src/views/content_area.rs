@@ -44,28 +44,18 @@ pub fn set_global_file_view(fv: Rc<RefCell<FileView>>) {
 
 pub fn switch_view_to_list(state: &FileManagerState) {
     unsafe {
-        crate::utils::simple_debug::debug_info("CONTENT_AREA", "switch_view_to_list called");
         if let Some(fv) = &GLOBAL_FILE_VIEW {
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "Setting ListViewAdapter");
             fv.borrow_mut().set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
             GLOBAL_ACTIVE_VIEW = "list";
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "ListViewAdapter set successfully");
-        } else {
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "ERROR: GLOBAL_FILE_VIEW is None in switch_view_to_list!");
         }
     }
 }
 
 pub fn switch_view_to_grid(state: &FileManagerState) {
     unsafe {
-        crate::utils::simple_debug::debug_info("CONTENT_AREA", "switch_view_to_grid called");
         if let Some(fv) = &GLOBAL_FILE_VIEW {
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "Setting GridViewAdapter");
             fv.borrow_mut().set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
             GLOBAL_ACTIVE_VIEW = "grid";
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "GridViewAdapter set successfully");
-        } else {
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "ERROR: GLOBAL_FILE_VIEW is None in switch_view_to_grid!");
         }
     }
 }
@@ -73,7 +63,6 @@ pub fn switch_view_to_grid(state: &FileManagerState) {
 pub fn refresh_active_view() {
     unsafe {
         // Just set a flag to refresh later, don't borrow state here
-        crate::utils::simple_debug::debug_info("CONTENT_AREA", "Setting NEEDS_REFRESH = true");
         NEEDS_REFRESH = true;
         // Schedule the deferred refresh to run on the next idle cycle
         glib::idle_add_once(|| {
@@ -84,25 +73,14 @@ pub fn refresh_active_view() {
 
 pub fn process_deferred_refresh() {
     unsafe {
-        crate::utils::simple_debug::debug_info("CONTENT_AREA", &format!("process_deferred_refresh called, NEEDS_REFRESH = {}", NEEDS_REFRESH));
         if NEEDS_REFRESH {
             NEEDS_REFRESH = false;
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "Processing deferred refresh...");
             if let Some(state_rc) = crate::core::navigation::get_global_state() {
                 let state_ref = state_rc.borrow().clone();
-                crate::utils::simple_debug::debug_info("CONTENT_AREA", &format!("Current path: {}", state_ref.current_path().display()));
                 if let Some(fv) = &GLOBAL_FILE_VIEW {
-                    crate::utils::simple_debug::debug_info("CONTENT_AREA", "Calling FileView::update()");
                     fv.borrow_mut().update(&state_ref);
-                    crate::utils::simple_debug::debug_info("CONTENT_AREA", "FileView::update() completed");
-                } else {
-                    crate::utils::simple_debug::debug_info("CONTENT_AREA", "ERROR: GLOBAL_FILE_VIEW is None!");
                 }
-            } else {
-                crate::utils::simple_debug::debug_info("CONTENT_AREA", "ERROR: Could not get global state!");
             }
-        } else {
-            crate::utils::simple_debug::debug_info("CONTENT_AREA", "No refresh needed, skipping");
         }
     }
 }
