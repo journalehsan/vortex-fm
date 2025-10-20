@@ -107,6 +107,9 @@ impl BottomPanel {
                     }
                 }
             }
+            
+            // Focus the terminal input when terminal tab is clicked
+            crate::widgets::terminal_panel::focus_terminal_input();
         });
         
         container.append(&stack);

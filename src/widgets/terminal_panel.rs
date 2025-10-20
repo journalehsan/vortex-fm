@@ -337,7 +337,7 @@ pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     let terminal_revealer = terminal_panel.widget.clone();
     
     // Set up the revealer
-    terminal_revealer.set_reveal_child(false); // Hidden by default
+    terminal_revealer.set_reveal_child(true); // Visible when in bottom panel
     terminal_revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
     terminal_revealer.set_transition_duration(300);
     
@@ -401,5 +401,13 @@ pub fn sync_terminal_directory(path: &PathBuf) {
         } else {
             crate::utils::simple_debug::debug_info("TERMINAL", "Terminal busy - directory sync deferred");
         }
+    }
+}
+
+pub fn focus_terminal_input() {
+    if let Some(terminal_rc) = get_global_terminal_panel() {
+        let terminal = terminal_rc.borrow();
+        terminal.input_entry.grab_focus();
+        crate::utils::simple_debug::debug_info("TERMINAL", "Terminal input focused");
     }
 }
