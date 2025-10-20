@@ -1,6 +1,6 @@
 use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button};
-use crate::core::file_manager::FileManagerState;
+use crate::core::file_manager::{FileManagerState, ViewMode};
 use crate::views::content_area::{switch_view_to_list, switch_view_to_grid};
 
 pub fn create_status_bar(state: &FileManagerState) -> Box {
@@ -47,7 +47,7 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     let list_view_btn = Button::from_icon_name("view-list-symbolic");
     let grid_view_btn = Button::from_icon_name("view-grid-symbolic");
     // Default active view follows config/state
-    if state.current_view_mode == "list" {
+    if state.current_view_mode == ViewMode::List {
         list_view_btn.add_css_class("suggested-action");
         list_view_btn.add_css_class("active-tab");
     } else {
@@ -61,10 +61,10 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         list_view_btn.connect_clicked(move |_| {
             let state_ref = unsafe { &*state_ptr };
             switch_view_to_list(state_ref);
-            // persist current mode
-            let mut cfg = state_ref.config.clone();
-            cfg.default_view_mode = "list".to_string();
-            let _ = cfg.save();
+            // persist on state
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                state_rc.borrow_mut().set_view_mode(ViewMode::List);
+            }
             // Toggle active styling
             grid_btn.remove_css_class("suggested-action");
             grid_btn.remove_css_class("active-tab");
@@ -79,10 +79,9 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         grid_view_btn.connect_clicked(move |_| {
             let state_ref = unsafe { &*state_ptr };
             switch_view_to_grid(state_ref);
-            // persist current mode
-            let mut cfg = state_ref.config.clone();
-            cfg.default_view_mode = "grid".to_string();
-            let _ = cfg.save();
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                state_rc.borrow_mut().set_view_mode(ViewMode::Grid);
+            }
             // Toggle active styling
             list_btn.remove_css_class("suggested-action");
             list_btn.remove_css_class("active-tab");

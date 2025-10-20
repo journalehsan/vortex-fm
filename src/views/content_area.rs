@@ -5,6 +5,7 @@ use crate::views::path_bar::create_path_bar;
 use crate::views::status_bar::create_status_bar;
 use crate::widgets::home_screen::create_home_screen;
 use crate::widgets::file_view::{FileView, ListViewAdapter, GridViewAdapter};
+use crate::core::file_manager::ViewMode;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -44,7 +45,6 @@ pub fn switch_view_to_list(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {
             fv.borrow_mut().set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
-            fv.borrow_mut().refresh(state);
             GLOBAL_ACTIVE_VIEW = "list";
         }
     }
@@ -54,7 +54,6 @@ pub fn switch_view_to_grid(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {
             fv.borrow_mut().set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
-            fv.borrow_mut().refresh(state);
             GLOBAL_ACTIVE_VIEW = "grid";
         }
     }
@@ -62,9 +61,11 @@ pub fn switch_view_to_grid(state: &FileManagerState) {
 
 pub fn refresh_active_view() {
     unsafe {
-        if let Some(fv) = &GLOBAL_FILE_VIEW {
-            if let Some(state_rc) = crate::core::navigation::get_global_state() {
-                let state_ref = state_rc.borrow();
+        // Borrow state first, drop before borrowing fv to avoid nested mutable borrows
+        let state_opt = crate::core::navigation::get_global_state();
+        if let Some(state_rc) = state_opt {
+            let state_ref = state_rc.borrow().clone();
+            if let Some(fv) = &GLOBAL_FILE_VIEW {
                 fv.borrow_mut().refresh(&state_ref);
             }
         }
@@ -130,7 +131,7 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     // Default to config/state view
     {
         let mut fv = file_view.borrow_mut();
-        if state.current_view_mode == "grid" {
+        if state.current_view_mode == ViewMode::Grid {
             fv.set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
         } else {
             fv.set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);

@@ -5,11 +5,26 @@ use gtk::{ScrolledWindow, Label, Box as GtkBox, Button};
 use crate::core::config::VortexConfig;
 use crate::core::navigation_history::NavigationHistory;
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ViewMode {
+    List,
+    Grid,
+}
+
+impl ViewMode {
+    pub fn as_str(&self) -> &'static str {
+        match self { ViewMode::List => "list", ViewMode::Grid => "grid" }
+    }
+    pub fn from_str(s: &str) -> Self {
+        match s { "grid" => ViewMode::Grid, _ => ViewMode::List }
+    }
+}
+
 #[derive(Clone)]
 pub struct FileManagerState {
     pub navigation_history: NavigationHistory,
     pub config: VortexConfig,
-    pub current_view_mode: String, // "list" | "grid" (extendable)
+    pub current_view_mode: ViewMode,
     pub file_list_widget: Option<ScrolledWindow>,
     pub path_label: Option<Label>,
     pub status_bar: Option<GtkBox>,
@@ -26,7 +41,7 @@ impl FileManagerState {
         Self {
             navigation_history: NavigationHistory::new(home_path),
             config: cfg.clone(),
-            current_view_mode: cfg.default_view_mode.clone(),
+            current_view_mode: ViewMode::from_str(&cfg.default_view_mode),
             file_list_widget: None,
             path_label: None,
             status_bar: None,
@@ -112,6 +127,14 @@ impl FileManagerState {
         if let Some(status_bar) = &self.status_bar {
             self.update_status_bar(status_bar);
         }
+    }
+
+    pub fn set_view_mode(&mut self, mode: ViewMode) {
+        self.current_view_mode = mode;
+        let mut cfg = self.config.clone();
+        cfg.default_view_mode = mode.as_str().to_string();
+        let _ = cfg.save();
+        self.config = cfg;
     }
     
     pub fn update_file_list(&self, scrolled: &ScrolledWindow) {
