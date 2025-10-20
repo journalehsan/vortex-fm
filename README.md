@@ -83,7 +83,7 @@ The application is structured with modular functions for different UI components
 
 ## License
 
-MIT License - see LICENSE file for details.
+GPL v3 License - see LICENSE file for details.
 
 ## Roadmap
 
