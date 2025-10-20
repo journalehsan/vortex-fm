@@ -159,43 +159,15 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     
     stack.add_named(&file_browser, Some("browser"));
     
-    // Add navigation buttons
-    let nav_box = Box::new(Orientation::Horizontal, 8);
-    nav_box.set_css_classes(&["nav-buttons"]);
-    nav_box.set_margin_start(8);
-    nav_box.set_margin_end(8);
-    nav_box.set_margin_top(8);
-    nav_box.set_margin_bottom(8);
-    
-    let home_btn = Button::new();
-    home_btn.set_label("🏠 Home");
-    home_btn.set_css_classes(&["suggested-action", "active-tab"]);
-    home_btn.connect_clicked({
-        move |_| { switch_to_home_view(); }
-    });
-    
-    let browser_btn = Button::new();
-    browser_btn.set_label("📁 Browser");
-    browser_btn.set_css_classes(&["flat"]);
-    browser_btn.connect_clicked({
-        move |_| { switch_to_browser_view(); }
-    });
-    
-    nav_box.append(&home_btn);
-    nav_box.append(&browser_btn);
-    
-    content.append(&nav_box);
+    // Append the stack directly (no top Home/Browser buttons; sidebar controls views)
     content.append(&stack);
     
-    // Start with home screen visible
+    // Start with Welcome (home screen) visible
     stack.set_visible_child_name("home");
 
-    // Store global ui refs for styling toggles
+    // Store global refs needed for responsive styling
     unsafe {
-        GLOBAL_HOME_BTN = Some(home_btn.clone());
-        GLOBAL_BROWSER_BTN = Some(browser_btn.clone());
         GLOBAL_HOME_CONTAINER = Some(home_scrolled.clone());
-        GLOBAL_NAV_BUTTONS = Some(nav_box.clone());
     }
     
     // Store references for later updates (keep status bar only for now)

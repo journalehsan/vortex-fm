@@ -51,7 +51,7 @@ pub fn navigate_to_directory(path: PathBuf) {
         };
         
         // Update the global state to match the active tab
-        if let Some(nav_history) = navigation_history {
+            if let Some(nav_history) = navigation_history {
             if let Some(state_rc) = get_global_state() {
                 let mut state = state_rc.borrow_mut();
                 state.navigation_history = nav_history;
@@ -63,6 +63,9 @@ pub fn navigate_to_directory(path: PathBuf) {
             }
         }
         
+            // Ensure UI shows Browser view on any directory navigation
+            crate::views::content_area::switch_to_browser_view();
+
         // Clear selection when navigating to a new directory
         crate::core::selection::clear_selection();
         

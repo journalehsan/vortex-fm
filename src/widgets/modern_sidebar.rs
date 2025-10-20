@@ -3,6 +3,7 @@ use gtk::{Box, Orientation, Label, Button, Separator, ScrolledWindow, ListBox, L
 use std::path::PathBuf;
 use crate::core::bookmarks::BookmarksManager;
 use crate::core::navigation::navigate_to_directory;
+use crate::views::content_area::switch_to_home_view;
 
 pub fn create_modern_sidebar(bookmarks_manager: &BookmarksManager) -> Box {
     let sidebar = Box::new(Orientation::Vertical, 0);
@@ -22,6 +23,13 @@ pub fn create_modern_sidebar(bookmarks_manager: &BookmarksManager) -> Box {
     
     // Quick Access section
     let quick_access_section = create_sidebar_section("Quick Access", &bookmarks_manager.get_bookmarks_by_category("Quick Access"));
+    // Prepend a custom "Welcome" item to Quick Access
+    if let Some(list_widget) = quick_access_section.last_child() {
+        if let Some(list_box) = list_widget.downcast_ref::<ListBox>() {
+            let welcome_row = create_welcome_item();
+            list_box.insert(&welcome_row, 0);
+        }
+    }
     content_box.append(&quick_access_section);
     
     // Add separator
@@ -79,6 +87,40 @@ fn create_sidebar_section(title: &str, bookmarks: &[&crate::core::bookmarks::Boo
     
     section.append(&list_box);
     section
+}
+
+fn create_welcome_item() -> ListBoxRow {
+    let row = ListBoxRow::new();
+    row.add_css_class("sidebar-item");
+
+    let item_box = Box::new(Orientation::Horizontal, 8);
+    item_box.set_margin_start(8);
+    item_box.set_margin_end(8);
+    item_box.set_margin_top(4);
+    item_box.set_margin_bottom(4);
+
+    let icon_label = Label::new(Some("👋"));
+    icon_label.add_css_class("sidebar-item-icon");
+    icon_label.set_width_request(24);
+    icon_label.set_halign(gtk::Align::Center);
+
+    let name_label = Label::new(Some("Welcome"));
+    name_label.add_css_class("sidebar-item-name");
+    name_label.set_halign(gtk::Align::Start);
+    name_label.set_hexpand(true);
+
+    item_box.append(&icon_label);
+    item_box.append(&name_label);
+
+    row.set_child(Some(&item_box));
+
+    let gesture = gtk::GestureClick::new();
+    gesture.connect_pressed(move |_, _n_press, _x, _y| {
+        switch_to_home_view();
+    });
+    row.add_controller(gesture);
+
+    row
 }
 
 fn create_sidebar_item(bookmark: &crate::core::bookmarks::Bookmark) -> ListBoxRow {
