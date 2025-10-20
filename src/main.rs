@@ -27,14 +27,19 @@ fn main() -> glib::ExitCode {
 
     app.connect_activate(build_ui);
     app.connect_open(|app, files, _hint| {
-        // Handle opening files/folders
-        if let Some(file) = files.first() {
-            if let Some(path) = file.path() {
-                println!("📁 Opening: {}", path.display());
-            }
-        }
-        build_ui(app);
+         // Handle opening files/folders
+         if let Some(file) = files.first() {
+             if let Some(path) = file.path() {
+                 println!("📁 Opening: {}", path.display());
+             }
+         }
+         build_ui(app);
+     });
+    
+    // Schedule deferred refresh processing on idle
+    glib::idle_add_once(|| {
+        crate::views::content_area::process_deferred_refresh();
     });
-
+ 
     app.run()
 }

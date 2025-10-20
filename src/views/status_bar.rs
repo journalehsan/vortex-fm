@@ -55,38 +55,39 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         grid_view_btn.add_css_class("active-tab");
     }
     {
-        let state_ptr: *const FileManagerState = state as *const _;
         let list_btn = list_view_btn.clone();
         let grid_btn = grid_view_btn.clone();
         list_view_btn.connect_clicked(move |_| {
-            let state_ref = unsafe { &*state_ptr };
-            switch_view_to_list(state_ref);
-            // persist on state
-            if let Some(state_rc) = crate::core::navigation::get_global_state() {
-                state_rc.borrow_mut().set_view_mode(ViewMode::List);
-            }
-            // Toggle active styling
+            // Toggle active styling first (no state borrows)
             grid_btn.remove_css_class("suggested-action");
             grid_btn.remove_css_class("active-tab");
             list_btn.add_css_class("suggested-action");
             list_btn.add_css_class("active-tab");
+            // Then switch view (borrow state once, use clone to drop early)
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                let state_ref = state_rc.borrow().clone();
+                switch_view_to_list(&state_ref);
+                drop(state_ref); // Explicitly drop to release borrow
+                state_rc.borrow_mut().set_view_mode(ViewMode::List);
+            }
         });
     }
     {
-        let state_ptr: *const FileManagerState = state as *const _;
         let list_btn = list_view_btn.clone();
         let grid_btn = grid_view_btn.clone();
         grid_view_btn.connect_clicked(move |_| {
-            let state_ref = unsafe { &*state_ptr };
-            switch_view_to_grid(state_ref);
-            if let Some(state_rc) = crate::core::navigation::get_global_state() {
-                state_rc.borrow_mut().set_view_mode(ViewMode::Grid);
-            }
-            // Toggle active styling
+            // Toggle active styling first
             list_btn.remove_css_class("suggested-action");
             list_btn.remove_css_class("active-tab");
             grid_btn.add_css_class("suggested-action");
             grid_btn.add_css_class("active-tab");
+            // Then switch view
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                let state_ref = state_rc.borrow().clone();
+                switch_view_to_grid(&state_ref);
+                drop(state_ref);
+                state_rc.borrow_mut().set_view_mode(ViewMode::Grid);
+            }
         });
     }
     

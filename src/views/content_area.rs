@@ -17,7 +17,8 @@ static mut GLOBAL_HOME_CONTAINER: Option<ScrolledWindow> = None;
 static mut GLOBAL_TAB_BAR: Option<Box> = None;
 static mut GLOBAL_NAV_BUTTONS: Option<Box> = None;
 static mut GLOBAL_FILE_VIEW: Option<Rc<RefCell<FileView>>> = None;
-static mut GLOBAL_ACTIVE_VIEW: &'static str = "grid"; // track current view mode
+static mut GLOBAL_ACTIVE_VIEW: &'static str = "list"; // track current view mode
+static mut NEEDS_REFRESH: bool = false;
 
 pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
     unsafe {
@@ -61,12 +62,20 @@ pub fn switch_view_to_grid(state: &FileManagerState) {
 
 pub fn refresh_active_view() {
     unsafe {
-        // Borrow state first, drop before borrowing fv to avoid nested mutable borrows
-        let state_opt = crate::core::navigation::get_global_state();
-        if let Some(state_rc) = state_opt {
-            let state_ref = state_rc.borrow().clone();
-            if let Some(fv) = &GLOBAL_FILE_VIEW {
-                fv.borrow_mut().refresh(&state_ref);
+        // Just set a flag to refresh later, don't borrow state here
+        NEEDS_REFRESH = true;
+    }
+}
+
+pub fn process_deferred_refresh() {
+    unsafe {
+        if NEEDS_REFRESH {
+            NEEDS_REFRESH = false;
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                let state_ref = state_rc.borrow().clone();
+                if let Some(fv) = &GLOBAL_FILE_VIEW {
+                    fv.borrow_mut().refresh(&state_ref);
+                }
             }
         }
     }

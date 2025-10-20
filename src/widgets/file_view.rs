@@ -10,6 +10,10 @@ pub trait FileViewAdapter {
     fn build(&mut self, state: &FileManagerState) -> Widget;
     fn refresh(&mut self, state: &FileManagerState);
     fn set_icon_size(&mut self, _size: i32) { let _ = _size; }
+    fn update(&mut self, state: &FileManagerState) {
+        // Default: do full refresh. Adapters can override for in-place updates.
+        self.refresh(state);
+    }
 }
 
 // Base FileView container that hosts the active adapter's widget
