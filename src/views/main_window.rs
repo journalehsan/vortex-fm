@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use crate::core::file_manager::FileManagerState;
 use crate::core::navigation::{set_global_state, set_global_tab_manager};
 use crate::core::tab_manager::TabManager;
-use crate::core::bookmarks::BookmarksManager;
+use crate::core::bookmarks::{BookmarksManager, set_global_bookmarks_manager};
 use crate::core::selection::{SelectionManager, set_global_selection_manager};
 use crate::widgets::modern_sidebar::create_modern_sidebar;
 use crate::widgets::tab_bar::create_tab_bar;
@@ -23,6 +23,8 @@ pub fn build_ui(app: &Application) {
     let tab_manager = Rc::new(RefCell::new(TabManager::new()));
     set_global_tab_manager(tab_manager.clone());
     let bookmarks_manager = BookmarksManager::load();
+    let bookmarks_manager_rc = Rc::new(RefCell::new(bookmarks_manager));
+    set_global_bookmarks_manager(bookmarks_manager_rc.clone());
     
     let selection_manager = Rc::new(RefCell::new(SelectionManager::new()));
     set_global_selection_manager(selection_manager.clone());
@@ -66,7 +68,7 @@ pub fn build_ui(app: &Application) {
     let main_paned = Paned::new(Orientation::Horizontal);
     
     // Left sidebar (modern design)
-    let sidebar = create_modern_sidebar(&bookmarks_manager);
+    let sidebar = create_modern_sidebar(&bookmarks_manager_rc.borrow());
     main_paned.set_start_child(Some(&sidebar));
     
     // Create the content + details split pane

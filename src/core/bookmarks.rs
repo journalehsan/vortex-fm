@@ -153,3 +153,14 @@ impl BookmarksManager {
         PathBuf::from(home).join(".local/config/vortex").join(BOOKMARKS_FILE)
     }
 }
+
+// Global access for UI layers to mutate bookmarks
+static mut GLOBAL_BOOKMARKS_MANAGER: Option<std::rc::Rc<std::cell::RefCell<BookmarksManager>>> = None;
+
+pub fn set_global_bookmarks_manager(manager: std::rc::Rc<std::cell::RefCell<BookmarksManager>>) {
+    unsafe { GLOBAL_BOOKMARKS_MANAGER = Some(manager); }
+}
+
+pub fn get_global_bookmarks_manager() -> Option<std::rc::Rc<std::cell::RefCell<BookmarksManager>>> {
+    unsafe { GLOBAL_BOOKMARKS_MANAGER.as_ref().map(|m| m.clone()) }
+}

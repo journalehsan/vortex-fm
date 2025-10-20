@@ -1,7 +1,8 @@
 use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button, Separator, ScrolledWindow, ListBox, ListBoxRow};
+use gtk::{gdk, gio};
 use std::path::PathBuf;
-use crate::core::bookmarks::BookmarksManager;
+use crate::core::bookmarks::{BookmarksManager, get_global_bookmarks_manager};
 use crate::core::navigation::navigate_to_directory;
 use crate::views::content_area::switch_to_home_view;
 
@@ -147,6 +148,32 @@ fn create_sidebar_item(bookmark: &crate::core::bookmarks::Bookmark) -> ListBoxRo
     
     item_box.append(&icon_label);
     item_box.append(&name_label);
+
+    // Pin/unpin button (visible for Quick Access items except Welcome)
+    let show_pin = bookmark.category == "Quick Access" && bookmark.name != "Welcome";
+    let pin_btn = Button::from_icon_name("pin-symbolic");
+    pin_btn.add_css_class("flat");
+    pin_btn.set_tooltip_text(Some("Unpin from Quick Access"));
+    pin_btn.set_visible(show_pin);
+    let path_for_pin = bookmark.path.clone();
+    let row_weak = row.downgrade();
+    pin_btn.connect_clicked(move |_| {
+        if let Some(manager_rc) = get_global_bookmarks_manager() {
+            manager_rc.borrow_mut().remove_bookmark(&path_for_pin);
+            let _ = manager_rc.borrow().save();
+        }
+        // Remove the row from UI immediately
+        if let Some(obj) = row_weak.upgrade() {
+            if let Ok(row) = obj.downcast::<ListBoxRow>() {
+                if let Some(parent) = row.parent() {
+                    if let Ok(list_box) = parent.downcast::<ListBox>() {
+                        list_box.remove(&row);
+                    }
+                }
+            }
+        }
+    });
+    item_box.append(&pin_btn);
     
     row.set_child(Some(&item_box));
     
@@ -157,6 +184,40 @@ fn create_sidebar_item(bookmark: &crate::core::bookmarks::Bookmark) -> ListBoxRo
         navigate_to_directory(path_clone.clone());
     });
     row.add_controller(gesture);
+
+    // Context menu (secondary click): remove from Quick Access (except "Welcome")
+    if bookmark.category == "Quick Access" {
+        let name_for_menu = bookmark.name.clone();
+        let path_for_menu = bookmark.path.clone();
+        let secondary = gtk::GestureClick::new();
+        secondary.set_button(3);
+        secondary.connect_pressed(move |g, _n, x, y| {
+            if name_for_menu == "Welcome" { return; }
+            let model = gio::Menu::new();
+            model.append(Some("Remove"), Some("qa.remove"));
+            let pop = gtk::PopoverMenu::from_model(Some(&model));
+            let ag = gio::SimpleActionGroup::new();
+            let path_for_menu_clone = path_for_menu.clone();
+            let remove_action = gio::SimpleAction::new("remove", None);
+            remove_action.connect_activate(move |_, _| {
+                if let Some(manager_rc) = get_global_bookmarks_manager() {
+                    manager_rc.borrow_mut().remove_bookmark(&path_for_menu_clone);
+                    let _ = manager_rc.borrow().save();
+                }
+            });
+            ag.add_action(&remove_action);
+            // Attach actions to the popover
+            pop.insert_action_group("qa", Some(&ag));
+            // Show at click position
+            let widget = g.widget();
+            pop.set_parent(&widget);
+            let rect = gdk::Rectangle::new(x as i32, y as i32, 1, 1);
+            pop.set_pointing_to(Some(&rect));
+            pop.set_has_arrow(false);
+            pop.popup();
+        });
+        row.add_controller(secondary);
+    }
     
     row
 }
