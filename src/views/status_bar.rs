@@ -2,6 +2,7 @@ use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button, Scale, Adjustment};
 use crate::core::file_manager::{FileManagerState, ViewMode};
 use crate::views::content_area::{switch_view_to_list, switch_view_to_grid};
+use crate::utils::icon_manager::IconSize;
 
 pub fn create_status_bar(state: &FileManagerState) -> Box {
     let status_bar = Box::new(Orientation::Horizontal, 12);
@@ -100,20 +101,41 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     icon_size_label.add_css_class("icon-size-label");
     status_bar.append(&icon_size_label);
     
-    let adjustment = Adjustment::new(64.0, 16.0, 256.0, 16.0, 32.0, 0.0);
+    // Create size display label
+    let size_display_label = Label::new(Some("32px"));
+    size_display_label.add_css_class("icon-size-display");
+    status_bar.append(&size_display_label);
+    
+    let adjustment = Adjustment::new(32.0, 16.0, 256.0, 1.0, 1.0, 0.0);
     let icon_size_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
     icon_size_scale.set_draw_value(false);
     icon_size_scale.set_width_request(120);
     icon_size_scale.add_css_class("icon-size-scale");
     
     // Connect icon size change
+    let size_display_clone = size_display_label.clone();
+    let scale_clone = icon_size_scale.clone();
     icon_size_scale.connect_value_changed(move |scale| {
-        let new_size = scale.value() as i32;
+        let raw_value = scale.value() as i32;
+        
+        // Snap to nearest standard icon size
+        let standard_sizes = vec![16, 32, 48, 64, 96, 128, 256];
+        let nearest_size = standard_sizes.iter()
+            .min_by_key(|&&size| (size - raw_value).abs())
+            .unwrap_or(&32);
+        
+        // Update the slider to the nearest standard size
+        scale_clone.set_value(*nearest_size as f64);
+        
+        let icon_size = IconSize::from_pixels(*nearest_size);
+        let size_text = format!("{}px", icon_size.to_pixels());
+        size_display_clone.set_text(&size_text);
+        
         // Update the global file view icon size
         if let Some(state_rc) = crate::core::navigation::get_global_state() {
             let state_ref = state_rc.borrow().clone();
             if let Some(fv) = crate::views::content_area::get_global_file_view() {
-                fv.borrow_mut().set_icon_size(new_size);
+                fv.borrow_mut().set_icon_size(*nearest_size);
                 // Refresh the view to apply new icon size
                 fv.borrow_mut().update(&state_ref);
             }

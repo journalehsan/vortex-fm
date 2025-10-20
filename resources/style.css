@@ -307,8 +307,8 @@ window {
 
 /* File Items - Improved Grid View */
 .file-item {
-    padding: 8px;
-    border-radius: 8px;
+    padding: 4px;
+    border-radius: 6px;
     background: transparent;
     border: 2px solid transparent;
     transition: all 0.2s ease;
@@ -391,6 +391,15 @@ window {
     font-weight: 500;
     color: #5f6368;
     margin-right: 8px;
+}
+
+.icon-size-display {
+    font-size: 11px;
+    color: #333;
+    font-weight: 600;
+    margin-right: 8px;
+    min-width: 40px;
+    text-align: center;
 }
 
 .icon-size-scale {

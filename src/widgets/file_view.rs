@@ -3,6 +3,7 @@ use gtk::{Box as GtkBox, Orientation, Widget};
 
 use crate::core::file_manager::FileManagerState;
 use crate::utils::search::{filter_files_in_directory, FileEntry};
+use crate::utils::icon_manager::IconSize;
 use std::fs;
 use gtk::{ListBox, ListBoxRow, FlowBox, FlowBoxChild, Label};
 
@@ -130,15 +131,15 @@ impl FileViewAdapter for ListViewAdapter {
 // Improved GridView adapter with configurable icon sizes
 pub struct GridViewAdapter {
     root: Option<GtkBox>,
-    icon_size: i32,
+    icon_size: IconSize,
 }
 
 impl GridViewAdapter { 
     pub fn new() -> Self { 
-        Self { root: None, icon_size: 64 } 
+        Self { root: None, icon_size: IconSize::Medium } 
     }
     
-    pub fn with_icon_size(icon_size: i32) -> Self {
+    pub fn with_icon_size(icon_size: IconSize) -> Self {
         Self { root: None, icon_size }
     }
 }
@@ -152,7 +153,8 @@ impl FileViewAdapter for GridViewAdapter {
         flow.set_selection_mode(gtk::SelectionMode::None);
         
         // Improved spacing based on icon size
-        let spacing = (self.icon_size as f32 * 0.2) as i32;
+        let icon_pixels = self.icon_size.to_pixels();
+        let spacing = (icon_pixels as f32 * 0.15) as i32; // Reduced from 0.2 to 0.15
         flow.set_row_spacing(spacing as u32);
         flow.set_column_spacing(spacing as u32);
         flow.set_margin_start(16);
@@ -173,7 +175,7 @@ impl FileViewAdapter for GridViewAdapter {
                 &file_entry.file_type, 
                 file_entry.path, 
                 &state.config,
-                self.icon_size
+                icon_pixels
             );
             let child = FlowBoxChild::new();
             child.set_child(Some(&btn));
@@ -203,7 +205,8 @@ impl FileViewAdapter for GridViewAdapter {
             flow.set_selection_mode(gtk::SelectionMode::None);
             
             // Improved spacing based on icon size
-            let spacing = (self.icon_size as f32 * 0.2) as i32;
+            let icon_pixels = self.icon_size.to_pixels();
+            let spacing = (icon_pixels as f32 * 0.15) as i32; // Reduced from 0.2 to 0.15
             flow.set_row_spacing(spacing as u32);
             flow.set_column_spacing(spacing as u32);
             flow.set_margin_start(16);
@@ -224,7 +227,7 @@ impl FileViewAdapter for GridViewAdapter {
                     &file_entry.file_type, 
                     file_entry.path, 
                     &state.config,
-                    self.icon_size
+                    icon_pixels
                 );
                 let child = FlowBoxChild::new();
                 child.set_child(Some(&btn));
@@ -236,7 +239,7 @@ impl FileViewAdapter for GridViewAdapter {
     }
     
     fn set_icon_size(&mut self, size: i32) {
-        self.icon_size = size;
+        self.icon_size = IconSize::from_pixels(size);
     }
 }
 

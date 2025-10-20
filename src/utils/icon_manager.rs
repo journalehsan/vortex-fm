@@ -5,6 +5,49 @@ use std::collections::HashMap;
 use std::sync::{Once, Mutex};
 use std::cell::RefCell;
 
+/// Predefined icon sizes following X Desktop standards
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IconSize {
+    Small = 16,
+    Medium = 32,
+    Large = 48,
+    ExtraLarge = 64,
+    Huge = 96,
+    ExtraHuge = 128,
+    Giant = 256,
+}
+
+impl IconSize {
+    pub fn from_pixels(pixels: i32) -> Self {
+        match pixels {
+            16 => IconSize::Small,
+            32 => IconSize::Medium,
+            48 => IconSize::Large,
+            64 => IconSize::ExtraLarge,
+            96 => IconSize::Huge,
+            128 => IconSize::ExtraHuge,
+            256 => IconSize::Giant,
+            _ => IconSize::Medium, // Default fallback
+        }
+    }
+    
+    pub fn to_pixels(self) -> i32 {
+        self as i32
+    }
+    
+    pub fn all_sizes() -> Vec<IconSize> {
+        vec![
+            IconSize::Small,
+            IconSize::Medium,
+            IconSize::Large,
+            IconSize::ExtraLarge,
+            IconSize::Huge,
+            IconSize::ExtraHuge,
+            IconSize::Giant,
+        ]
+    }
+}
+
 /// IconManager facade for handling system icons and MIME types
 pub struct IconManager {
     icon_cache: RefCell<HashMap<String, gtk::IconPaintable>>,
