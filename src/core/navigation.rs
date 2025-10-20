@@ -73,7 +73,10 @@ pub fn navigate_to_directory(path: PathBuf) {
         crate::widgets::tab_bar::update_global_tab_bar();
         
         // Sync terminal directory
+        crate::utils::simple_debug::debug_info("NAVIGATION", &format!("Navigating to directory: {}", path.display()));
+        crate::utils::simple_debug::debug_info("NAVIGATION", "Calling sync_terminal_directory...");
         crate::widgets::terminal_panel::sync_terminal_directory(&path);
+        crate::utils::simple_debug::debug_info("NAVIGATION", "sync_terminal_directory call completed");
     }
 }
 

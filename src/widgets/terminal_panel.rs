@@ -11,10 +11,10 @@ pub struct TerminalPanel {
     pub input_entry: gtk::Entry,
     pub prompt_label: gtk::Label,
     pub visible: bool,
-    pub current_directory: RefCell<PathBuf>,
-    pub is_busy: RefCell<bool>,
-    pub command_history: RefCell<Vec<String>>,
-    pub history_index: RefCell<usize>,
+    pub current_directory: Rc<RefCell<PathBuf>>,
+    pub is_busy: Rc<RefCell<bool>>,
+    pub command_history: Rc<RefCell<Vec<String>>>,
+    pub history_index: Rc<RefCell<usize>>,
 }
 
 impl TerminalPanel {
@@ -37,8 +37,19 @@ impl TerminalPanel {
         scrolled_output.set_max_content_height(500);
         scrolled_output.style_context().add_class("terminal-scrolled");
         
-        // Get current directory
-        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+        // Get the current directory, fallback to HOME if needed
+        let current_dir = std::env::current_dir()
+            .unwrap_or_else(|_| {
+                crate::utils::simple_debug::debug_info("TERMINAL", "Failed to get current directory, using HOME");
+                std::env::var("HOME")
+                    .map(|home| PathBuf::from(home))
+                    .unwrap_or_else(|_| {
+                        crate::utils::simple_debug::debug_info("TERMINAL", "HOME not found, using root");
+                        PathBuf::from("/")
+                    })
+            });
+        
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("Terminal initialized with directory: {}", current_dir.display()));
         
         // Create input Entry
         let input_entry = gtk::Entry::new();
@@ -70,7 +81,7 @@ impl TerminalPanel {
         revealer.set_transition_duration(300);
         
         // Initialize terminal with welcome message
-        Self::append_output(&output_view, &format!("Vortex Terminal v1.0\nCurrent directory: {}\nType 'help' for available commands.\n\n", current_dir.display()));
+        Self::append_output(&output_view, "Vortex Terminal v1.0\nType 'help' for available commands.\n\n");
         Self::update_prompt(&input_entry, &current_dir);
         
         Self {
@@ -79,10 +90,10 @@ impl TerminalPanel {
             input_entry,
             prompt_label,
             visible: false,
-            current_directory: RefCell::new(current_dir),
-            is_busy: RefCell::new(false),
-            command_history: RefCell::new(Vec::new()),
-            history_index: RefCell::new(0),
+            current_directory: Rc::new(RefCell::new(current_dir)),
+            is_busy: Rc::new(RefCell::new(false)),
+            command_history: Rc::new(RefCell::new(Vec::new())),
+            history_index: Rc::new(RefCell::new(0)),
         }
     }
     
@@ -102,11 +113,24 @@ impl TerminalPanel {
             .or_else(|_| std::env::var("HOST"))
             .unwrap_or_else(|_| "localhost".to_string());
         
-        let dir_name = current_dir.file_name()
-            .unwrap_or(std::ffi::OsStr::new("~"))
-            .to_string_lossy();
+        // Get home directory for tilde expansion
+        let home_dir = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
         
-        let prompt = format!("{}@{}:{} $ ", username, hostname, dir_name);
+        // Create a more meaningful directory display
+        let dir_display = if current_dir.to_string_lossy().starts_with(&home_dir) {
+            // Replace home directory with ~
+            let relative_path = current_dir.strip_prefix(&home_dir)
+                .unwrap_or(current_dir);
+            if relative_path.to_string_lossy().is_empty() {
+                "~".to_string()
+            } else {
+                format!("~/{}", relative_path.to_string_lossy())
+            }
+        } else {
+            current_dir.to_string_lossy().to_string()
+        };
+        
+        let prompt = format!("{}@{}:{} $ ", username, hostname, dir_display);
         prompt_label.set_text(&prompt);
     }
     
@@ -155,7 +179,7 @@ impl TerminalPanel {
         self.input_entry.add_controller(controller);
     }
     
-    fn navigate_history(input_entry: &gtk::Entry, command_history: &RefCell<Vec<String>>, history_index: &RefCell<usize>, direction: i32) {
+    fn navigate_history(input_entry: &gtk::Entry, command_history: &Rc<RefCell<Vec<String>>>, history_index: &Rc<RefCell<usize>>, direction: i32) {
         let history = command_history.borrow();
         let mut index = history_index.borrow_mut();
         
@@ -190,9 +214,9 @@ impl TerminalPanel {
         output_view: &gtk::TextView, 
         input_entry: &gtk::Entry, 
         prompt_label: &gtk::Label,
-        current_dir: &RefCell<PathBuf>, 
-        command_history: &RefCell<Vec<String>>, 
-        history_index: &RefCell<usize>, 
+        current_dir: &Rc<RefCell<PathBuf>>, 
+        command_history: &Rc<RefCell<Vec<String>>>, 
+        history_index: &Rc<RefCell<usize>>, 
         command: &str
     ) {
         // Add command to history
@@ -206,6 +230,7 @@ impl TerminalPanel {
         Self::append_output(output_view, &format!("$ {}\n", command));
         
         let current_dir_path = current_dir.borrow().clone();
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("execute_command: Using directory from RefCell: {}", current_dir_path.display()));
         
         // Handle built-in commands
         match command {
@@ -223,7 +248,6 @@ impl TerminalPanel {
                 let buffer = output_view.buffer();
                 buffer.set_text("");
                 Self::append_output(output_view, "Vortex Terminal v1.0\n");
-                Self::append_output(output_view, &format!("Current directory: {}\n", current_dir_path.display()));
                 Self::append_output(output_view, "Type 'help' for available commands.\n\n");
             }
             "pwd" => {
@@ -271,6 +295,12 @@ impl TerminalPanel {
             }
             _ => {
                 // Try to execute as system command
+                let actual_system_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+                crate::utils::simple_debug::debug_info("TERMINAL", &format!("Executing command '{}'", command));
+                crate::utils::simple_debug::debug_info("TERMINAL", &format!("Terminal's current_directory: {}", current_dir_path.display()));
+                crate::utils::simple_debug::debug_info("TERMINAL", &format!("System's current directory: {}", actual_system_dir.display()));
+                crate::utils::simple_debug::debug_info("TERMINAL", &format!("Command will run in: {}", current_dir_path.display()));
+                
                 let output = if cfg!(target_os = "windows") {
                     Command::new("cmd")
                         .args(&["/C", command])
@@ -318,23 +348,45 @@ impl TerminalPanel {
     }
     
     pub fn set_current_directory(&self, path: &PathBuf) {
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("set_current_directory called with: {}", path.display()));
+        
         if *self.is_busy.borrow() {
             crate::utils::simple_debug::debug_info("TERMINAL", "Terminal busy - skipping directory sync");
             return;
         }
         
+        // Get current system directory before change
+        let old_system_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("System directory before change: {}", old_system_dir.display()));
+        
         // Update the current directory
         *self.current_directory.borrow_mut() = path.clone();
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("Updated terminal current_directory to: {}", path.display()));
         
         // Also change the system's current working directory
         if let Err(e) = std::env::set_current_dir(path) {
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Failed to change system directory: {}", e));
+        } else {
+            crate::utils::simple_debug::debug_info("TERMINAL", &format!("Successfully changed system directory to: {}", path.display()));
         }
         
-        // Update prompt label and entry if visible
+        // Verify the change worked
+        let actual_current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+        crate::utils::simple_debug::debug_info("TERMINAL", &format!("Actual system current directory is now: {}", actual_current_dir.display()));
+        
+        // Check if the change actually worked
+        if actual_current_dir == *path {
+            crate::utils::simple_debug::debug_info("TERMINAL", "Directory change verification: SUCCESS");
+        } else {
+            crate::utils::simple_debug::debug_info("TERMINAL", &format!("Directory change verification: FAILED - expected {}, got {}", path.display(), actual_current_dir.display()));
+        }
+        
+        // Always update prompt label to reflect the directory we set
+        Self::update_prompt_label(&self.prompt_label, path);
+        Self::update_prompt(&self.input_entry, path);
+        
+        // Only append output message if terminal is visible
         if self.visible {
-            Self::update_prompt_label(&self.prompt_label, path);
-            Self::update_prompt(&self.input_entry, path);
             Self::append_output(&self.output_view, &format!("Directory changed to: {}\n", path.display()));
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Synced terminal to: {}", path.display()));
         }
@@ -439,13 +491,18 @@ pub fn toggle_terminal_panel() {
 }
 
 pub fn sync_terminal_directory(path: &PathBuf) {
+    crate::utils::simple_debug::debug_info("TERMINAL", &format!("sync_terminal_directory called with: {}", path.display()));
+    
     if let Some(terminal_rc) = get_global_terminal_panel() {
         let terminal = terminal_rc.borrow();
         if !terminal.is_busy() {
+            crate::utils::simple_debug::debug_info("TERMINAL", "Terminal not busy - proceeding with directory sync");
             terminal.set_current_directory(path);
         } else {
             crate::utils::simple_debug::debug_info("TERMINAL", "Terminal busy - directory sync deferred");
         }
+    } else {
+        crate::utils::simple_debug::debug_info("TERMINAL", "No global terminal panel found - cannot sync directory");
     }
 }
 

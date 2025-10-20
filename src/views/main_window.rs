@@ -102,10 +102,17 @@ pub fn build_ui(app: &Application) {
     bottom_panel.set_details_panel(&details_panel);
     
     // Create and add terminal panel to bottom panel
-    let (terminal_panel, _terminal_revealer) = create_terminal_panel();
+    let (terminal_panel, terminal_revealer) = create_terminal_panel();
     let terminal_widget = terminal_panel.widget.clone();
     set_global_terminal_panel(Rc::new(RefCell::new(terminal_panel)));
+    crate::widgets::terminal_panel::set_global_terminal_revealer(terminal_revealer);
     bottom_panel.set_terminal_panel(&terminal_widget);
+    
+    // Sync terminal with current file manager directory
+    let current_path = state.borrow().current_path().clone();
+    crate::utils::simple_debug::debug_info("MAIN_WINDOW", &format!("Initial terminal sync with directory: {}", current_path.display()));
+    crate::widgets::terminal_panel::sync_terminal_directory(&current_path);
+    crate::utils::simple_debug::debug_info("MAIN_WINDOW", "Initial terminal sync completed");
     
     crate::widgets::bottom_panel::set_global_bottom_panel(bottom_panel.container.clone());
     crate::widgets::bottom_panel::set_global_bottom_stack(bottom_panel.stack.clone());
