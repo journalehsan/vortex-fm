@@ -528,6 +528,7 @@ revealer[visible="false"] {
 .home-screen {
     background: linear-gradient(135deg, #f8f9fa 0%, #e8f0fe 100%);
     padding: 16px;
+    margin-left: 220px; /* default sidebar width */
 }
 
 /* Responsive Grid Layout */
@@ -539,28 +540,21 @@ revealer[visible="false"] {
 }
 
 /* Grid responsiveness - adjust columns based on available space */
-@media (min-width: 1200px) {
-    .home-screen grid {
-        /* 4 columns for directories, 3 for drives on large screens */
-    }
+/* Reduce left margin on smaller widths so content doesn't hide */
+@media (max-width: 1280px) {
+    .home-screen { margin-left: 180px; }
 }
-
-@media (max-width: 1199px) {
-    .home-screen grid {
-        /* 3 columns for directories, 2 for drives on medium screens */
-    }
+@media (max-width: 1100px) {
+    .home-screen { margin-left: 140px; }
 }
-
-@media (max-width: 768px) {
-    .home-screen grid {
-        /* 2 columns on small screens */
-    }
+@media (max-width: 900px) {
+    .home-screen { margin-left: 100px; }
 }
-
-@media (max-width: 480px) {
-    .home-screen grid {
-        /* 1 column on very small screens */
-    }
+@media (max-width: 760px) {
+    .home-screen { margin-left: 64px; }
+}
+@media (max-width: 640px) {
+    .home-screen { margin-left: 32px; }
 }
 /* Home inactive (when Browser is active) */
 .home-inactive {

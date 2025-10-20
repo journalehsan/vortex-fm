@@ -20,7 +20,7 @@ pub struct HomeScreen {
 impl HomeScreen {
     pub fn new() -> Self {
         let container = Box::new(Orientation::Vertical, 12);
-        container.set_margin_start(16);
+        container.set_margin_start(220); // Account for sidebar width
         container.set_margin_end(16);
         container.set_margin_top(16);
         container.set_margin_bottom(16);
@@ -133,14 +133,17 @@ impl HomeScreen {
 
     fn create_home_directories() -> Box {
         let content = Box::new(Orientation::Vertical, 8);
-        
-        // Create a responsive grid for directories
-        let grid = gtk::Grid::new();
-        grid.set_row_spacing(12);
-        grid.set_column_spacing(12);
-        grid.set_hexpand(true);
-        grid.set_halign(Align::Fill);
-        
+
+        // Use FlowBox for responsive, wrapping layout similar to bootstrap columns
+        let flow = gtk::FlowBox::new();
+        flow.set_selection_mode(gtk::SelectionMode::None);
+        flow.set_max_children_per_line(6);
+        flow.set_min_children_per_line(1);
+        flow.set_row_spacing(12);
+        flow.set_column_spacing(12);
+        flow.set_halign(Align::Fill);
+        flow.set_hexpand(true);
+
         // Standard Linux home directories
         let home_dirs = vec![
             ("Desktop", "🖥️", "Desktop"),
@@ -152,19 +155,14 @@ impl HomeScreen {
             ("Templates", "📋", "Templates"),
             ("Public", "🌐", "Public"),
         ];
-        
-        // Add directories to grid with responsive layout
-        for (i, (name, icon, xdg_name)) in home_dirs.iter().enumerate() {
+
+        // Add directory items; FlowBox will handle wrapping
+        for (name, icon, xdg_name) in home_dirs.iter() {
             let dir_item = Self::create_directory_item(name, icon, xdg_name);
-            
-            // Calculate grid position (responsive columns)
-            let col = i % 4; // 4 columns max
-            let row = i / 4;
-            
-            grid.attach(&dir_item, col as i32, row as i32, 1, 1);
+            flow.insert(&dir_item, -1);
         }
-        
-        content.append(&grid);
+
+        content.append(&flow);
         content
     }
 
@@ -224,29 +222,27 @@ impl HomeScreen {
 
     fn create_storage_drives() -> Box {
         let content = Box::new(Orientation::Vertical, 8);
-        
-        // Create a responsive grid for drives
-        let grid = gtk::Grid::new();
-        grid.set_row_spacing(12);
-        grid.set_column_spacing(12);
-        grid.set_hexpand(true);
-        grid.set_halign(Align::Fill);
-        
+
+        // Use FlowBox for responsive drive layout
+        let flow = gtk::FlowBox::new();
+        flow.set_selection_mode(gtk::SelectionMode::None);
+        flow.set_max_children_per_line(4);
+        flow.set_min_children_per_line(1);
+        flow.set_row_spacing(12);
+        flow.set_column_spacing(12);
+        flow.set_halign(Align::Fill);
+        flow.set_hexpand(true);
+
         // Get mounted drives
         let drives = Self::get_mounted_drives();
-        
-        // Add drives to grid with responsive layout
-        for (i, drive) in drives.iter().enumerate() {
+
+        // Add drive items; FlowBox will handle wrapping
+        for drive in drives.iter() {
             let drive_item = Self::create_drive_item(drive);
-            
-            // Calculate grid position (responsive columns)
-            let col = i % 3; // 3 columns max for drives
-            let row = i / 3;
-            
-            grid.attach(&drive_item, col as i32, row as i32, 1, 1);
+            flow.insert(&drive_item, -1);
         }
-        
-        content.append(&grid);
+
+        content.append(&flow);
         content
     }
 
