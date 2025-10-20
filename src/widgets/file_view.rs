@@ -34,7 +34,12 @@ impl FileView {
     }
 
     pub fn refresh(&mut self, state: &FileManagerState) {
-        if let Some(adapter) = self.adapter.as_mut() { adapter.refresh(state); }
+        if let Some(adapter) = self.adapter.as_mut() {
+            // Rebuild the adapter view to reflect current directory/state
+            if let Some(child) = self.container.first_child() { self.container.remove(&child); }
+            let view = adapter.build(state);
+            self.container.append(&view);
+        }
     }
 
     pub fn set_icon_size(&mut self, size: i32) {

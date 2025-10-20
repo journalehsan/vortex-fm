@@ -9,6 +9,7 @@ use crate::core::navigation_history::NavigationHistory;
 pub struct FileManagerState {
     pub navigation_history: NavigationHistory,
     pub config: VortexConfig,
+    pub current_view_mode: String, // "list" | "grid" (extendable)
     pub file_list_widget: Option<ScrolledWindow>,
     pub path_label: Option<Label>,
     pub status_bar: Option<GtkBox>,
@@ -21,9 +22,11 @@ impl FileManagerState {
     pub fn new() -> Self {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
         let home_path = PathBuf::from(&home);
+        let cfg = VortexConfig::load();
         Self {
             navigation_history: NavigationHistory::new(home_path),
-            config: VortexConfig::load(),
+            config: cfg.clone(),
+            current_view_mode: cfg.default_view_mode.clone(),
             file_list_widget: None,
             path_label: None,
             status_bar: None,
@@ -102,10 +105,8 @@ impl FileManagerState {
             path_label.set_text(&current_path_str);
         }
         
-        // Update file list
-        if let Some(file_list_widget) = &self.file_list_widget {
-            self.update_file_list(file_list_widget);
-        }
+        // Refresh active adapter-based file view (if present)
+        crate::views::content_area::refresh_active_view();
         
         // Update status bar
         if let Some(status_bar) = &self.status_bar {

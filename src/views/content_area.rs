@@ -16,6 +16,7 @@ static mut GLOBAL_HOME_CONTAINER: Option<ScrolledWindow> = None;
 static mut GLOBAL_TAB_BAR: Option<Box> = None;
 static mut GLOBAL_NAV_BUTTONS: Option<Box> = None;
 static mut GLOBAL_FILE_VIEW: Option<Rc<RefCell<FileView>>> = None;
+static mut GLOBAL_ACTIVE_VIEW: &'static str = "grid"; // track current view mode
 
 pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
     unsafe {
@@ -43,6 +44,8 @@ pub fn switch_view_to_list(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {
             fv.borrow_mut().set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
+            fv.borrow_mut().refresh(state);
+            GLOBAL_ACTIVE_VIEW = "list";
         }
     }
 }
@@ -51,6 +54,19 @@ pub fn switch_view_to_grid(state: &FileManagerState) {
     unsafe {
         if let Some(fv) = &GLOBAL_FILE_VIEW {
             fv.borrow_mut().set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
+            fv.borrow_mut().refresh(state);
+            GLOBAL_ACTIVE_VIEW = "grid";
+        }
+    }
+}
+
+pub fn refresh_active_view() {
+    unsafe {
+        if let Some(fv) = &GLOBAL_FILE_VIEW {
+            if let Some(state_rc) = crate::core::navigation::get_global_state() {
+                let state_ref = state_rc.borrow();
+                fv.borrow_mut().refresh(&state_ref);
+            }
         }
     }
 }
@@ -111,10 +127,14 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
 
     let file_view = Rc::new(RefCell::new(FileView::new()));
     set_global_file_view(file_view.clone());
-    // Default to List view
+    // Default to config/state view
     {
         let mut fv = file_view.borrow_mut();
-        fv.set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
+        if state.current_view_mode == "grid" {
+            fv.set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
+        } else {
+            fv.set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
+        }
         scrolled.set_child(Some(fv.widget()));
     }
     file_browser.append(&scrolled);

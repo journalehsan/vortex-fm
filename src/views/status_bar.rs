@@ -46,9 +46,14 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     let view_box = Box::new(Orientation::Horizontal, 4);
     let list_view_btn = Button::from_icon_name("view-list-symbolic");
     let grid_view_btn = Button::from_icon_name("view-grid-symbolic");
-    // Default active view matches content area default (List)
-    list_view_btn.add_css_class("suggested-action");
-    list_view_btn.add_css_class("active-tab");
+    // Default active view follows config/state
+    if state.current_view_mode == "list" {
+        list_view_btn.add_css_class("suggested-action");
+        list_view_btn.add_css_class("active-tab");
+    } else {
+        grid_view_btn.add_css_class("suggested-action");
+        grid_view_btn.add_css_class("active-tab");
+    }
     {
         let state_ptr: *const FileManagerState = state as *const _;
         let list_btn = list_view_btn.clone();
@@ -56,6 +61,10 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         list_view_btn.connect_clicked(move |_| {
             let state_ref = unsafe { &*state_ptr };
             switch_view_to_list(state_ref);
+            // persist current mode
+            let mut cfg = state_ref.config.clone();
+            cfg.default_view_mode = "list".to_string();
+            let _ = cfg.save();
             // Toggle active styling
             grid_btn.remove_css_class("suggested-action");
             grid_btn.remove_css_class("active-tab");
@@ -70,6 +79,10 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
         grid_view_btn.connect_clicked(move |_| {
             let state_ref = unsafe { &*state_ptr };
             switch_view_to_grid(state_ref);
+            // persist current mode
+            let mut cfg = state_ref.config.clone();
+            cfg.default_view_mode = "grid".to_string();
+            let _ = cfg.save();
             // Toggle active styling
             list_btn.remove_css_class("suggested-action");
             list_btn.remove_css_class("active-tab");
