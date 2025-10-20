@@ -1,12 +1,16 @@
 use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button, Separator, ScrolledWindow, ListBox, ListBoxRow};
 use gtk::{gdk, gio};
+use gtk::{TreeView, TreeViewColumn, CellRendererText, TreeStore};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use crate::core::bookmarks::{BookmarksManager, get_global_bookmarks_manager};
+use crate::core::config::VortexConfig;
 use crate::core::navigation::navigate_to_directory;
 use crate::views::content_area::switch_to_home_view;
 
-pub fn create_modern_sidebar(bookmarks_manager: &BookmarksManager) -> Box {
+pub fn create_modern_sidebar(bookmarks_manager: &BookmarksManager, config: &VortexConfig) -> Box {
     let sidebar = Box::new(Orientation::Vertical, 0);
     sidebar.set_margin_start(8);
     sidebar.set_margin_end(8);
@@ -37,8 +41,8 @@ pub fn create_modern_sidebar(bookmarks_manager: &BookmarksManager) -> Box {
     let separator1 = Separator::new(Orientation::Horizontal);
     content_box.append(&separator1);
     
-    // This PC section
-    let this_pc_section = create_sidebar_section("This PC", &bookmarks_manager.get_bookmarks_by_category("Quick Access"));
+    // This PC section (Tree view of /home and mounted devices)
+    let this_pc_section = create_this_pc_section(config);
     content_box.append(&this_pc_section);
     
     // Add separator
@@ -220,4 +224,120 @@ fn create_sidebar_item(bookmark: &crate::core::bookmarks::Bookmark) -> ListBoxRo
     }
     
     row
+}
+
+fn create_this_pc_section(config: &VortexConfig) -> Box {
+    let section = Box::new(Orientation::Vertical, 4);
+
+    // Section title
+    let title_label = Label::new(Some("This PC"));
+    title_label.add_css_class("sidebar-section-title");
+    title_label.set_halign(gtk::Align::Start);
+    title_label.set_margin_start(8);
+    title_label.set_margin_end(8);
+    title_label.set_margin_top(4);
+    title_label.set_margin_bottom(4);
+    section.append(&title_label);
+
+    // Create TreeStore with three columns: icon, display name, path
+    let store = TreeStore::new(&[String::static_type(), String::static_type(), String::static_type()]);
+
+    // Add /home as root
+    if let Ok(home_dir) = std::env::var("HOME") {
+        let home_iter = store.append(None);
+        store.set(&home_iter, &[(0, &"📁"), (1, &"Home"), (2, &home_dir)]);
+
+        // Populate first-level children (user directories) filtered by show_hidden_files
+        if let Ok(entries) = std::fs::read_dir(&home_dir) {
+            for entry in entries.flatten() {
+                if let Ok(mt) = entry.metadata() {
+                    if mt.is_dir() {
+                        if let Some(name) = entry.file_name().to_str() {
+                            // Skip hidden files if show_hidden_files is false
+                            if !config.show_hidden_files && name.starts_with('.') {
+                                continue;
+                            }
+                            let child_iter = store.append(Some(&home_iter));
+                            let path = entry.path().to_string_lossy().to_string();
+                            store.set(&child_iter, &[(0, &"📂"), (1, &name), (2, &path)]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Mounted devices (from /proc/mounts) as other roots
+    for mount in get_mounted_devices() {
+        let iter = store.append(None);
+        let display = mount.display_name.clone();
+        let mp_str = mount.mount_point.to_string_lossy().to_string();
+        store.set(&iter, &[(0, &"💾"), (1, &display), (2, &mp_str)]);
+    }
+
+    // Create TreeView
+    let tree = TreeView::with_model(&store);
+    tree.add_css_class("sidebar-tree");
+    tree.set_headers_visible(false);
+    tree.set_vexpand(false);
+    tree.set_hexpand(true);
+
+    // Column with icon and display name
+    let col = TreeViewColumn::new();
+    
+    // Icon cell
+    let icon_cell = CellRendererText::new();
+    icon_cell.set_property("font", "16");
+    col.pack_start(&icon_cell, false);
+    col.add_attribute(&icon_cell, "text", 0);
+    
+    // Name cell
+    let name_cell = CellRendererText::new();
+    col.pack_start(&name_cell, true);
+    col.add_attribute(&name_cell, "text", 1);
+    
+    tree.append_column(&col);
+
+    // Connect activation to navigate
+    let store_clone = store.clone();
+    tree.connect_row_activated(move |_tv, path, _column| {
+        if let Some(iter) = store_clone.iter(path) {
+            if let Ok(path_value) = store_clone.get_value(&iter, 2).get::<String>() {
+                let pathbuf = PathBuf::from(path_value);
+                navigate_to_directory(pathbuf);
+            }
+        }
+    });
+
+    section.append(&tree);
+    section
+}
+
+struct MountPoint {
+    mount_point: PathBuf,
+    display_name: String,
+}
+
+fn get_mounted_devices() -> Vec<MountPoint> {
+    let mut mounts = Vec::new();
+    if let Ok(f) = File::open("/proc/mounts") {
+        let reader = BufReader::new(f);
+        let mut seen = std::collections::HashSet::new();
+        for line in reader.lines().flatten() {
+            // /proc/mounts format: device mountpoint fstype options dump pass
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let mp = parts[1];
+                // We only want mountpoints under /media, /run/media, /mnt, or root (/) and skip pseudo filesystems
+                if mp.starts_with("/media") || mp.starts_with("/run/media") || mp.starts_with("/mnt") || mp == "/" {
+                    if !seen.contains(mp) {
+                        seen.insert(mp.to_string());
+                        let display = if mp == "/" { "/".to_string() } else { mp.rsplit('/').next().unwrap_or(mp).to_string() };
+                        mounts.push(MountPoint { mount_point: PathBuf::from(mp), display_name: display });
+                    }
+                }
+            }
+        }
+    }
+    mounts
 }

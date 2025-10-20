@@ -68,7 +68,7 @@ pub fn build_ui(app: &Application) {
     let main_paned = Paned::new(Orientation::Horizontal);
     
     // Left sidebar (modern design)
-    let sidebar = create_modern_sidebar(&bookmarks_manager_rc.borrow());
+    let sidebar = create_modern_sidebar(&bookmarks_manager_rc.borrow(), &state.borrow().config);
     main_paned.set_start_child(Some(&sidebar));
     
     // Create the content + details split pane
