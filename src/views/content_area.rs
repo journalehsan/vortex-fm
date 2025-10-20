@@ -141,6 +141,8 @@ fn create_file_list(state: &FileManagerState) -> ScrolledWindow {
     let scrolled = ScrolledWindow::new();
     scrolled.set_hexpand(true);
     scrolled.set_vexpand(true);
+    // Allow GTK to manage scrollbars to avoid clipping/breaking layout
+    scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
     
     // Use the state's method to populate the file list
     state.update_file_list(&scrolled);
