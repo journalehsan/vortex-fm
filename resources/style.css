@@ -969,3 +969,25 @@ revealer {
     color: white;
     transform: scale(1.1);
 }
+
+/* Terminal Panel Styling */
+.terminal-widget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.terminal-widget:focus {
+    outline: none;
+}
+
+.terminal-panel {
+    background-color: #2d2d2d;
+    border-top: 1px solid #404040;
+    margin: 0;
+    padding: 0;
+}

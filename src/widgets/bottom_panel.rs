@@ -131,7 +131,7 @@ impl BottomPanel {
         self.stack.add_named(details_widget, Some("details"));
     }
     
-    pub fn set_terminal_panel(&self, terminal_widget: &gtk::ScrolledWindow) {
+    pub fn set_terminal_panel(&self, terminal_widget: &gtk::Revealer) {
         // Remove the placeholder and add the real terminal panel
         if let Some(placeholder) = self.stack.child_by_name("terminal") {
             self.stack.remove(&placeholder);
