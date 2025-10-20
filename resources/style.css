@@ -971,22 +971,34 @@ revealer {
 }
 
 /* Terminal Panel Styling */
-.terminal-widget {
+.terminal-output {
     background-color: #1e1e1e;
-    color: #ffffff;
-    font-family: 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    color: #cccccc;
+    font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
     font-size: 12px;
     padding: 8px;
-    border-radius: 4px;
-    margin: 4px;
-}
-
-.terminal-widget:focus {
+    border: none;
     outline: none;
 }
 
-.terminal-panel {
+.terminal-input {
     background-color: #2d2d2d;
+    color: #ffffff;
+    border: none;
+    border-top: 1px solid #444444;
+    font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    font-size: 12px;
+    padding: 8px;
+    outline: none;
+}
+
+.terminal-input:focus {
+    background-color: #333333;
+    border-top: 1px solid #666666;
+}
+
+.terminal-panel {
+    background-color: #1e1e1e;
     border-top: 1px solid #404040;
     margin: 0;
     padding: 0;

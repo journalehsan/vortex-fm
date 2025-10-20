@@ -7,7 +7,8 @@ use std::process::Command;
 
 pub struct TerminalPanel {
     pub widget: gtk::Revealer,
-    pub terminal: gtk::TextView,
+    pub output_view: gtk::TextView,
+    pub input_entry: gtk::Entry,
     pub visible: bool,
     pub current_directory: RefCell<PathBuf>,
     pub is_busy: RefCell<bool>,
@@ -17,19 +18,27 @@ pub struct TerminalPanel {
 
 impl TerminalPanel {
     pub fn new() -> Self {
-        // Create TextView as terminal
-        let terminal = gtk::TextView::new();
-        terminal.set_editable(true);
-        terminal.set_cursor_visible(true);
-        terminal.set_monospace(true);
-        terminal.set_wrap_mode(gtk::WrapMode::Word);
+        // Create output TextView (read-only)
+        let output_view = gtk::TextView::new();
+        output_view.set_editable(false);
+        output_view.set_cursor_visible(false);
+        output_view.set_monospace(true);
+        output_view.set_wrap_mode(gtk::WrapMode::Word);
+        output_view.style_context().add_class("terminal-output");
         
-        // Set a nice dark theme
-        terminal.style_context().add_class("terminal-widget");
+        // Create input Entry
+        let input_entry = gtk::Entry::new();
+        input_entry.set_placeholder_text(Some("Enter command..."));
+        input_entry.style_context().add_class("terminal-input");
+        
+        // Create main container
+        let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        main_box.append(&output_view);
+        main_box.append(&input_entry);
         
         // Create revealer for smooth show/hide
         let revealer = gtk::Revealer::new();
-        revealer.set_child(Some(&terminal));
+        revealer.set_child(Some(&main_box));
         revealer.set_reveal_child(false);
         revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
         revealer.set_transition_duration(300);
@@ -38,24 +47,13 @@ impl TerminalPanel {
         let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
         
         // Initialize terminal with welcome message
-        Self::append_to_terminal(&terminal, &format!("Vortex Terminal v1.0\nCurrent directory: {}\nType 'help' for available commands.\n\n$ ", current_dir.display()));
-        
-        // Set up key press handler for command execution
-        let terminal_clone = terminal.clone();
-        let controller = gtk::EventControllerKey::new();
-        controller.connect_key_pressed(move |_, _key, keycode, _modifiers| {
-            if keycode == 36 { // Return key
-                Self::handle_key_press(&terminal_clone);
-                glib::Propagation::Stop
-            } else {
-                glib::Propagation::Proceed
-            }
-        });
-        terminal.add_controller(controller);
+        Self::append_output(&output_view, &format!("Vortex Terminal v1.0\nCurrent directory: {}\nType 'help' for available commands.\n\n", current_dir.display()));
+        Self::update_prompt(&input_entry, &current_dir);
         
         Self {
             widget: revealer,
-            terminal,
+            output_view,
+            input_entry,
             visible: false,
             current_directory: RefCell::new(current_dir),
             is_busy: RefCell::new(false),
@@ -64,67 +62,148 @@ impl TerminalPanel {
         }
     }
     
-    fn append_to_terminal(terminal: &gtk::TextView, text: &str) {
-        let buffer = terminal.buffer();
+    fn append_output(output_view: &gtk::TextView, text: &str) {
+        let buffer = output_view.buffer();
         let mut iter = buffer.end_iter();
         buffer.insert(&mut iter, text);
         
         // Scroll to bottom
-        terminal.scroll_to_mark(&buffer.create_mark(None, &buffer.end_iter(), false), 0.0, false, 0.0, 0.0);
+        let mark = buffer.create_mark(None, &buffer.end_iter(), false);
+        output_view.scroll_to_mark(&mark, 0.0, false, 0.0, 0.0);
     }
     
-    fn handle_key_press(terminal: &gtk::TextView) {
-        // Get current line
-        let buffer = terminal.buffer();
-        let start = buffer.start_iter();
-        let end = buffer.end_iter();
-        let text = buffer.text(&start, &end, false).to_string();
+    fn update_prompt(input_entry: &gtk::Entry, current_dir: &PathBuf) {
+        let dir_name = current_dir.file_name()
+            .unwrap_or(std::ffi::OsStr::new("~"))
+            .to_string_lossy();
+        let prompt = format!("{} $ ", dir_name);
+        input_entry.set_placeholder_text(Some(&prompt));
+    }
+    
+    pub fn connect_events(&self) {
+        let output_view = self.output_view.clone();
+        let input_entry = self.input_entry.clone();
+        let current_dir = self.current_directory.clone();
+        let command_history = self.command_history.clone();
+        let history_index = self.history_index.clone();
         
-        // Find the last command line (after last $)
-        if let Some(last_dollar) = text.rfind("$ ") {
-            let command = &text[last_dollar + 2..].trim();
-            if !command.is_empty() {
-                Self::execute_command(terminal, command);
+        // Handle Enter key to execute command
+        let input_entry_clone = input_entry.clone();
+        input_entry.connect_activate(move |entry| {
+            let command = entry.text().to_string();
+            if !command.trim().is_empty() {
+                Self::execute_command(&output_view, &input_entry_clone, &current_dir, &command_history, &history_index, &command);
+                entry.set_text("");
             }
+        });
+        
+        // Handle Up/Down arrows for command history
+        let input_entry_for_history = self.input_entry.clone();
+        let command_history = self.command_history.clone();
+        let history_index = self.history_index.clone();
+        
+        let controller = gtk::EventControllerKey::new();
+        controller.connect_key_pressed(move |_, _key, keycode, _modifiers| {
+            match keycode {
+                111 => { // Up arrow
+                    Self::navigate_history(&input_entry_for_history, &command_history, &history_index, 1);
+                    glib::Propagation::Stop
+                }
+                116 => { // Down arrow
+                    Self::navigate_history(&input_entry_for_history, &command_history, &history_index, -1);
+                    glib::Propagation::Stop
+                }
+                _ => glib::Propagation::Proceed,
+            }
+        });
+        self.input_entry.add_controller(controller);
+    }
+    
+    fn navigate_history(input_entry: &gtk::Entry, command_history: &RefCell<Vec<String>>, history_index: &RefCell<usize>, direction: i32) {
+        let history = command_history.borrow();
+        let mut index = history_index.borrow_mut();
+        
+        if history.is_empty() {
+            return;
+        }
+        
+        match direction {
+            1 => { // Up arrow - older command
+                if *index > 0 {
+                    *index -= 1;
+                }
+            }
+            -1 => { // Down arrow - newer command
+                if *index < history.len() - 1 {
+                    *index += 1;
+                } else {
+                    *index = history.len();
+                    input_entry.set_text("");
+                    return;
+                }
+            }
+            _ => return,
+        }
+        
+        if *index < history.len() {
+            input_entry.set_text(&history[*index]);
         }
     }
     
-    fn execute_command(terminal: &gtk::TextView, command: &str) {
-        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+    fn execute_command(
+        output_view: &gtk::TextView, 
+        input_entry: &gtk::Entry, 
+        current_dir: &RefCell<PathBuf>, 
+        command_history: &RefCell<Vec<String>>, 
+        history_index: &RefCell<usize>, 
+        command: &str
+    ) {
+        // Add command to history
+        {
+            let mut history = command_history.borrow_mut();
+            history.push(command.to_string());
+            *history_index.borrow_mut() = history.len();
+        }
+        
+        // Show command in output
+        Self::append_output(output_view, &format!("$ {}\n", command));
+        
+        let current_dir_path = current_dir.borrow().clone();
         
         // Handle built-in commands
         match command {
             "help" => {
-                Self::append_to_terminal(terminal, "Available commands:\n");
-                Self::append_to_terminal(terminal, "  help     - Show this help message\n");
-                Self::append_to_terminal(terminal, "  clear    - Clear the terminal\n");
-                Self::append_to_terminal(terminal, "  pwd      - Print current directory\n");
-                Self::append_to_terminal(terminal, "  ls       - List directory contents\n");
-                Self::append_to_terminal(terminal, "  cd <dir> - Change directory\n");
-                Self::append_to_terminal(terminal, "  exit     - Close terminal\n");
-                Self::append_to_terminal(terminal, "\n$ ");
+                Self::append_output(output_view, "Available commands:\n");
+                Self::append_output(output_view, "  help     - Show this help message\n");
+                Self::append_output(output_view, "  clear    - Clear the terminal\n");
+                Self::append_output(output_view, "  pwd      - Print current directory\n");
+                Self::append_output(output_view, "  ls       - List directory contents\n");
+                Self::append_output(output_view, "  cd <dir> - Change directory\n");
+                Self::append_output(output_view, "  exit     - Close terminal\n");
+                Self::append_output(output_view, "\n");
             }
             "clear" => {
-                let buffer = terminal.buffer();
+                let buffer = output_view.buffer();
                 buffer.set_text("");
-                Self::append_to_terminal(terminal, "$ ");
+                Self::append_output(output_view, "Vortex Terminal v1.0\n");
+                Self::append_output(output_view, &format!("Current directory: {}\n", current_dir_path.display()));
+                Self::append_output(output_view, "Type 'help' for available commands.\n\n");
             }
             "pwd" => {
-                Self::append_to_terminal(terminal, &format!("{}\n$ ", current_dir.display()));
+                Self::append_output(output_view, &format!("{}\n", current_dir_path.display()));
             }
             "ls" => {
-                match std::fs::read_dir(&current_dir) {
+                match std::fs::read_dir(&current_dir_path) {
                     Ok(entries) => {
                         for entry in entries.flatten() {
                             let name = entry.file_name().to_string_lossy().to_string();
-                            Self::append_to_terminal(terminal, &format!("{}\n", name));
+                            Self::append_output(output_view, &format!("{}\n", name));
                         }
                     }
                     Err(e) => {
-                        Self::append_to_terminal(terminal, &format!("Error: {}\n", e));
+                        Self::append_output(output_view, &format!("Error: {}\n", e));
                     }
                 }
-                Self::append_to_terminal(terminal, "$ ");
             }
             cmd if cmd.starts_with("cd ") => {
                 let new_dir = &cmd[3..].trim();
@@ -133,21 +212,23 @@ impl TerminalPanel {
                 } else if new_dir.starts_with('/') {
                     PathBuf::from(new_dir)
                 } else {
-                    current_dir.join(new_dir)
+                    current_dir_path.join(new_dir)
                 };
                 
                 if target_path.exists() && target_path.is_dir() {
                     if let Err(e) = std::env::set_current_dir(&target_path) {
-                        Self::append_to_terminal(terminal, &format!("Error changing directory: {}\n$ ", e));
+                        Self::append_output(output_view, &format!("Error changing directory: {}\n", e));
                     } else {
-                        Self::append_to_terminal(terminal, &format!("Changed to: {}\n$ ", target_path.display()));
+                        *current_dir.borrow_mut() = target_path.clone();
+                        Self::append_output(output_view, &format!("Changed to: {}\n", target_path.display()));
+                        Self::update_prompt(input_entry, &target_path);
                     }
                 } else {
-                    Self::append_to_terminal(terminal, &format!("Directory not found: {}\n$ ", target_path.display()));
+                    Self::append_output(output_view, &format!("Directory not found: {}\n", target_path.display()));
                 }
             }
             "exit" => {
-                Self::append_to_terminal(terminal, "Terminal closed.\n");
+                Self::append_output(output_view, "Terminal closed.\n");
                 // TODO: Implement actual terminal closing
             }
             _ => {
@@ -155,13 +236,13 @@ impl TerminalPanel {
                 let output = if cfg!(target_os = "windows") {
                     Command::new("cmd")
                         .args(&["/C", command])
-                        .current_dir(&current_dir)
+                        .current_dir(&current_dir_path)
                         .output()
                 } else {
                     Command::new("sh")
                         .arg("-c")
                         .arg(command)
-                        .current_dir(&current_dir)
+                        .current_dir(&current_dir_path)
                         .output()
                 };
                 
@@ -171,17 +252,16 @@ impl TerminalPanel {
                         let stderr = String::from_utf8_lossy(&output.stderr);
                         
                         if !stdout.is_empty() {
-                            Self::append_to_terminal(terminal, &stdout);
+                            Self::append_output(output_view, &stdout);
                         }
                         if !stderr.is_empty() {
-                            Self::append_to_terminal(terminal, &stderr);
+                            Self::append_output(output_view, &stderr);
                         }
                     }
                     Err(e) => {
-                        Self::append_to_terminal(terminal, &format!("Error executing command: {}\n", e));
+                        Self::append_output(output_view, &format!("Error executing command: {}\n", e));
                     }
                 }
-                Self::append_to_terminal(terminal, "$ ");
             }
         }
     }
@@ -191,9 +271,9 @@ impl TerminalPanel {
         self.widget.set_reveal_child(self.visible);
         
         if self.visible {
-            crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel shown - VTE integration active!");
-            // Focus the terminal when shown
-            self.terminal.grab_focus();
+            crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel shown - Input/Output terminal active!");
+            // Focus the input entry when shown
+            self.input_entry.grab_focus();
         } else {
             crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel hidden");
         }
@@ -208,9 +288,10 @@ impl TerminalPanel {
         // Update the current directory
         *self.current_directory.borrow_mut() = path.clone();
         
-        // Update terminal display if visible
+        // Update prompt if visible
         if self.visible {
-            Self::append_to_terminal(&self.terminal, &format!("Directory changed to: {}\n$ ", path.display()));
+            Self::update_prompt(&self.input_entry, path);
+            Self::append_output(&self.output_view, &format!("Directory changed to: {}\n", path.display()));
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Synced terminal to: {}", path.display()));
         }
     }
@@ -229,18 +310,28 @@ impl TerminalPanel {
     
     pub fn run_command(&self, command: &str) {
         if self.visible {
-            Self::execute_command(&self.terminal, command);
+            Self::execute_command(
+                &self.output_view, 
+                &self.input_entry, 
+                &self.current_directory, 
+                &self.command_history, 
+                &self.history_index, 
+                command
+            );
             crate::utils::simple_debug::debug_info("TERMINAL", &format!("Executed command: {}", command));
         }
     }
     
     pub fn terminal_widget(&self) -> &gtk::TextView {
-        &self.terminal
+        &self.output_view
     }
 }
 
 pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     let terminal_panel = TerminalPanel::new();
+    
+    // Connect events for the terminal
+    terminal_panel.connect_events();
     
     // Get the revealer from the terminal panel
     let terminal_revealer = terminal_panel.widget.clone();
@@ -251,7 +342,7 @@ pub fn create_terminal_panel() -> (TerminalPanel, gtk::Revealer) {
     terminal_revealer.set_transition_duration(300);
     
     // Set height for the terminal
-    terminal_panel.terminal.set_height_request(200);
+    terminal_panel.output_view.set_height_request(200);
     
     (terminal_panel, terminal_revealer)
 }
@@ -288,10 +379,10 @@ pub fn toggle_terminal_panel() {
                 revealer.set_reveal_child(true);
                 crate::utils::simple_debug::debug_info("TERMINAL", "Terminal panel shown - VTE integration active!");
                 
-                // Focus the terminal when shown
+                // Focus the input entry when shown
                 if let Some(terminal_panel) = &GLOBAL_TERMINAL_PANEL {
                     let panel = terminal_panel.borrow();
-                    panel.terminal.grab_focus();
+                    panel.input_entry.grab_focus();
                 }
             } else {
                 // Hiding
