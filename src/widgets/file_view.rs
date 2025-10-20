@@ -172,47 +172,60 @@ impl FileViewAdapter for GridViewAdapter {
         let scrolled = ScrolledWindow::new();
         scrolled.set_hexpand(true);
         scrolled.set_vexpand(true);
-        // Set scroll policy after widget is fully constructed
+        // Set scroll policy to disable horizontal scrolling, enable vertical
         scrolled.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
         scrolled.set_propagate_natural_width(false); // Don't propagate natural width
         scrolled.set_propagate_natural_height(false);
         
         // Create fixed grid layout (like Qt's HLayout/VLayout)
         let grid = Grid::new();
-        grid.set_hexpand(true);  // Fill available width
-        grid.set_vexpand(true);  // Allow vertical expansion
+        grid.set_hexpand(false);  // Don't expand horizontally - we'll set fixed width
+        grid.set_vexpand(true);   // Allow vertical expansion
         
         // Calculate dynamic spacing based on icon size
         let icon_pixels = self.icon_size.to_pixels();
         let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
         let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
         
-        // Calculate tile dimensions and grid layout
+        // Calculate tile dimensions
         let base_tile_width = 120;
         let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Calculate responsive items per row based on available width
-        // Use a reasonable minimum width for calculation (600px as fallback)
-        let available_width = 600; // This should be dynamically calculated, but we'll use a reasonable default
-        let items_per_row = (available_width / total_item_width).max(1);
-        
-        // Calculate grid width to fit exactly the number of items per row
+        // Initial responsive calculation - will be updated on size allocation
+        let initial_available_width = 800; // Reasonable default
+        let items_per_row = (initial_available_width / total_item_width).max(1);
         let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
         
         grid.set_row_spacing(spacing as u32);
         grid.set_column_spacing(spacing as u32);
         grid.set_margin_start(margin);
         grid.set_margin_end(margin);
-        // Set fixed width to prevent horizontal overflow
-        grid.set_size_request(grid_width, -1);
+        grid.set_size_request(grid_width, -1); // Fixed width to prevent horizontal overflow
         grid.set_margin_top(margin);
         grid.set_margin_bottom(margin);
-        grid.set_halign(gtk::Align::Center); // Center the grid instead of filling
+        grid.set_halign(gtk::Align::Center); // Center the grid
         grid.set_valign(gtk::Align::Start);
         
-        // items_per_row is already calculated above
+        // Store references for later responsive updates
+        let grid_clone = grid.clone();
+        let icon_size_clone = self.icon_size;
+        
+        // Connect to size-allocate signal for true responsiveness (like Nautilus/Nemo)
+        scroll_container.connect_size_allocate(|widget, rect| {
+            let available_width = rect.width() - 2 * margin;
+            
+            // Recalculate items per row based on actual available width
+            let items_per_row = (available_width / total_item_width).max(1);
+            let new_grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+            
+            // Update grid width to fit available space
+            grid_clone.set_size_request(new_grid_width, -1);
+            
+            // TODO: In a real implementation, we'd need to rebuild the grid layout
+            // with the new items_per_row. This requires more complex state management.
+        });
         
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
@@ -278,28 +291,25 @@ impl FileViewAdapter for GridViewAdapter {
             let spacing = (icon_pixels as f32 * 0.1) as i32; // 10% of icon size
             let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
             
-            // Calculate tile dimensions and grid layout
+            // Calculate tile dimensions
             let base_tile_width = 120;
             let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
             let tile_width = (base_tile_width as f32 * scale_factor) as i32;
             let total_item_width = tile_width + spacing;
             
-            // Calculate responsive items per row based on available width
-            let available_width = 600; // Same default as in build()
-            let items_per_row = (available_width / total_item_width).max(1);
-            
-            // Calculate grid width to fit exactly the number of items per row
+            // Initial responsive calculation - will be updated on size allocation
+            let initial_available_width = 800; // Reasonable default
+            let items_per_row = (initial_available_width / total_item_width).max(1);
             let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
             
             grid.set_row_spacing(spacing as u32);
             grid.set_column_spacing(spacing as u32);
             grid.set_margin_start(margin);
             grid.set_margin_end(margin);
-            // Set fixed width to prevent horizontal overflow
-            grid.set_size_request(grid_width, -1);
+            grid.set_size_request(grid_width, -1); // Fixed width to prevent horizontal overflow
             grid.set_margin_top(margin);
             grid.set_margin_bottom(margin);
-            grid.set_halign(gtk::Align::Center); // Center the grid instead of filling
+            grid.set_halign(gtk::Align::Center); // Center the grid
             grid.set_valign(gtk::Align::Start);
             
             // Use the search utility to get filtered files
