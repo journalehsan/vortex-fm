@@ -14,11 +14,11 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
 }
 
 pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig, icon_size: i32) -> Button {
-    // Calculate item dimensions based on icon size
+    // Calculate item dimensions based on icon size - use fixed height like home screen
     let item_width = (icon_size as f32 * 1.5) as i32;
-    let item_height = (icon_size as f32 * 1.8) as i32;
+    let item_height = (icon_size as f32 * 1.4) as i32; // Reduced from 1.8 to 1.4 for cleaner look
     
-    let item_box = Box::new(Orientation::Vertical, 6);
+    let item_box = Box::new(Orientation::Vertical, 4); // Reduced spacing from 6 to 4
     item_box.set_width_request(item_width);
     item_box.set_height_request(item_height);
     item_box.add_css_class("file-item");
@@ -55,10 +55,11 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     name_label.set_halign(gtk::Align::Center);
     name_label.set_wrap(true);
     name_label.set_wrap_mode(gtk::pango::WrapMode::Word);
-    name_label.set_max_width_chars(12);
+    name_label.set_max_width_chars(10); // Reduced from 12 to 10 for better fit
     name_label.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
     name_label.set_lines(2);
-    // name_label.set_line_wrap(true); // This method doesn't exist in GTK4
+    name_label.set_vexpand(false); // Don't expand vertically
+    name_label.set_hexpand(false); // Don't expand horizontally
     item_box.append(&name_label);
     
     // Make it clickable

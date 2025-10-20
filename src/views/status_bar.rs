@@ -112,6 +112,9 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     icon_size_scale.set_width_request(120);
     icon_size_scale.add_css_class("icon-size-scale");
     
+    // Set the initial value explicitly to ensure position matches
+    icon_size_scale.set_value(32.0);
+    
     // Connect icon size change
     let size_display_clone = size_display_label.clone();
     let scale_clone = icon_size_scale.clone();

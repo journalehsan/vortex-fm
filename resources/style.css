@@ -307,12 +307,18 @@ window {
 
 /* File Items - Improved Grid View */
 .file-item {
-    padding: 4px;
-    border-radius: 6px;
+    padding: 8px;
+    border-radius: 8px;
     background: transparent;
     border: 2px solid transparent;
     transition: all 0.2s ease;
     box-shadow: none;
+    min-height: 100px; /* Fixed minimum height for consistency */
+    max-height: 100px; /* Fixed maximum height for consistency */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .file-item:hover {
@@ -357,9 +363,16 @@ window {
 .grid-item {
     background: transparent;
     border: none;
-    padding: 4px;
+    padding: 8px;
     border-radius: 8px;
     transition: all 0.2s ease;
+    height: 100px; /* Fixed height for all grid items */
+    width: 120px; /* Fixed width for all grid items */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Prevent content from overflowing */
 }
 
 .grid-item:hover {
