@@ -47,7 +47,7 @@ pub fn create_folder_context_menu(path: PathBuf) -> PopoverMenu {
             println!("   ✓ Bookmark saved");
             // Add directly to the UI
             crate::widgets::modern_sidebar::add_bookmark_to_qa_ui(&bookmark);
-            println!("   ✓ Bookmarkappeared in sidebar");
+            println!("   ✓ Bookmark appeared in sidebar");
         }
     });
     
