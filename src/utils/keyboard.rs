@@ -75,16 +75,58 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
     });
     app.add_action(&terminal_toggle_action);
     
-    // Add key controller for F4 - using a simpler approach
+    // Add key controller for global shortcuts
     let key_controller = gtk::EventControllerKey::new();
-    key_controller.connect_key_pressed(|_, key, _, _| {
-        if key == gdk::Key::F4 {
+    key_controller.connect_key_pressed(|_, key, keycode, state| {
+        use gdk::Key;
+        let ctrl = state.contains(gdk::ModifierType::CONTROL_MASK);
+        let shift = state.contains(gdk::ModifierType::SHIFT_MASK);
+
+        // F4: toggle terminal
+        if key == Key::F4 {
             crate::utils::simple_debug::debug_info("KEYBOARD", "F4 key pressed - toggling terminal");
             crate::widgets::terminal_panel::toggle_terminal_panel();
-            gtk::glib::Propagation::Stop // Stop event propagation
-        } else {
-            gtk::glib::Propagation::Proceed // Continue event propagation
+            return gtk::glib::Propagation::Stop;
         }
+
+        // Ctrl+W: close current tab
+        if ctrl && (key == Key::w || key == Key::W) {
+            if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                if let Some(active_id) = tab_manager_rc.borrow().active_tab_id {
+                    let (closed, next_path_opt) = {
+                        let closed_local = tab_manager_rc.borrow_mut().close_tab(active_id);
+                        (closed_local, tab_manager_rc.borrow().get_active_path())
+                    };
+                    crate::widgets::tab_bar::update_global_tab_bar();
+                    if let Some(path) = next_path_opt {
+                        gtk::glib::idle_add_once(move || {
+                            crate::core::navigation::navigate_to_directory(path);
+                        });
+                    }
+                }
+            }
+            return gtk::glib::Propagation::Stop;
+        }
+
+        // Ctrl+Tab: next tab; Ctrl+Shift+Tab: previous tab
+        if ctrl && (key == Key::Tab) {
+            if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                let tabs = tab_manager_rc.borrow().tabs.clone();
+                if tabs.is_empty() { return gtk::glib::Propagation::Proceed; }
+                if let Some(current_id) = tab_manager_rc.borrow().active_tab_id {
+                    let mut idx = tabs.iter().position(|t| t.id == current_id).unwrap_or(0) as isize;
+                    if shift { idx -= 1; } else { idx += 1; }
+                    let len = tabs.len() as isize;
+                    let idx = (idx.rem_euclid(len)) as usize;
+                    let next_id = tabs[idx].id;
+                    crate::core::navigation::switch_to_tab(next_id);
+                    crate::widgets::tab_bar::update_global_tab_bar();
+                    return gtk::glib::Propagation::Stop;
+                }
+            }
+        }
+
+        gtk::glib::Propagation::Proceed
     });
     window.add_controller(key_controller);
 }

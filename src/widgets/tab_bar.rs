@@ -123,7 +123,24 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     let tab_id = tab.id;
     
     let gesture = gtk::GestureClick::new();
-    gesture.connect_pressed(move |_, n_press, _x, _y| {
+    gesture.connect_pressed(move |g, n_press, _x, _y| {
+        // Middle-click closes tab
+        let button = g.current_button();
+        if button == 2 {
+            if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                let (_closed, next_path_opt) = {
+                    let closed_local = tab_manager_rc.borrow_mut().close_tab(tab_id);
+                    (closed_local, tab_manager_rc.borrow().get_active_path())
+                };
+                crate::widgets::tab_bar::update_global_tab_bar();
+                if let Some(path) = next_path_opt {
+                    gtk::glib::idle_add_once(move || {
+                        crate::core::navigation::navigate_to_directory(path);
+                    });
+                }
+            }
+            return;
+        }
         if n_press == 1 {
             // Single click - switch to tab
             crate::utils::simple_debug::debug_info("TAB_BAR", &format!("Switching to tab {}", tab_id));
@@ -139,6 +156,28 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
         }
     });
     click_area.add_controller(gesture);
+
+    // Scroll over tab bar to switch tabs
+    let scroll_ctrl = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);
+    scroll_ctrl.connect_scroll(|_, _dx, dy| {
+        if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+            let tabs = tab_manager_rc.borrow().tabs.clone();
+            if tabs.is_empty() { return Inhibit(false); }
+            let current_id_opt = tab_manager_rc.borrow().active_tab_id;
+            if let Some(current_id) = current_id_opt {
+                let mut idx = tabs.iter().position(|t| t.id == current_id).unwrap_or(0) as isize;
+                if dy > 0.0 { idx += 1; } else if dy < 0.0 { idx -= 1; } else { return Inhibit(false); }
+                let len = tabs.len() as isize;
+                let idx = (idx.rem_euclid(len)) as usize;
+                let next_id = tabs[idx].id;
+                crate::core::navigation::switch_to_tab(next_id);
+                crate::widgets::tab_bar::update_global_tab_bar();
+                return Inhibit(true);
+            }
+        }
+        Inhibit(false)
+    });
+    tab_widget.add_controller(scroll_ctrl);
     
     tab_widget
 }
