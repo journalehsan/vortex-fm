@@ -515,11 +515,17 @@ button:hover {
     }
 }
 
-/* Details Panel Styling */
+/* Modern Details Panel Styling */
 .details-panel {
     background-color: #ffffff;
     border-left: 1px solid #e0e0e0;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    min-height: 0;
+    vertical-align: middle;
+    align-items: center;
+    justify-content: center;
 }
 
 .details-header {
@@ -533,11 +539,15 @@ button:hover {
     color: #888888;
     font-style: italic;
     font-size: 13px;
+    padding: 16px;
+    text-align: center;
 }
 
 .details-error {
     color: #d32f2f;
     font-size: 13px;
+    padding: 16px;
+    text-align: center;
 }
 
 .details-file-icon {
@@ -581,57 +591,53 @@ button:hover {
 .details-panel {
     background-color: #ffffff;
     border-top: 1px solid #e0e0e0;
-    padding-top: 50px; /* avoid extra vertical space */
-    padding-bottom: 0; /* avoid extra vertical space */
-    min-height: 0; /* let content define height */
+    padding: 0;
+    min-height: 0;
     vertical-align: middle;
     align-items: center;
-    align-self: center;
     justify-content: center;
-    justify-items: center;
-    justify-self: center;
-    justify-content: center;
-    justify-items: center;
-    justify-self: center;
-    justify-content: center;
-    justify-items: center;
-    justify-self: center;
 }
 
 /* Subtle vertical separators inside details panel */
 .details-panel separator {
-    margin-left: 6px;
-    margin-right: 6px;
-    opacity: 0.85;
+    margin: 0 8px;
+    opacity: 0.6;
+    background-color: #e0e0e0;
 }
 
 .details-thumbnail-compact {
     border-radius: 6px;
     border: 1px solid #e0e0e0;
     background-color: #f5f5f5;
+    margin: 4px;
 }
 
 .details-file-icon-compact {
-    font-size: 44px; /* slightly smaller to reduce height */
+    font-size: 40px;
     text-align: center;
     vertical-align: middle;
+    margin: 4px;
+    color: #5f6368;
 }
 
 .details-label-compact {
     font-weight: 600;
     font-size: 11px;
-    color: #555555;
-    min-width: 58px; /* slightly narrower */
-    margin: 0; /* prevent extra line spacing */
-    line-height: 1.1; /* tighter row height */
+    color: #5f6368;
+    min-width: 60px;
+    margin: 0;
+    line-height: 1.2;
+    text-align: left;
 }
 
 .details-value-compact {
     font-size: 11px;
-    color: #333333;
+    color: #2c2c2c;
     text-overflow: ellipsis;
-    margin: 0; /* prevent extra line spacing */
-    line-height: 1.1; /* tighter row height */
+    margin: 0;
+    line-height: 1.2;
+    text-align: left;
+    font-weight: 500;
 }
 
 .file-thumbnail {
