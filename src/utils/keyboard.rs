@@ -128,6 +128,27 @@ pub fn setup_keyboard_shortcuts(window: &ApplicationWindow) {
             }
         }
 
+        // Ctrl+T: open new tab (duplicating current path if available)
+        if ctrl && (key == Key::t || key == Key::T) {
+            gtk::glib::idle_add_once(move || {
+                if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+                    // Determine path for new tab: current active tab's path or HOME
+                    let new_path = {
+                        if let Some(path) = tab_manager_rc.borrow().get_active_path() { path } else {
+                            let home = std::env::var("HOME").unwrap_or_else(|_| "/home".to_string());
+                            std::path::PathBuf::from(home)
+                        }
+                    };
+                    // Add tab and make it active
+                    let _new_id = tab_manager_rc.borrow_mut().add_tab(new_path.clone());
+                    // Refresh tab bar and navigate UI to the new tab path
+                    crate::widgets::tab_bar::update_global_tab_bar();
+                    crate::core::navigation::navigate_to_directory(new_path);
+                }
+            });
+            return gtk::glib::Propagation::Stop;
+        }
+
         gtk::glib::Propagation::Proceed
     });
     window.add_controller(key_controller);
