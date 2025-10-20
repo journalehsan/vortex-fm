@@ -985,6 +985,7 @@ revealer {
     background-color: #1e1e1e;
     border: none;
     outline: none;
+    min-height: 200px;
 }
 
 .terminal-scrolled scrollbar {
@@ -1004,16 +1005,17 @@ revealer {
     background-color: #2d2d2d;
     color: #ffffff;
     border: none;
-    border-top: 1px solid #444444;
+    border-bottom: 1px solid #444444;
     font-family: 'Fira Code', 'Monospace', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
     font-size: 12px;
     padding: 8px;
     outline: none;
+    min-height: 40px;
 }
 
 .terminal-input:focus {
     background-color: #333333;
-    border-top: 1px solid #666666;
+    border-bottom: 1px solid #666666;
 }
 
 .terminal-panel {
@@ -1021,4 +1023,5 @@ revealer {
     border-top: 1px solid #404040;
     margin: 0;
     padding: 0;
+    min-height: 250px;
 }
