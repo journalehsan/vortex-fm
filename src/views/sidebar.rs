@@ -3,6 +3,7 @@ use gtk::{Box, Orientation, Label, Button, Separator};
 use std::path::PathBuf;
 use crate::core::file_manager::FileManagerState;
 use crate::core::navigation::navigate_to_directory;
+use crate::views::content_area::{switch_to_home_view, switch_to_browser_view};
 
 pub fn create_sidebar(_state: &FileManagerState) -> Box {
     let sidebar = Box::new(Orientation::Vertical, 12);
@@ -31,6 +32,9 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
     home_btn.connect_clicked({
         let home_path = home_path.clone();
         move |_| {
+            // Show Home screen
+            switch_to_home_view();
+            // Optionally align active tab path with home for consistency
             navigate_to_directory(PathBuf::from(&home_path));
         }
     });
@@ -39,6 +43,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let docs_path = PathBuf::from(&home_path).join("Documents");
+            switch_to_browser_view();
             navigate_to_directory(docs_path);
         }
     });
@@ -47,6 +52,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let downloads_path = PathBuf::from(&home_path).join("Downloads");
+            switch_to_browser_view();
             navigate_to_directory(downloads_path);
         }
     });
@@ -55,6 +61,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let pictures_path = PathBuf::from(&home_path).join("Pictures");
+            switch_to_browser_view();
             navigate_to_directory(pictures_path);
         }
     });
@@ -63,6 +70,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let music_path = PathBuf::from(&home_path).join("Music");
+            switch_to_browser_view();
             navigate_to_directory(music_path);
         }
     });
@@ -71,6 +79,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let videos_path = PathBuf::from(&home_path).join("Videos");
+            switch_to_browser_view();
             navigate_to_directory(videos_path);
         }
     });
@@ -105,6 +114,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let desktop_path = PathBuf::from(&home_path).join("Desktop");
+            switch_to_browser_view();
             navigate_to_directory(desktop_path);
         }
     });
@@ -113,6 +123,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let docs_path = PathBuf::from(&home_path).join("Documents");
+            switch_to_browser_view();
             navigate_to_directory(docs_path);
         }
     });
@@ -121,6 +132,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let downloads_path = PathBuf::from(&home_path).join("Downloads");
+            switch_to_browser_view();
             navigate_to_directory(downloads_path);
         }
     });
@@ -129,6 +141,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let pictures_path = PathBuf::from(&home_path).join("Pictures");
+            switch_to_browser_view();
             navigate_to_directory(pictures_path);
         }
     });
@@ -137,6 +150,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let music_path = PathBuf::from(&home_path).join("Music");
+            switch_to_browser_view();
             navigate_to_directory(music_path);
         }
     });
@@ -145,6 +159,7 @@ pub fn create_sidebar(_state: &FileManagerState) -> Box {
         let home_path = home_path.clone();
         move |_| {
             let videos_path = PathBuf::from(&home_path).join("Videos");
+            switch_to_browser_view();
             navigate_to_directory(videos_path);
         }
     });
