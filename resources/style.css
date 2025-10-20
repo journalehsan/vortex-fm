@@ -93,8 +93,6 @@ window {
 /* Responsive tab bar margins are driven by sidebar-width-* classes set at runtime */
 
 /* Navigation buttons (Home/Browse) */
-.nav-buttons {
-}
 
 /* Dynamic navigation button sidebar width classes */
 .nav-buttons.sidebar-width-small {
