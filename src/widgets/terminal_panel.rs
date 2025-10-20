@@ -326,6 +326,11 @@ impl TerminalPanel {
         // Update the current directory
         *self.current_directory.borrow_mut() = path.clone();
         
+        // Also change the system's current working directory
+        if let Err(e) = std::env::set_current_dir(path) {
+            crate::utils::simple_debug::debug_info("TERMINAL", &format!("Failed to change system directory: {}", e));
+        }
+        
         // Update prompt label and entry if visible
         if self.visible {
             Self::update_prompt_label(&self.prompt_label, path);
