@@ -309,16 +309,21 @@ window {
 .file-item {
     padding: 8px;
     border-radius: 8px;
-    background: transparent;
-    border: 2px solid transparent;
+    background: transparent !important;
+    border: 2px solid transparent !important;
     transition: all 0.2s ease;
-    box-shadow: none;
-    min-height: 100px; /* Fixed minimum height for consistency */
-    max-height: 100px; /* Fixed maximum height for consistency */
+    box-shadow: none !important;
+    height: 100px !important; /* Force fixed height */
+    width: 120px !important; /* Force fixed width */
+    min-height: 100px !important;
+    max-height: 100px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    overflow: hidden; /* Prevent content overflow */
 }
 
 .file-item:hover {
@@ -361,13 +366,17 @@ window {
 
 /* Grid-specific styling */
 .grid-item {
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     padding: 8px;
     border-radius: 8px;
     transition: all 0.2s ease;
-    height: 100px; /* Fixed height for all grid items */
-    width: 120px; /* Fixed width for all grid items */
+    height: 100px !important; /* Force fixed height */
+    width: 120px !important; /* Force fixed width */
+    min-height: 100px !important;
+    max-height: 100px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -386,16 +395,35 @@ window {
 }
 
 .file-button {
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     padding: 0;
     margin: 0;
     border-radius: 8px;
     transition: all 0.2s ease;
+    height: 100px !important;
+    width: 120px !important;
+    min-height: 100px !important;
+    max-height: 100px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
 }
 
 .file-button:hover {
     background: transparent;
+}
+
+/* Empty placeholder for grid filling */
+.empty-placeholder {
+    background: transparent !important;
+    border: none !important;
+    opacity: 0 !important;
+    height: 100px !important;
+    width: 120px !important;
+    min-height: 100px !important;
+    max-height: 100px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
 }
 
 /* Icon size scale styling */
@@ -451,8 +479,8 @@ window {
 }
 
 .fileview-grid flowboxchild {
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     margin: 0;
     padding: 0;
 }

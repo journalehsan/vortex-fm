@@ -14,13 +14,14 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
 }
 
 pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig, icon_size: i32) -> Button {
-    // Calculate item dimensions based on icon size - use fixed height like home screen
-    let item_width = (icon_size as f32 * 1.5) as i32;
-    let item_height = (icon_size as f32 * 1.4) as i32; // Reduced from 1.8 to 1.4 for cleaner look
+    // Use fixed dimensions like home screen - not based on icon size
+    let item_width = 120; // Fixed width
+    let item_height = 100; // Fixed height
     
-    let item_box = Box::new(Orientation::Vertical, 4); // Reduced spacing from 6 to 4
+    let item_box = Box::new(Orientation::Vertical, 4);
     item_box.set_width_request(item_width);
     item_box.set_height_request(item_height);
+    item_box.set_size_request(item_width, item_height); // Force the size
     item_box.add_css_class("file-item");
     item_box.add_css_class("grid-item");
     
@@ -65,6 +66,7 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     // Make it clickable
     let button = Button::new();
     button.set_child(Some(&item_box));
+    button.set_size_request(item_width, item_height); // Force button size too
     button.add_css_class("file-button");
     
     // Set up right-click gesture for context menu

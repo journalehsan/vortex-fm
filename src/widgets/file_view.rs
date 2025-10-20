@@ -5,7 +5,7 @@ use crate::core::file_manager::FileManagerState;
 use crate::utils::search::{filter_files_in_directory, FileEntry};
 use crate::utils::icon_manager::IconSize;
 use std::fs;
-use gtk::{ListBox, ListBoxRow, FlowBox, FlowBoxChild, Label};
+use gtk::{ListBox, ListBoxRow, FlowBox, FlowBoxChild, Label, Grid, ScrolledWindow};
 
 // Adapter trait: each view implements this to provide its widget and lifecycle hooks
 pub trait FileViewAdapter {
@@ -128,19 +128,31 @@ impl FileViewAdapter for ListViewAdapter {
     }
 }
 
-// Improved GridView adapter with configurable icon sizes
+// Improved GridView adapter with fixed grid layout (like Qt HLayout/VLayout)
 pub struct GridViewAdapter {
     root: Option<GtkBox>,
+    grid: Option<Grid>,
+    scrolled: Option<ScrolledWindow>,
     icon_size: IconSize,
 }
 
 impl GridViewAdapter { 
     pub fn new() -> Self { 
-        Self { root: None, icon_size: IconSize::Medium } 
+        Self { 
+            root: None, 
+            grid: None,
+            scrolled: None,
+            icon_size: IconSize::Medium 
+        } 
     }
     
     pub fn with_icon_size(icon_size: IconSize) -> Self {
-        Self { root: None, icon_size }
+        Self { 
+            root: None, 
+            grid: None,
+            scrolled: None,
+            icon_size 
+        }
     }
 }
 
@@ -149,43 +161,69 @@ impl FileViewAdapter for GridViewAdapter {
         let root = GtkBox::new(Orientation::Vertical, 0);
         root.set_css_classes(&["fileview-grid"]);
         
-        let flow = FlowBox::new();
-        flow.set_selection_mode(gtk::SelectionMode::None);
+        // Create scrolled window for the grid
+        let scrolled = ScrolledWindow::new();
+        scrolled.set_hexpand(true);
+        scrolled.set_vexpand(true);
+        scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
         
-        // Improved spacing based on icon size
-        let icon_pixels = self.icon_size.to_pixels();
-        let spacing = (icon_pixels as f32 * 0.15) as i32; // Reduced from 0.2 to 0.15
-        flow.set_row_spacing(spacing as u32);
-        flow.set_column_spacing(spacing as u32);
-        flow.set_margin_start(16);
-        flow.set_margin_end(16);
-        flow.set_margin_top(16);
-        flow.set_margin_bottom(16);
+        // Create fixed grid layout (like Qt's HLayout/VLayout)
+        let grid = Grid::new();
+        grid.set_row_spacing(12);
+        grid.set_column_spacing(12);
+        grid.set_margin_start(16);
+        grid.set_margin_end(16);
+        grid.set_margin_top(16);
+        grid.set_margin_bottom(16);
+        grid.set_halign(gtk::Align::Start);
+        grid.set_valign(gtk::Align::Start);
         
-        // Set homogeneous sizing for consistent grid
-        flow.set_homogeneous(true);
-
+        // Calculate items per row based on available width
+        // Each item is 120px + 12px spacing = 132px
+        // Let's assume we have at least 800px width, so 6 items per row
+        const ITEMS_PER_ROW: i32 = 6;
+        
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
-
-        for file_entry in files {
+        
+        // Add files to grid with fixed positions
+        for (index, file_entry) in files.iter().enumerate() {
+            let row = (index as i32) / ITEMS_PER_ROW;
+            let col = (index as i32) % ITEMS_PER_ROW;
+            
             let btn = crate::widgets::file_item::create_file_item_with_size(
                 &file_entry.icon, 
                 &file_entry.name, 
                 &file_entry.file_type, 
-                file_entry.path, 
+                file_entry.path.clone(), 
                 &state.config,
-                icon_pixels
+                self.icon_size.to_pixels()
             );
-            let child = FlowBoxChild::new();
-            child.set_child(Some(&btn));
-            // Insert at end (-1) for gtk4-rs 0.7
-            flow.insert(&child, -1);
+            
+            // Attach to grid at specific position
+            grid.attach(&btn, col, row, 1, 1);
         }
-
-        root.append(&flow);
+        
+        // Add empty placeholder items to fill the grid and prevent dynamic sizing
+        let total_items = files.len() as i32;
+        let total_rows = (total_items + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW; // Ceiling division
+        let total_cells = total_rows * ITEMS_PER_ROW;
+        let empty_items_needed = total_cells - total_items;
+        
+        for i in 0..empty_items_needed {
+            let empty_item = self.create_empty_placeholder();
+            let row = (total_items + i) / ITEMS_PER_ROW;
+            let col = (total_items + i) % ITEMS_PER_ROW;
+            grid.attach(&empty_item, col, row, 1, 1);
+        }
+        
+        scrolled.set_child(Some(&grid));
+        root.append(&scrolled);
+        
         let w: Widget = root.clone().upcast();
         self.root = Some(root);
+        self.grid = Some(grid);
+        self.scrolled = Some(scrolled);
         w
     }
 
@@ -194,52 +232,67 @@ impl FileViewAdapter for GridViewAdapter {
     }
 
     fn update(&mut self, state: &FileManagerState) {
-        // In-place update: clear and rebuild flowbox without replacing entire widget
-        if let Some(root) = &self.root {
-            // Clear existing children
-            while let Some(child) = root.first_child() {
-                root.remove(&child);
+        // In-place update: clear and rebuild grid without replacing entire widget
+        if let Some(grid) = &self.grid {
+            // Clear all children from grid
+            while let Some(child) = grid.first_child() {
+                grid.remove(&child);
             }
             
-            let flow = FlowBox::new();
-            flow.set_selection_mode(gtk::SelectionMode::None);
+            const ITEMS_PER_ROW: i32 = 6;
             
-            // Improved spacing based on icon size
-            let icon_pixels = self.icon_size.to_pixels();
-            let spacing = (icon_pixels as f32 * 0.15) as i32; // Reduced from 0.2 to 0.15
-            flow.set_row_spacing(spacing as u32);
-            flow.set_column_spacing(spacing as u32);
-            flow.set_margin_start(16);
-            flow.set_margin_end(16);
-            flow.set_margin_top(16);
-            flow.set_margin_bottom(16);
-            
-            // Set homogeneous sizing for consistent grid
-            flow.set_homogeneous(true);
-
             // Use the search utility to get filtered files
             let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
-
-            for file_entry in files {
+            
+            // Add files to grid with fixed positions
+            for (index, file_entry) in files.iter().enumerate() {
+                let row = (index as i32) / ITEMS_PER_ROW;
+                let col = (index as i32) % ITEMS_PER_ROW;
+                
                 let btn = crate::widgets::file_item::create_file_item_with_size(
                     &file_entry.icon, 
                     &file_entry.name, 
                     &file_entry.file_type, 
-                    file_entry.path, 
+                    file_entry.path.clone(), 
                     &state.config,
-                    icon_pixels
+                    self.icon_size.to_pixels()
                 );
-                let child = FlowBoxChild::new();
-                child.set_child(Some(&btn));
-                flow.insert(&child, -1);
+                
+                // Attach to grid at specific position
+                grid.attach(&btn, col, row, 1, 1);
             }
-
-            root.append(&flow);
+            
+            // Add empty placeholder items to fill the grid and prevent dynamic sizing
+            let total_items = files.len() as i32;
+            let total_rows = (total_items + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW; // Ceiling division
+            let total_cells = total_rows * ITEMS_PER_ROW;
+            let empty_items_needed = total_cells - total_items;
+            
+            for i in 0..empty_items_needed {
+                let empty_item = self.create_empty_placeholder();
+                let row = (total_items + i) / ITEMS_PER_ROW;
+                let col = (total_items + i) % ITEMS_PER_ROW;
+                grid.attach(&empty_item, col, row, 1, 1);
+            }
         }
     }
     
     fn set_icon_size(&mut self, size: i32) {
         self.icon_size = IconSize::from_pixels(size);
+    }
+}
+
+impl GridViewAdapter {
+    /// Create an empty placeholder widget to fill grid cells and prevent dynamic sizing
+    fn create_empty_placeholder(&self) -> gtk::Widget {
+        let placeholder = gtk::Box::new(Orientation::Vertical, 0);
+        placeholder.set_size_request(120, 100); // Same size as file items
+        placeholder.add_css_class("empty-placeholder");
+        
+        // Make it invisible but still take up space
+        placeholder.set_opacity(0.0);
+        
+        placeholder.upcast()
     }
 }
 
