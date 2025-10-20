@@ -57,6 +57,9 @@ pub fn navigate_to_directory(path: PathBuf) {
                 state.navigation_history = nav_history;
                 state.clear_filter(); // Clear search filter when navigating
                 state.refresh_ui();
+                
+                // Update breadcrumb path
+                crate::views::path_bar::update_breadcrumb_path(&state.current_path());
             }
         }
         

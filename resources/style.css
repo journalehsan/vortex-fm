@@ -235,6 +235,78 @@ window {
     margin: 0 4px;
 }
 
+/* Modern Breadcrumb Path Bar */
+.breadcrumb-container {
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    margin: 0 4px;
+    min-height: 32px;
+}
+
+.breadcrumb-path {
+    padding: 4px 8px;
+    background: transparent;
+}
+
+.breadcrumb-button {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 2px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a73e8;
+    transition: all 0.2s ease;
+    min-height: 24px;
+}
+
+.breadcrumb-button:hover {
+    background-color: #e8f0fe;
+    color: #1557b0;
+    transform: translateY(-1px);
+}
+
+.breadcrumb-button:active {
+    background-color: #d2e3fc;
+    transform: translateY(0);
+}
+
+.breadcrumb-separator {
+    color: #9aa0a6;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 4px;
+    min-width: 12px;
+    text-align: center;
+}
+
+.breadcrumb-ellipsis {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 2px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #9aa0a6;
+    transition: all 0.2s ease;
+    min-height: 24px;
+    min-width: 24px;
+}
+
+.breadcrumb-ellipsis:hover {
+    background-color: #f1f3f4;
+    color: #5f6368;
+    transform: translateY(-1px);
+}
+
+.breadcrumb-ellipsis:active {
+    background-color: #e8eaed;
+    transform: translateY(0);
+}
+
 /* File Items */
 .file-item {
     padding: 12px;

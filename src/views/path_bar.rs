@@ -1,7 +1,8 @@
 use gtk::prelude::*;
-use gtk::{Box, Orientation, Button, Separator, Label, SearchEntry};
+use gtk::{Box, Orientation, Button, Separator, Label, SearchEntry, ScrolledWindow};
 use crate::core::file_manager::FileManagerState;
-use crate::core::navigation::get_global_state;
+use crate::core::navigation::{get_global_state, navigate_to_directory};
+use std::path::PathBuf;
 
 pub fn create_path_bar(state: &mut FileManagerState) -> Box {
     let path_bar = Box::new(Orientation::Horizontal, 8);
@@ -61,16 +62,14 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
     let separator = Separator::new(Orientation::Vertical);
     path_bar.append(&separator);
     
-    // Path display
-    let current_path_str = state.current_path().to_string_lossy().to_string();
-    let path_label = Label::new(Some(&current_path_str));
-    path_label.set_halign(gtk::Align::Start);
-    path_label.set_hexpand(true);
-    path_label.add_css_class("path-label");
-    path_bar.append(&path_label);
+    // Breadcrumb path display
+    let breadcrumb_container = create_breadcrumb_path(state.current_path());
+    breadcrumb_container.set_hexpand(true);
+    set_global_breadcrumb_container(breadcrumb_container.clone());
+    path_bar.append(&breadcrumb_container);
     
     // Store reference for later updates
-    state.path_label = Some(path_label.clone());
+    state.path_label = Some(create_path_label_for_state(state.current_path()));
     
     // Search box
     let search_entry = SearchEntry::new();
@@ -89,5 +88,195 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
     path_bar.append(&search_entry);
     
     path_bar
+}
+
+fn create_breadcrumb_path(current_path: &PathBuf) -> ScrolledWindow {
+    let scrolled = ScrolledWindow::new();
+    scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Never);
+    scrolled.set_hexpand(true);
+    scrolled.add_css_class("breadcrumb-container");
+    
+    let mut breadcrumb_box = Box::new(Orientation::Horizontal, 0);
+    breadcrumb_box.add_css_class("breadcrumb-path");
+    
+    // Get path components
+    let path_str = current_path.to_string_lossy().to_string();
+    let components = path_str.split('/').filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+    
+    if components.is_empty() {
+        // Root directory
+        let root_btn = create_breadcrumb_button("/", "/");
+        breadcrumb_box.append(&root_btn);
+    } else {
+        // Smart ellipsis handling for long paths
+        let max_visible_segments = 6; // Show max 6 segments before ellipsis
+        
+        if components.len() <= max_visible_segments {
+            // Short path - show all segments
+            build_full_breadcrumb(&components, &mut breadcrumb_box);
+        } else {
+            // Long path - show first few, ellipsis, last few
+            build_ellipsis_breadcrumb(&components, max_visible_segments, &mut breadcrumb_box);
+        }
+    }
+    
+    scrolled.set_child(Some(&breadcrumb_box));
+    scrolled
+}
+
+fn create_breadcrumb_button(text: &str, path: &str) -> Button {
+    let btn = Button::new();
+    btn.set_label(text);
+    btn.add_css_class("breadcrumb-button");
+    btn.set_halign(gtk::Align::Start);
+    
+    // Connect click handler
+    let path_buf = PathBuf::from(path);
+    btn.connect_clicked(move |_| {
+        navigate_to_directory(path_buf.clone());
+    });
+    
+    btn
+}
+
+fn create_breadcrumb_separator() -> Label {
+    let separator = Label::new(Some("›"));
+    separator.add_css_class("breadcrumb-separator");
+    separator.set_halign(gtk::Align::Center);
+    separator
+}
+
+fn build_full_breadcrumb(components: &[&str], breadcrumb_box: &mut Box) {
+    let mut current_path_str = String::new();
+    
+    for (i, component) in components.iter().enumerate() {
+        if !current_path_str.is_empty() {
+            current_path_str.push('/');
+        }
+        current_path_str.push_str(component);
+        
+        // Create breadcrumb button
+        let btn = create_breadcrumb_button(component, &current_path_str);
+        breadcrumb_box.append(&btn);
+        
+        // Add separator (except for last item)
+        if i < components.len() - 1 {
+            let separator = create_breadcrumb_separator();
+            breadcrumb_box.append(&separator);
+        }
+    }
+}
+
+fn build_ellipsis_breadcrumb(components: &[&str], _max_visible: usize, breadcrumb_box: &mut Box) {
+    let total = components.len();
+    let show_first = 2; // Always show first 2 segments
+    let show_last = 2;  // Always show last 2 segments
+    
+    // Build first segments
+    let mut current_path_str = String::new();
+    for i in 0..show_first {
+        if !current_path_str.is_empty() {
+            current_path_str.push('/');
+        }
+        current_path_str.push_str(components[i]);
+        
+        let btn = create_breadcrumb_button(components[i], &current_path_str);
+        breadcrumb_box.append(&btn);
+        
+        let separator = create_breadcrumb_separator();
+        breadcrumb_box.append(&separator);
+    }
+    
+    // Add ellipsis button (shows middle segments on click)
+    let ellipsis_btn = create_ellipsis_button(components, show_first, total - show_last);
+    breadcrumb_box.append(&ellipsis_btn);
+    
+    let separator = create_breadcrumb_separator();
+    breadcrumb_box.append(&separator);
+    
+    // Build last segments
+    for i in (total - show_last)..total {
+        if !current_path_str.is_empty() {
+            current_path_str.push('/');
+        }
+        current_path_str.push_str(components[i]);
+        
+        let btn = create_breadcrumb_button(components[i], &current_path_str);
+        breadcrumb_box.append(&btn);
+        
+        if i < total - 1 {
+            let separator = create_breadcrumb_separator();
+            breadcrumb_box.append(&separator);
+        }
+    }
+}
+
+fn create_ellipsis_button(_components: &[&str], _start: usize, _end: usize) -> Button {
+    let btn = Button::new();
+    btn.set_label("⋯");
+    btn.add_css_class("breadcrumb-ellipsis");
+    btn.set_halign(gtk::Align::Center);
+    
+    // For now, ellipsis is just visual - in future could show popover
+    btn.connect_clicked(move |_| {
+        println!("Ellipsis clicked - showing hidden path segments");
+    });
+    
+    btn
+}
+
+fn create_path_label_for_state(current_path: &PathBuf) -> Label {
+    // This is kept for compatibility with existing state management
+    let current_path_str = current_path.to_string_lossy().to_string();
+    let path_label = Label::new(Some(&current_path_str));
+    path_label.add_css_class("path-label");
+    path_label
+}
+
+// Global reference to the breadcrumb container for updates
+static mut GLOBAL_BREADCRUMB_CONTAINER: Option<ScrolledWindow> = None;
+
+pub fn set_global_breadcrumb_container(container: ScrolledWindow) {
+    unsafe {
+        GLOBAL_BREADCRUMB_CONTAINER = Some(container);
+    }
+}
+
+pub fn update_breadcrumb_path(current_path: &PathBuf) {
+    unsafe {
+        if let Some(container) = &GLOBAL_BREADCRUMB_CONTAINER {
+            // Clear existing content
+            if let Some(child) = container.child() {
+                container.set_child(None::<&gtk::Widget>);
+            }
+            
+            // Create new breadcrumb
+            let mut breadcrumb_box = Box::new(Orientation::Horizontal, 0);
+            breadcrumb_box.add_css_class("breadcrumb-path");
+            
+            // Get path components
+            let path_str = current_path.to_string_lossy().to_string();
+            let components = path_str.split('/').filter(|s| !s.is_empty()).collect::<Vec<&str>>();
+            
+            if components.is_empty() {
+                // Root directory
+                let root_btn = create_breadcrumb_button("/", "/");
+                breadcrumb_box.append(&root_btn);
+            } else {
+                // Smart ellipsis handling for long paths
+                let max_visible_segments = 6; // Show max 6 segments before ellipsis
+                
+                if components.len() <= max_visible_segments {
+                    // Short path - show all segments
+                    build_full_breadcrumb(&components, &mut breadcrumb_box);
+                } else {
+                    // Long path - show first few, ellipsis, last few
+                    build_ellipsis_breadcrumb(&components, max_visible_segments, &mut breadcrumb_box);
+                }
+            }
+            
+            container.set_child(Some(&breadcrumb_box));
+        }
+    }
 }
 
