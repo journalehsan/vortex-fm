@@ -400,70 +400,47 @@ static mut GLOBAL_SIDEBAR_CONFIG: Option<VortexConfig> = None;
 static mut GLOBAL_QA_LIST_BOXES: Option<std::rc::Rc<std::cell::RefCell<Vec<gtk::glib::WeakRef<ListBox>>>>> = None;
 
 pub fn init_global_sidebar(config: VortexConfig) {
-    println!("[init_global_sidebar] Initializing global sidebar and QA list boxes (without clearing)");
     unsafe {
         if GLOBAL_QA_LIST_BOXES.is_none() {
             GLOBAL_QA_LIST_BOXES = Some(std::rc::Rc::new(std::cell::RefCell::new(Vec::new())));
-            println!("[init_global_sidebar] ✓ GLOBAL_QA_LIST_BOXES initialized");
-        } else {
-            println!("[init_global_sidebar] ℹ GLOBAL_QA_LIST_BOXES already initialized");
         }
         GLOBAL_SIDEBAR_CONFIG = Some(config);
     }
 }
 
 pub fn set_global_sidebar(sidebar: Box, config: VortexConfig) {
-    println!("[set_global_sidebar] Setting global sidebar");
     unsafe {
         GLOBAL_SIDEBAR = Some(std::rc::Rc::new(std::cell::RefCell::new(sidebar)));
         GLOBAL_SIDEBAR_CONFIG = Some(config);
         // Don't reinitialize GLOBAL_QA_LIST_BOXES - it's already set
         if GLOBAL_QA_LIST_BOXES.is_none() {
-            println!("[set_global_sidebar] ⚠ GLOBAL_QA_LIST_BOXES is None, initializing");
             GLOBAL_QA_LIST_BOXES = Some(std::rc::Rc::new(std::cell::RefCell::new(Vec::new())));
         }
-        println!("[set_global_sidebar] ✓ Globals updated");
     }
 }
 
 pub fn add_qa_list_box(list_box: &ListBox) {
-    println!("[add_qa_list_box] Registering Quick Access list box");
     unsafe {
         if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
             qa_list_rc.borrow_mut().push(list_box.downgrade());
-            let count = qa_list_rc.borrow().len();
-            println!("[add_qa_list_box] ✓ List box registered (total: {})", count);
-        } else {
-            println!("[add_qa_list_box] ✗ GLOBAL_QA_LIST_BOXES is None - call set_global_sidebar first!");
         }
     }
 }
 
 pub fn add_bookmark_to_qa_ui(bookmark: &Bookmark) {
-    println!("   [add_bookmark_to_qa_ui] Starting...");
     unsafe {
         if let Some(qa_list_rc) = GLOBAL_QA_LIST_BOXES.as_ref() {
-            println!("   [add_bookmark_to_qa_ui] ✓ GLOBAL_QA_LIST_BOXES exists");
             let mut list_boxes = qa_list_rc.borrow_mut();
-            println!("   [add_bookmark_to_qa_ui] Found {} list boxes", list_boxes.len());
-            let mut added = 0;
             list_boxes.retain(|weak_ref| {
                 if let Some(list) = weak_ref.upgrade() {
-                    println!("   [add_bookmark_to_qa_ui] ✓ List box {} upgraded successfully", added);
                     // Directly add item to the list
                     let item = create_sidebar_item(bookmark);
                     list.append(&item);
-                    println!("   [add_bookmark_to_qa_ui] ✓ Item appended to list box {}", added);
-                    added += 1;
                     true
                 } else {
-                    println!("   [add_bookmark_to_qa_ui] ✗ List box could not be upgraded (dead reference)");
                     false
                 }
             });
-            println!("   [add_bookmark_to_qa_ui] ✓ Completed - added to {} list boxes", added);
-        } else {
-            println!("   [add_bookmark_to_qa_ui] ✗ GLOBAL_QA_LIST_BOXES is None!");
         }
     }
 }
