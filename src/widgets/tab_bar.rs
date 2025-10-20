@@ -123,7 +123,7 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
     let tab_id = tab.id;
     
     let gesture = gtk::GestureClick::new();
-    // Accept all mouse buttons (0 = any) so middle-click is captured
+    // Left/double click switching handler
     gesture.set_button(0);
     gesture.connect_pressed(move |g, n_press, _x, _y| {
         // Middle-click closes tab
@@ -158,6 +158,28 @@ pub fn create_tab_widget(tab: &Tab, tab_manager: Rc<RefCell<TabManager>>) -> Box
         }
     });
     click_area.add_controller(gesture);
+
+    // Dedicated middle-click close gesture (more reliable)
+    let mid_gesture = gtk::GestureClick::new();
+    mid_gesture.set_button(2);
+    mid_gesture.set_exclusive(true);
+    mid_gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let tab_id_for_mid = tab.id;
+    mid_gesture.connect_pressed(move |_, _n_press, _x, _y| {
+        if let Some(tab_manager_rc) = crate::core::navigation::get_global_tab_manager() {
+            let (_closed, next_path_opt) = {
+                let closed_local = tab_manager_rc.borrow_mut().close_tab(tab_id_for_mid);
+                (closed_local, tab_manager_rc.borrow().get_active_path())
+            };
+            crate::widgets::tab_bar::update_global_tab_bar();
+            if let Some(path) = next_path_opt {
+                gtk::glib::idle_add_once(move || {
+                    crate::core::navigation::navigate_to_directory(path);
+                });
+            }
+        }
+    });
+    tab_widget.add_controller(mid_gesture);
 
     // Scroll over tab bar to switch tabs
     let scroll_ctrl = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);

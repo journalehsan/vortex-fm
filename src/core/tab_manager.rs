@@ -93,6 +93,11 @@ impl TabManager {
     }
     
     pub fn close_tab(&mut self, tab_id: usize) -> bool {
+        // Do not allow closing the last remaining tab
+        if self.tabs.len() <= 1 {
+            crate::utils::simple_debug::debug_info("TAB_MANAGER", "Refusing to close last tab");
+            return false;
+        }
         crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Request to close tab_id={} (tabs={})", tab_id, self.tabs.len()));
         if let Some(pos) = self.tabs.iter().position(|t| t.id == tab_id) {
             crate::utils::simple_debug::debug_info("TAB_MANAGER", &format!("Found tab at index {}", pos));
