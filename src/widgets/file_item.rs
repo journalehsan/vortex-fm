@@ -89,29 +89,32 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     gesture.connect_pressed(move |gesture, n_press, _x, _y| {
         if gesture.current_button() == 1 {
             if path_clone.is_dir() {
-                // For folders: always open on single click (regardless of config)
-                if n_press == 1 {
+                // For folders: single click opens if config allows
+                if n_press == 1 && single_click_mode {
                     println!("📁 Opening directory: {}", path_clone.display());
                     navigate_to_directory(path_clone.clone());
                 }
+                // If double-click mode, open on double-click
+                else if n_press == 2 && !single_click_mode {
+                    println!("📁 Opening directory (double-click): {}", path_clone.display());
+                    navigate_to_directory(path_clone.clone());
+                }
+                // Single-click select for folders too (to show details)
+                if n_press == 1 {
+                    select_file(path_clone.clone());
+                    println!("📁 Selected folder: {}", path_clone.display());
+                }
             } else {
-                // For files: behavior depends on single_click_to_open config
-                if single_click_mode {
-                    // Single-click mode: single click opens the file
-                    if n_press == 1 {
-                        println!("📄 Opening file (single-click mode): {}", path_clone.display());
-                        // TODO: Open file with default application
-                    }
-                } else {
-                    // Double-click mode: single click selects, double click opens
-                    if n_press == 1 {
-                        // Single click - select the file
-                        select_file(path_clone.clone());
-                        println!("📄 Selected file: {}", path_clone.display());
-                    } else if n_press == 2 {
-                        // Double click - open the file
-                        println!("📄 Opening file (double-click mode): {}", path_clone.display());
-                        // TODO: Open file with default application
+                // For files: ALWAYS single-click selects (show details), never opens on single-click
+                if n_press == 1 {
+                    // Single click - select the file and show details
+                    select_file(path_clone.clone());
+                    println!("📄 Selected file: {}", path_clone.display());
+                } else if n_press == 2 {
+                    // Double click - open the file
+                    println!("📄 Opening file (double-click): {}", path_clone.display());
+                    if let Err(e) = crate::utils::file_ops::open_with_system(&path_clone) {
+                        eprintln!("Error opening file: {}", e);
                     }
                 }
             }
