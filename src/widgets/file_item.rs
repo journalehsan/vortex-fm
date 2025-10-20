@@ -79,6 +79,7 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     // Connect click handler with double-click detection
     let _name_clone = name.to_string();
     let path_clone = path.clone();
+    let single_click_mode = config.single_click_to_open;
     
     // Use GestureClick to handle both single and double clicks
     let gesture = gtk::GestureClick::new();
@@ -87,30 +88,36 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
     gesture.connect_pressed(move |gesture, n_press, _x, _y| {
         if gesture.current_button() == 1 {
             if path_clone.is_dir() {
-                // For folders: both single and double click open the folder
-                if n_press == 1 || n_press == 2 {
+                // For folders: always open on single click (regardless of config)
+                if n_press == 1 {
                     println!("📁 Opening directory: {}", path_clone.display());
                     navigate_to_directory(path_clone.clone());
                 }
             } else {
-                // For files: single click = select, double click = open
-                if n_press == 1 {
-                    // Single click - select the file
-                    select_file(path_clone.clone());
-                    println!("📄 Selected file: {}", path_clone.display());
-                } else if n_press == 2 {
-                    // Double click - open the file
-                    println!("📄 Opening file: {}", path_clone.display());
-                    // TODO: Open file with default application
+                // For files: behavior depends on single_click_to_open config
+                if single_click_mode {
+                    // Single-click mode: single click opens the file
+                    if n_press == 1 {
+                        println!("📄 Opening file (single-click mode): {}", path_clone.display());
+                        // TODO: Open file with default application
+                    }
+                } else {
+                    // Double-click mode: single click selects, double click opens
+                    if n_press == 1 {
+                        // Single click - select the file
+                        select_file(path_clone.clone());
+                        println!("📄 Selected file: {}", path_clone.display());
+                    } else if n_press == 2 {
+                        // Double click - open the file
+                        println!("📄 Opening file (double-click mode): {}", path_clone.display());
+                        // TODO: Open file with default application
+                    }
                 }
             }
         }
     });
     
     button.add_controller(gesture);
-    
-    // TODO: Add double-click handler if single click is disabled
-    // Note: GTK4 Button doesn't have connect_button_press_event, need different approach
     
     // Return the button
     button
