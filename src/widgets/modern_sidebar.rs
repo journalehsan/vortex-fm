@@ -426,7 +426,7 @@ pub fn refresh_sidebar() {
                                                     list_box.insert(&welcome_row, 0);
                                                 }
                                             }
-                                            cb.reorder_child_after(&quick_access_section, &next);
+                                            cb.reorder_child_after(&quick_access_section, Some(&next));
                                         }
                                     }
                                 }
