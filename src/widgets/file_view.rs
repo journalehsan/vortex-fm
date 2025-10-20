@@ -170,12 +170,14 @@ impl FileViewAdapter for GridViewAdapter {
         
         // Create scrolled window for the grid
         let scrolled = ScrolledWindow::new();
-        scrolled.set_hexpand(true);
-        scrolled.set_vexpand(true);
+        scrolled.set_hexpand(false);  // Don't expand horizontally
+        scrolled.set_vexpand(true);   // Allow vertical expansion only
         // Set scroll policy to disable horizontal scrolling, enable vertical
         scrolled.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
         scrolled.set_propagate_natural_width(false); // Don't propagate natural width
         scrolled.set_propagate_natural_height(false);
+        scrolled.set_max_content_width(1000); // Prevent horizontal overflow
+        scrolled.set_halign(gtk::Align::Center); // Center the scroll area
         
         // Create fixed grid layout (like Qt's HLayout/VLayout)
         let grid = Grid::new();
@@ -193,16 +195,21 @@ impl FileViewAdapter for GridViewAdapter {
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Initial responsive calculation - will be updated on size allocation
-        let initial_available_width = 800; // Reasonable default
-        let items_per_row = (initial_available_width / total_item_width).max(1);
+        // Use a more conservative available width calculation
+        // Typical main content area is around 600-700px after sidebar subtraction
+        let conservative_available_width = 600;
+        let items_per_row = (conservative_available_width / total_item_width).max(1);
         let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+        
+        // Ensure grid doesn't exceed reasonable bounds
+        let max_grid_width = 1000; // Prevent excessive width
+        let final_grid_width = grid_width.min(max_grid_width);
         
         grid.set_row_spacing(spacing as u32);
         grid.set_column_spacing(spacing as u32);
         grid.set_margin_start(margin);
         grid.set_margin_end(margin);
-        grid.set_size_request(grid_width, -1); // Fixed width to prevent horizontal overflow
+        grid.set_size_request(final_grid_width, -1); // Fixed width to prevent horizontal overflow
         grid.set_margin_top(margin);
         grid.set_margin_bottom(margin);
         grid.set_halign(gtk::Align::Center); // Center the grid
@@ -211,21 +218,6 @@ impl FileViewAdapter for GridViewAdapter {
         // Store references for later responsive updates
         let grid_clone = grid.clone();
         let icon_size_clone = self.icon_size;
-        
-        // Connect to size-allocate signal for true responsiveness (like Nautilus/Nemo)
-        scroll_container.connect_size_allocate(|widget, rect| {
-            let available_width = rect.width() - 2 * margin;
-            
-            // Recalculate items per row based on actual available width
-            let items_per_row = (available_width / total_item_width).max(1);
-            let new_grid_width = items_per_row * total_item_width - spacing + 2 * margin;
-            
-            // Update grid width to fit available space
-            grid_clone.set_size_request(new_grid_width, -1);
-            
-            // TODO: In a real implementation, we'd need to rebuild the grid layout
-            // with the new items_per_row. This requires more complex state management.
-        });
         
         // Use the search utility to get filtered files
         let files = filter_files_in_directory(&state.current_path(), &state.current_filter, &state.config);
@@ -297,16 +289,21 @@ impl FileViewAdapter for GridViewAdapter {
             let tile_width = (base_tile_width as f32 * scale_factor) as i32;
             let total_item_width = tile_width + spacing;
             
-            // Initial responsive calculation - will be updated on size allocation
-            let initial_available_width = 800; // Reasonable default
-            let items_per_row = (initial_available_width / total_item_width).max(1);
+            // Use a more conservative available width calculation
+            // Typical main content area is around 600-700px after sidebar subtraction
+            let conservative_available_width = 600;
+            let items_per_row = (conservative_available_width / total_item_width).max(1);
             let grid_width = items_per_row * total_item_width - spacing + 2 * margin;
+            
+            // Ensure grid doesn't exceed reasonable bounds
+            let max_grid_width = 1000; // Prevent excessive width
+            let final_grid_width = grid_width.min(max_grid_width);
             
             grid.set_row_spacing(spacing as u32);
             grid.set_column_spacing(spacing as u32);
             grid.set_margin_start(margin);
             grid.set_margin_end(margin);
-            grid.set_size_request(grid_width, -1); // Fixed width to prevent horizontal overflow
+            grid.set_size_request(final_grid_width, -1); // Fixed width to prevent horizontal overflow
             grid.set_margin_top(margin);
             grid.set_margin_bottom(margin);
             grid.set_halign(gtk::Align::Center); // Center the grid
