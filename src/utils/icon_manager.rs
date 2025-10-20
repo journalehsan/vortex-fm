@@ -14,10 +14,26 @@ pub struct IconManager {
 
 impl IconManager {
     pub fn new() -> Self {
-        let icon_theme = gtk::IconTheme::for_display(&gtk::gdk::Display::default().unwrap());
+        // Try to get the default display, but handle the case where GTK might not be fully initialized
+        let icon_theme = if let Some(display) = gtk::gdk::Display::default() {
+            gtk::IconTheme::for_display(&display)
+        } else {
+            // Fallback: create a basic icon theme
+            gtk::IconTheme::new()
+        };
+        
         Self {
             icon_cache: RefCell::new(HashMap::new()),
             icon_theme,
+            mime_type_cache: RefCell::new(HashMap::new()),
+        }
+    }
+    
+    /// Create a dummy IconManager that always falls back to emoji
+    pub fn dummy() -> Self {
+        Self {
+            icon_cache: RefCell::new(HashMap::new()),
+            icon_theme: gtk::IconTheme::new(),
             mime_type_cache: RefCell::new(HashMap::new()),
         }
     }
@@ -175,7 +191,13 @@ static mut ICON_MANAGER: Option<Mutex<IconManager>> = None;
 pub fn get_global_icon_manager() -> &'static Mutex<IconManager> {
     unsafe {
         INIT.call_once(|| {
-            ICON_MANAGER = Some(Mutex::new(IconManager::new()));
+            // Only initialize if GTK is ready
+            if gtk::is_initialized() {
+                ICON_MANAGER = Some(Mutex::new(IconManager::new()));
+            } else {
+                // Create a dummy manager that will fall back to emoji
+                ICON_MANAGER = Some(Mutex::new(IconManager::dummy()));
+            }
         });
         ICON_MANAGER.as_ref().unwrap()
     }
