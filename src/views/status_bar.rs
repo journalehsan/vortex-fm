@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk::{Box, Orientation, Label, Button};
 use crate::core::file_manager::FileManagerState;
+use crate::views::content_area::{switch_view_to_list, switch_view_to_grid};
 
 pub fn create_status_bar(state: &FileManagerState) -> Box {
     let status_bar = Box::new(Orientation::Horizontal, 12);
@@ -45,7 +46,37 @@ pub fn create_status_bar(state: &FileManagerState) -> Box {
     let view_box = Box::new(Orientation::Horizontal, 4);
     let list_view_btn = Button::from_icon_name("view-list-symbolic");
     let grid_view_btn = Button::from_icon_name("view-grid-symbolic");
-    grid_view_btn.add_css_class("suggested-action");
+    // Default active view matches content area default (List)
+    list_view_btn.add_css_class("suggested-action");
+    list_view_btn.add_css_class("active-tab");
+    {
+        let state_ptr: *const FileManagerState = state as *const _;
+        let list_btn = list_view_btn.clone();
+        let grid_btn = grid_view_btn.clone();
+        list_view_btn.connect_clicked(move |_| {
+            let state_ref = unsafe { &*state_ptr };
+            switch_view_to_list(state_ref);
+            // Toggle active styling
+            grid_btn.remove_css_class("suggested-action");
+            grid_btn.remove_css_class("active-tab");
+            list_btn.add_css_class("suggested-action");
+            list_btn.add_css_class("active-tab");
+        });
+    }
+    {
+        let state_ptr: *const FileManagerState = state as *const _;
+        let list_btn = list_view_btn.clone();
+        let grid_btn = grid_view_btn.clone();
+        grid_view_btn.connect_clicked(move |_| {
+            let state_ref = unsafe { &*state_ptr };
+            switch_view_to_grid(state_ref);
+            // Toggle active styling
+            list_btn.remove_css_class("suggested-action");
+            list_btn.remove_css_class("active-tab");
+            grid_btn.add_css_class("suggested-action");
+            grid_btn.add_css_class("active-tab");
+        });
+    }
     
     view_box.append(&list_view_btn);
     view_box.append(&grid_view_btn);

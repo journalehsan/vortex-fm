@@ -4,6 +4,7 @@ use crate::core::file_manager::FileManagerState;
 use crate::views::path_bar::create_path_bar;
 use crate::views::status_bar::create_status_bar;
 use crate::widgets::home_screen::create_home_screen;
+use crate::widgets::file_view::{FileView, ListViewAdapter, GridViewAdapter};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -14,6 +15,7 @@ static mut GLOBAL_BROWSER_BTN: Option<Button> = None;
 static mut GLOBAL_HOME_CONTAINER: Option<ScrolledWindow> = None;
 static mut GLOBAL_TAB_BAR: Option<Box> = None;
 static mut GLOBAL_NAV_BUTTONS: Option<Box> = None;
+static mut GLOBAL_FILE_VIEW: Option<Rc<RefCell<FileView>>> = None;
 
 pub fn set_global_stack(stack: Rc<RefCell<Stack>>) {
     unsafe {
@@ -30,6 +32,26 @@ pub fn set_global_tab_bar(tab_bar: Box) {
 pub fn set_global_nav_buttons(nav_buttons: Box) {
     unsafe {
         GLOBAL_NAV_BUTTONS = Some(nav_buttons);
+    }
+}
+
+pub fn set_global_file_view(fv: Rc<RefCell<FileView>>) {
+    unsafe { GLOBAL_FILE_VIEW = Some(fv); }
+}
+
+pub fn switch_view_to_list(state: &FileManagerState) {
+    unsafe {
+        if let Some(fv) = &GLOBAL_FILE_VIEW {
+            fv.borrow_mut().set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
+        }
+    }
+}
+
+pub fn switch_view_to_grid(state: &FileManagerState) {
+    unsafe {
+        if let Some(fv) = &GLOBAL_FILE_VIEW {
+            fv.borrow_mut().set_adapter(std::boxed::Box::new(GridViewAdapter::new()), state);
+        }
     }
 }
 
@@ -81,9 +103,21 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
     let path_bar = create_path_bar(state);
     file_browser.append(&path_bar);
     
-    // File list area
-    let file_list = create_file_list(state);
-    file_browser.append(&file_list);
+    // File view with adapter pattern inside a scrolled container
+    let scrolled = ScrolledWindow::new();
+    scrolled.set_hexpand(true);
+    scrolled.set_vexpand(true);
+    scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+
+    let file_view = Rc::new(RefCell::new(FileView::new()));
+    set_global_file_view(file_view.clone());
+    // Default to List view
+    {
+        let mut fv = file_view.borrow_mut();
+        fv.set_adapter(std::boxed::Box::new(ListViewAdapter::new()), state);
+        scrolled.set_child(Some(fv.widget()));
+    }
+    file_browser.append(&scrolled);
     
     // Status bar
     let status_bar = create_status_bar(state);
@@ -130,8 +164,7 @@ pub fn create_content_area(state: &mut FileManagerState) -> Box {
         GLOBAL_NAV_BUTTONS = Some(nav_box.clone());
     }
     
-    // Store references for later updates
-    state.file_list_widget = Some(file_list.clone());
+    // Store references for later updates (keep status bar only for now)
     state.status_bar = Some(status_bar.clone());
     
     content
