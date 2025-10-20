@@ -71,11 +71,18 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
     // Store reference for later updates
     state.path_label = Some(create_path_label_for_state(state.current_path()));
     
-    // Search box
+    // Compact search: icon that expands to an entry with a close button
+    let search_icon_btn = Button::from_icon_name("system-search-symbolic");
+    let search_revealer = gtk::Revealer::new();
+    search_revealer.set_transition_type(gtk::RevealerTransitionType::SlideLeft);
+    search_revealer.set_reveal_child(false);
+
+    let search_box = Box::new(Orientation::Horizontal, 4);
     let search_entry = SearchEntry::new();
     search_entry.set_placeholder_text(Some("Search files..."));
-    search_entry.set_width_request(200);
-    
+    search_entry.set_width_request(220);
+    let search_close_btn = Button::from_icon_name("window-close-symbolic");
+
     // Connect search functionality
     search_entry.connect_search_changed(move |entry| {
         if let Some(state_rc) = get_global_state() {
@@ -84,8 +91,37 @@ pub fn create_path_bar(state: &mut FileManagerState) -> Box {
             state_rc.borrow().refresh_ui();
         }
     });
-    
-    path_bar.append(&search_entry);
+
+    // Toggle open: reveal and focus
+    {
+        let revealer = search_revealer.clone();
+        let entry = search_entry.clone();
+        search_icon_btn.connect_clicked(move |_| {
+            revealer.set_reveal_child(true);
+            entry.grab_focus();
+        });
+    }
+
+    // Close: hide, clear text/filter, and refresh
+    search_close_btn.connect_clicked({
+        let revealer = search_revealer.clone();
+        let entry = search_entry.clone();
+        move |_| {
+            entry.set_text("");
+            if let Some(state_rc) = get_global_state() {
+                state_rc.borrow_mut().clear_filter();
+                state_rc.borrow().refresh_ui();
+            }
+            revealer.set_reveal_child(false);
+        }
+    });
+
+    search_box.append(&search_entry);
+    search_box.append(&search_close_btn);
+    search_revealer.set_child(Some(&search_box));
+
+    path_bar.append(&search_icon_btn);
+    path_bar.append(&search_revealer);
     
     path_bar
 }
