@@ -69,6 +69,7 @@ pub fn build_ui(app: &Application) {
     
     // Left sidebar (modern design)
     let sidebar = create_modern_sidebar(&bookmarks_manager_rc.borrow(), &state.borrow().config);
+    crate::widgets::modern_sidebar::set_global_sidebar(sidebar.clone(), state.borrow().config.clone());
     main_paned.set_start_child(Some(&sidebar));
     
     // Create the content + details split pane
