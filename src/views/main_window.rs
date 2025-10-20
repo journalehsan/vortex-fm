@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Orientation, Paned, Box};
+use gtk::{Application, ApplicationWindow, Orientation, Paned, Box, HeaderBar};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::core::file_manager::FileManagerState;
@@ -47,11 +47,18 @@ pub fn build_ui(app: &Application) {
     // Create main vertical layout
     let main_box = Box::new(Orientation::Vertical, 0);
     
-    // Tab bar at the top
+    // HeaderBar with tab bar as title widget
     let tab_bar = create_tab_bar(tab_manager.clone());
     crate::widgets::tab_bar::set_global_tab_bar(tab_bar.clone());
     set_global_tab_bar(tab_bar.clone());
-    main_box.append(&tab_bar);
+    let header = HeaderBar::new();
+    header.set_title_widget(Some(&tab_bar));
+    header.set_show_title_buttons(true);
+    window.set_titlebar(Some(&header));
+    
+    // Ribbon toolbar under header
+    let ribbon = crate::widgets::ribbon::create_ribbon_toolbar();
+    main_box.append(&ribbon);
     
     // Create the main horizontal split pane
     let main_paned = Paned::new(Orientation::Horizontal);

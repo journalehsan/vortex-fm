@@ -8,6 +8,7 @@ pub mod details_panel;
 pub mod terminal_panel;
 pub mod home_screen;
 pub mod file_view;
+pub mod ribbon;
 
 pub use file_item::*;
 pub use context_menu::*;
@@ -19,3 +20,4 @@ pub use details_panel::*;
 pub use terminal_panel::*;
 pub use home_screen::*;
 pub use file_view::*;
+pub use ribbon::*;
