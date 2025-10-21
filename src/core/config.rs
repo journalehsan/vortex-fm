@@ -70,6 +70,31 @@ impl AppTheme {
             }
             Self::Custom => {
                 log::info!("🎨 Using Custom theme - will show custom color picker");
+                log::info!("🎨 Custom theme: Checking for theme manager");
+                
+                // Try to get the theme manager and apply custom colors
+                use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
+                use crate::utils::themes::manager::{ColorContext, ThemeStaged};
+                
+                let desktop = detect_desktop_environment();
+                log::info!("🖥️  Desktop environment for Custom theme: {:?}", desktop);
+                
+                if let Some(theme_manager_mutex) = get_theme_manager() {
+                    log::info!("🔧 Theme manager available for Custom theme");
+                    let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+                    if let Some(theme_manager) = theme_manager_guard.as_mut() {
+                        log::info!("🎨 Theme manager found, getting cosmic theme");
+                        let cosmic_theme = theme_manager.cosmic_theme();
+                        log::info!("✅ Returning custom cosmic theme");
+                        return cosmic_theme;
+                    } else {
+                        log::warn!("❌ Theme manager is None for Custom theme");
+                    }
+                } else {
+                    log::warn!("❌ Theme manager not available for Custom theme on desktop: {:?}", desktop);
+                }
+                
+                log::info!("🎨 Falling back to system theme for Custom theme");
                 // For now, fall back to system theme until custom colors are applied
                 theme::system_preference()
             }

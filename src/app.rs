@@ -3934,7 +3934,38 @@ impl Application for App {
 
             Message::CustomColor(color) => {
                 log::info!("🎨 Custom color selected for preview: {:?}", color);
-                // This is just for preview - don't apply yet
+                log::info!("🎨 Color RGB values: R={:.3}, G={:.3}, B={:.3}", color.r, color.g, color.b);
+                log::info!("🎨 Color hex: #{:02X}{:02X}{:02X}", 
+                    (color.r * 255.0) as u8, 
+                    (color.g * 255.0) as u8, 
+                    (color.b * 255.0) as u8
+                );
+                
+                // Apply the color immediately for preview
+                use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
+                use crate::utils::themes::manager::{ColorContext, ThemeStaged};
+                
+                let desktop = detect_desktop_environment();
+                log::info!("🖥️  Desktop environment: {:?}", desktop);
+                
+                if let Some(theme_manager_mutex) = get_theme_manager() {
+                    log::info!("🔧 Theme manager available, applying color for preview");
+                    let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+                    if let Some(theme_manager) = theme_manager_guard.as_mut() {
+                        log::info!("🎨 Setting custom accent color in theme manager");
+                        if let Some(_staged) = theme_manager.set_color(Some(color), ColorContext::CustomAccent) {
+                            log::info!("✅ Custom accent color set successfully");
+                            let _ = theme_manager.build_theme(ThemeStaged::Current);
+                            log::info!("✅ Custom theme built and applied for preview");
+                        } else {
+                            log::warn!("❌ Failed to set custom accent color");
+                        }
+                    } else {
+                        log::warn!("❌ Theme manager is None");
+                    }
+                } else {
+                    log::warn!("❌ Theme manager not available for desktop: {:?}", desktop);
+                }
             }
 
             Message::SelectColorScheme(scheme_name) => {
@@ -3949,19 +3980,39 @@ impl Application for App {
                 use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
                 use crate::utils::themes::manager::{ColorContext, ThemeStaged};
                 
-                let _desktop = detect_desktop_environment();
+                let desktop = detect_desktop_environment();
+                log::info!("🖥️  Desktop environment for apply: {:?}", desktop);
+                
                 if let Some(theme_manager_mutex) = get_theme_manager() {
+                    log::info!("🔧 Theme manager available for apply");
                     let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
                     if let Some(theme_manager) = theme_manager_guard.as_mut() {
+                        log::info!("🎨 Theme manager found, applying custom color");
+                        
                         // For now, apply a default custom color
                         let custom_color = cosmic::iced::Color::from_rgb(0.24, 0.60, 0.89); // Blue
+                        log::info!("🎨 Applying custom color: {:?} (RGB: {:.3}, {:.3}, {:.3})", 
+                            custom_color, custom_color.r, custom_color.g, custom_color.b);
+                        
                         if let Some(_staged) = theme_manager.set_color(Some(custom_color), ColorContext::CustomAccent) {
-                            log::info!("🎨 Applied custom accent color: {:?}", custom_color);
+                            log::info!("✅ Custom accent color set successfully");
                             let _ = theme_manager.build_theme(ThemeStaged::Current);
-                            log::info!("✅ Custom theme applied successfully");
+                            log::info!("✅ Custom theme built and applied successfully");
+                            
+                            // Check if the color was actually applied
+                            if let Some(applied_color) = theme_manager.get_color(ColorContext::CustomAccent) {
+                                log::info!("🎨 Verified applied color: {:?}", applied_color);
+                            } else {
+                                log::warn!("❌ Could not verify applied color");
+                            }
+                        } else {
+                            log::warn!("❌ Failed to set custom accent color in theme manager");
                         }
+                    } else {
+                        log::warn!("❌ Theme manager is None");
                     }
                 } else {
+                    log::warn!("❌ Theme manager not available for desktop: {:?}", desktop);
                     log::info!("ℹ️  Custom theme application only available on Cosmic desktop");
                 }
             }

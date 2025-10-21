@@ -249,16 +249,21 @@ impl ThemeManager {
 
     /// Build and apply the current theme
     pub fn build_theme(&mut self, stage: ThemeStaged) -> Task<()> {
+        log::info!("🎨 ThemeManager::build_theme called with stage: {:?}", stage);
+        
         macro_rules! theme_transaction {
             ($config:ident, $current_theme:ident, $new_theme:ident, { $($name:ident;)+ }) => {
+                log::info!("🎨 Starting theme transaction");
                 let tx = $config.transaction();
 
                 $(
                     if $current_theme.$name != $new_theme.$name {
+                        log::info!("🎨 Updating theme field: {}", stringify!($name));
                         _ = tx.set(stringify!($name), $new_theme.$name.clone());
                     }
                 )+
 
+                log::info!("🎨 Committing theme transaction");
                 _ = tx.commit();
             }
         }
@@ -321,10 +326,20 @@ impl ThemeManager {
 
     /// Get the current cosmic theme
     pub fn cosmic_theme(&self) -> cosmic::Theme {
-        cosmic::Theme {
-            theme_type: ThemeType::Custom(Arc::new(self.theme().clone())),
+        log::info!("🎨 ThemeManager::cosmic_theme called");
+        
+        let theme = self.theme();
+        log::info!("🎨 Current theme: {:?}", theme);
+        log::info!("🎨 Theme accent color: {:?}", theme.accent.base.color);
+        log::info!("🎨 Theme background color: {:?}", theme.bg_color());
+        
+        let cosmic_theme = cosmic::Theme {
+            theme_type: ThemeType::Custom(Arc::new(theme.clone())),
             ..cosmic::Theme::default()
-        }
+        };
+        
+        log::info!("🎨 Created cosmic theme with custom theme type");
+        cosmic_theme
     }
 
     /// Get the current theme
@@ -376,23 +391,52 @@ impl ThemeManager {
 
     /// Set a color in the current theme
     pub fn set_color(&mut self, color: Option<Color>, context: ColorContext) -> Option<ThemeStaged> {
+        log::info!("🎨 ThemeManager::set_color called with context: {:?}, color: {:?}", context, color);
+        
         let theme_customizer = self.selected_customizer_mut();
-        match context {
-            ColorContext::CustomAccent => theme_customizer.set_accent(color.map(Srgb::from)),
+        log::info!("🎨 Selected customizer: {:?}", std::ptr::addr_of!(theme_customizer));
+        
+        let result = match context {
+            ColorContext::CustomAccent => {
+                log::info!("🎨 Setting custom accent color: {:?}", color);
+                let srgb_color = color.map(Srgb::from);
+                log::info!("🎨 Converted to Srgb: {:?}", srgb_color);
+                theme_customizer.set_accent(srgb_color)
+            }
             ColorContext::ApplicationBackground => {
-                theme_customizer.set_bg_color(color.map(Srgba::from))
+                log::info!("🎨 Setting application background color: {:?}", color);
+                let srgba_color = color.map(Srgba::from);
+                log::info!("🎨 Converted to Srgba: {:?}", srgba_color);
+                theme_customizer.set_bg_color(srgba_color)
             }
             ColorContext::ContainerBackground => {
-                theme_customizer.set_primary_container_bg(color.map(Srgba::from))
+                log::info!("🎨 Setting container background color: {:?}", color);
+                let srgba_color = color.map(Srgba::from);
+                log::info!("🎨 Converted to Srgba: {:?}", srgba_color);
+                theme_customizer.set_primary_container_bg(srgba_color)
             }
-            ColorContext::InterfaceText => theme_customizer.set_text_tint(color.map(Srgb::from)),
+            ColorContext::InterfaceText => {
+                log::info!("🎨 Setting interface text color: {:?}", color);
+                let srgb_color = color.map(Srgb::from);
+                log::info!("🎨 Converted to Srgb: {:?}", srgb_color);
+                theme_customizer.set_text_tint(srgb_color)
+            }
             ColorContext::ControlComponent => {
-                theme_customizer.set_neutral_tint(color.map(Srgb::from))
+                log::info!("🎨 Setting control component color: {:?}", color);
+                let srgb_color = color.map(Srgb::from);
+                log::info!("🎨 Converted to Srgb: {:?}", srgb_color);
+                theme_customizer.set_neutral_tint(srgb_color)
             }
             ColorContext::AccentWindowHint => {
-                theme_customizer.set_window_hint(color.map(Srgb::from))
+                log::info!("🎨 Setting accent window hint color: {:?}", color);
+                let srgb_color = color.map(Srgb::from);
+                log::info!("🎨 Converted to Srgb: {:?}", srgb_color);
+                theme_customizer.set_window_hint(srgb_color)
             }
-        }
+        };
+        
+        log::info!("🎨 ThemeManager::set_color result: {:?}", result);
+        result
     }
 
     /// Get custom accent color
@@ -478,9 +522,27 @@ impl ThemeCustomizer {
 
     /// Set accent color
     pub fn set_accent(&mut self, color: Option<Srgb>) -> Option<ThemeStaged> {
-        let config = self.builder.1.as_ref()?;
-        self.builder.0.set_accent(config, color).ok()?;
-        Some(ThemeStaged::Current)
+        log::info!("🎨 ThemeCustomizer::set_accent called with color: {:?}", color);
+        
+        let config = self.builder.1.as_ref();
+        log::info!("🎨 Builder config available: {}", config.is_some());
+        
+        if let Some(config) = config {
+            log::info!("🎨 Setting accent color in ThemeBuilder");
+            match self.builder.0.set_accent(config, color) {
+                Ok(_) => {
+                    log::info!("✅ Successfully set accent color in ThemeBuilder");
+                    Some(ThemeStaged::Current)
+                }
+                Err(err) => {
+                    log::error!("❌ Failed to set accent color in ThemeBuilder: {:?}", err);
+                    None
+                }
+            }
+        } else {
+            log::warn!("❌ No builder config available for set_accent");
+            None
+        }
     }
 
     /// Set text tint color

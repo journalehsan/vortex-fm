@@ -23,7 +23,14 @@ pub fn detect_desktop_environment() -> DesktopEnvironment {
     
     log::info!("XDG_CURRENT_DESKTOP: {}", xdg_desktop);
     
-    // Check for Hyprland first, but if omarchy command exists, use Omarchy themes
+    // Check for Cosmic first (highest priority for theme customization)
+    // cosmic-settings availability means we can use Cosmic theme system
+    if xdg_desktop.contains("cosmic") || command_exists("cosmic-settings") {
+        log::info!("Detected Cosmic desktop environment (cosmic-settings available)");
+        return DesktopEnvironment::Cosmic;
+    }
+    
+    // Check for Hyprland, but if omarchy command exists, use Omarchy themes
     if xdg_desktop.contains("hyprland") {
         if command_exists("omarchy-theme-current") {
             log::info!("Detected Hyprland with Omarchy themes available");
@@ -38,12 +45,6 @@ pub fn detect_desktop_environment() -> DesktopEnvironment {
     if command_exists("omarchy-theme-current") {
         log::info!("Detected Omarchy desktop environment");
         return DesktopEnvironment::Omarchy;
-    }
-    
-    // Check for Cosmic
-    if xdg_desktop.contains("cosmic") {
-        log::info!("Detected Cosmic desktop environment");
-        return DesktopEnvironment::Cosmic;
     }
     
     // Check for KDE
@@ -207,17 +208,16 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Theme properties - is_light: {}, window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
         theme.is_light, theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
     
-    let desktop = detect_desktop_environment();
-    
-    // Only use ThemeBuilder on Cosmic desktop
-    if desktop == DesktopEnvironment::Cosmic {
-        log::info!("🎨 Using ThemeBuilder for Cosmic desktop");
+    // Use ThemeBuilder when cosmic-settings is available (works on any desktop)
+    if command_exists("cosmic-settings") {
+        log::info!("🎨 Using ThemeBuilder (cosmic-settings available)");
         
         let theme_manager_mutex = init_theme_manager();
         let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
         
         // Initialize theme manager if needed
         if theme_manager_guard.is_none() {
+            let desktop = detect_desktop_environment();
             *theme_manager_guard = Some(ThemeManager::new(desktop));
         }
         
@@ -297,50 +297,52 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
 pub fn apply_advanced_theme(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Applying advanced theme '{}'", theme.name);
     
-    let desktop = detect_desktop_environment();
-    
-    match desktop {
-        DesktopEnvironment::Cosmic => {
-            log::info!("🎨 Using ThemeBuilder for advanced color customization on Cosmic");
-            let theme_manager_mutex = init_theme_manager();
-            let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
-            
-            // Initialize theme manager if needed
-            if theme_manager_guard.is_none() {
-                *theme_manager_guard = Some(ThemeManager::new(desktop));
+    // Use ThemeBuilder when cosmic-settings is available (works on any desktop)
+    if command_exists("cosmic-settings") {
+        log::info!("🎨 Using ThemeBuilder for advanced color customization (cosmic-settings available)");
+        let theme_manager_mutex = init_theme_manager();
+        let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+        
+        // Initialize theme manager if needed
+        if theme_manager_guard.is_none() {
+            let desktop = detect_desktop_environment();
+            *theme_manager_guard = Some(ThemeManager::new(desktop));
+        }
+        
+        if let Some(theme_manager) = theme_manager_guard.as_mut() {
+            // Apply the external theme with full color customization
+            if let Err(err) = theme_manager.apply_external_theme(theme) {
+                log::warn!("❌ Failed to apply advanced theme: {}", err);
+                // Fallback to basic theme application
+                return apply_theme_to_cosmic(theme);
             }
             
-            if let Some(theme_manager) = theme_manager_guard.as_mut() {
-                // Apply the external theme with full color customization
-                if let Err(err) = theme_manager.apply_external_theme(theme) {
-                    log::warn!("❌ Failed to apply advanced theme: {}", err);
-                    // Fallback to basic theme application
-                    return apply_theme_to_cosmic(theme);
-                }
-                
-                // Build the theme with all customizations
-                let _ = theme_manager.build_theme(ThemeStaged::Current);
-                
-                return theme_manager.cosmic_theme();
-            }
+            // Build the theme with all customizations
+            let _ = theme_manager.build_theme(ThemeStaged::Current);
             
-            // Fallback if theme manager initialization failed
-            apply_theme_to_cosmic(theme)
+            return theme_manager.cosmic_theme();
         }
-        _ => {
-            log::info!("🎨 Using standard theme application for non-Cosmic desktop");
-            apply_theme_to_cosmic(theme)
-        }
+        
+        // Fallback if theme manager initialization failed
+        apply_theme_to_cosmic(theme)
+    } else {
+        log::info!("🎨 Using standard theme application (cosmic-settings not available)");
+        apply_theme_to_cosmic(theme)
     }
 }
 
 /// Get the current theme manager (for advanced customization)
 /// Note: This returns a reference to the mutex, not the manager directly
 pub fn get_theme_manager() -> Option<&'static Mutex<Option<ThemeManager>>> {
-    let desktop = detect_desktop_environment();
-    if desktop == DesktopEnvironment::Cosmic {
+    log::info!("🔧 get_theme_manager called - using Cosmic theme system directly");
+    
+    // Always use theme manager when cosmic-settings is available
+    // This ensures compatibility with all desktop environments where Cosmic apps work
+    if command_exists("cosmic-settings") {
+        log::info!("✅ Theme manager available (cosmic-settings detected)");
         Some(init_theme_manager())
     } else {
+        log::warn!("❌ Theme manager not available (cosmic-settings not found)");
         None
     }
 }
