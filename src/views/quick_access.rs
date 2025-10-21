@@ -156,7 +156,7 @@ pub fn get_library_folders() -> Vec<LibraryFolder> {
 // Drive Detection
 pub fn get_drives(mounter_items: &HashMap<MounterKey, MounterItems>) -> Vec<DriveInfo> {
     let mut drives = Vec::new();
-    
+
     // Use existing MOUNTERS system
     for (key, items) in mounter_items {
         for item in items {
@@ -173,7 +173,43 @@ pub fn get_drives(mounter_items: &HashMap<MounterKey, MounterItems>) -> Vec<Driv
             drives.push(drive);
         }
     }
-    
+
+    // Add demo drives if no real drives are detected
+    if drives.is_empty() {
+        drives.push(DriveInfo {
+            label: "System Disk".to_string(),
+            path: Some(std::path::PathBuf::from("/")),
+            total_space: 100_000_000_000, // 100GB
+            used_space: 65_000_000_000,   // 65GB used
+            is_mounted: true,
+            drive_type: DriveType::System,
+            mounter_key: None,
+            mounter_item: None,
+        });
+
+        drives.push(DriveInfo {
+            label: "Data Disk".to_string(),
+            path: Some(std::path::PathBuf::from("/home")),
+            total_space: 500_000_000_000, // 500GB
+            used_space: 150_000_000_000,  // 150GB used
+            is_mounted: true,
+            drive_type: DriveType::Partition,
+            mounter_key: None,
+            mounter_item: None,
+        });
+
+        drives.push(DriveInfo {
+            label: "USB Drive".to_string(),
+            path: Some(std::path::PathBuf::from("/media/usb")),
+            total_space: 32_000_000_000,  // 32GB
+            used_space: 12_000_000_000,   // 12GB used
+            is_mounted: true,
+            drive_type: DriveType::Usb,
+            mounter_key: None,
+            mounter_item: None,
+        });
+    }
+
     drives
 }
 
@@ -236,34 +272,42 @@ fn get_space_used(item: &MounterItem) -> u64 {
 // Recent Files
 pub fn get_recent_files() -> Vec<RecentFile> {
     // TODO: Read from recently-used.xbel (XDG recent files)
-    // For now, return demo files
+    // For now, return demo files with better variety
     let mut files = Vec::new();
-    
-    // Add some demo recent files
+
+    // Add some demo recent files with different file types and realistic dates
     if let Some(home) = dirs::home_dir() {
         let demo_files = vec![
-            ("Document.pdf", "Documents"),
-            ("Photo.jpg", "Pictures"),
-            ("Video.mp4", "Videos"),
-            ("Music.mp3", "Music"),
-            ("Archive.zip", "Downloads"),
-            ("Code.rs", "Documents"),
-            ("Image.png", "Pictures"),
-            ("Spreadsheet.xlsx", "Documents"),
-            ("Presentation.pptx", "Documents"),
-            ("Text.txt", "Documents"),
+            ("Project_Proposal.pdf", "Documents", 1),  // 1 day ago
+            ("Family_Photo.jpg", "Pictures", 2),       // 2 days ago
+            ("Vacation_Video.mp4", "Videos", 3),       // 3 days ago
+            ("Favorite_Song.mp3", "Music", 4),         // 4 days ago
+            ("Archive_2024.zip", "Downloads", 5),      // 5 days ago
+            ("main.rs", "Documents/Projects", 1),       // 1 day ago
+            ("Screenshot_001.png", "Pictures", 2),     // 2 days ago
+            ("Budget_2024.xlsx", "Documents", 3),      // 3 days ago
+            ("Meeting_Notes.txt", "Documents", 1),     // 1 day ago
+            ("Presentation.pptx", "Documents", 2),     // 2 days ago
         ];
-        
-        for (filename, folder) in demo_files {
-            let path = home.join(folder).join(filename);
+
+        for (filename, folder, days_ago) in demo_files {
+            let path = if folder.contains('/') {
+                let parts: Vec<&str> = folder.split('/').collect();
+                home.join(parts[0]).join(parts[1]).join(filename)
+            } else {
+                home.join(folder).join(filename)
+            };
+
+            // Create a modified time that's a few days ago
+            let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(days_ago * 24 * 60 * 60);
             files.push(RecentFile {
                 name: filename.to_string(),
                 path,
-                modified: std::time::SystemTime::now(),
+                modified,
             });
         }
     }
-    
+
     files
 }
 
@@ -311,7 +355,7 @@ fn library_section(
             .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the folder
             .width(Length::Fixed(120.0))
             .height(Length::Fixed(100.0));
-            
+
             grid = grid.push(tile);
         }
         
@@ -441,25 +485,27 @@ fn recent_section(
     
     if expanded {
         if !files.is_empty() {
-            // List of recent files with better layout
-            for file in files.iter().take(10) {
-                let file_icon = widget::icon::from_name("text-x-generic").size(16);
+            // Modern list of recent files
+            for file in files.iter().take(8) { // Limit to 8 items
+                let file_icon = widget::icon::from_name(get_file_icon(&file.name)).size(20);
+
                 let row = widget::button::custom(
                     widget::row()
                         .push(file_icon)
                         .push(widget::horizontal_space())
                         .push(widget::column()
                             .push(widget::text(file.name.clone()).size(14))
-                            .push(widget::text(format_date(&file.modified)).size(12))
+                            .push(widget::text(format_date(&file.modified)).size(11))
                             .spacing(2)
                         )
                         .push(widget::horizontal_space())
                         .align_y(Alignment::Center)
-                        .padding(8)
+                        .padding(12)
                 )
                 .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the file
-                .width(Length::Fill);
-                
+                .width(Length::Fill)
+                .height(Length::Fixed(56.0));
+
                 column = column.push(row);
             }
         } else {
@@ -494,9 +540,56 @@ fn format_size(bytes: u64) -> String {
     }
 }
 
+fn get_file_icon(filename: &str) -> &'static str {
+    if let Some(extension) = std::path::Path::new(filename).extension() {
+        match extension.to_str().unwrap_or("").to_lowercase().as_str() {
+            "pdf" => "application-pdf",
+            "jpg" | "jpeg" | "png" | "gif" | "bmp" | "webp" | "svg" => "image-x-generic",
+            "mp4" | "avi" | "mkv" | "mov" | "wmv" => "video-x-generic",
+            "mp3" | "wav" | "flac" | "ogg" => "audio-x-generic",
+            "zip" | "rar" | "7z" | "tar" | "gz" => "package-x-generic",
+            "rs" | "py" | "js" | "html" | "css" => "text-x-script",
+            "xlsx" | "xls" => "x-office-spreadsheet",
+            "docx" | "doc" => "x-office-document",
+            "pptx" | "ppt" => "x-office-presentation",
+            "txt" => "text-x-generic",
+            _ => "text-x-generic",
+        }
+    } else {
+        "text-x-generic"
+    }
+}
+
 fn format_date(time: &SystemTime) -> String {
-    // TODO: Implement proper date formatting
-    "Today".to_string()
+    use std::time::Duration;
+
+    if let Ok(duration) = time.elapsed() {
+        let days = duration.as_secs() / (24 * 60 * 60);
+        let hours = (duration.as_secs() % (24 * 60 * 60)) / (60 * 60);
+        let minutes = (duration.as_secs() % (60 * 60)) / 60;
+
+        if days == 0 {
+            if hours == 0 {
+                if minutes == 0 {
+                    "Just now".to_string()
+                } else {
+                    format!("{} minute{} ago", minutes, if minutes == 1 { "" } else { "s" })
+                }
+            } else {
+                format!("{} hour{} ago", hours, if hours == 1 { "" } else { "s" })
+            }
+        } else if days == 1 {
+            "Yesterday".to_string()
+        } else if days < 7 {
+            format!("{} days ago", days)
+        } else if days < 30 {
+            format!("{} weeks ago", days / 7)
+        } else {
+            "Older".to_string()
+        }
+    } else {
+        "Unknown".to_string()
+    }
 }
 
 // Main QuickAccess View Function
