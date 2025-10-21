@@ -1,0 +1,13 @@
+[package]
+name = "vortex-files-applet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "0.4"
+zbus = "4" # Blocking connection in zbus 5 hangs
+
+[dependencies.vortex-fm]
+path = ".."
+default-features = false
+features = ["desktop", "gvfs", "wayland", "wgpu", "desktop-applet"]

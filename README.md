@@ -1,6 +1,9 @@
 # Vortex File Manager 🚀
 
-A modern, Windows Explorer-like file manager built with GTK4 and Rust for Linux systems.
+A modern, Windows Explorer-like file manager built with Iced and libcosmic for Linux systems.
+
+> [!NOTE]
+> This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) and is still a work in progress
 
 ## Features
 
@@ -9,29 +12,30 @@ A modern, Windows Explorer-like file manager built with GTK4 and Rust for Linux 
 - 🧭 **Path Navigation Bar**: Back, forward, up, and refresh buttons
 - 🔍 **Search Functionality**: Built-in search for files and folders
 - 📋 **Grid View**: Icon-based file display similar to Windows Explorer
-- 🎨 **Modern Styling**: Clean, professional appearance with CSS theming
+- 🎨 **Modern Styling**: Clean, professional appearance with libcosmic theming
 - ⚡ **Fast Performance**: Built with Rust for optimal speed
+- 🦀 **Rust Native**: Uses Iced and libcosmic instead of GTK4 for better Rust integration
 
 ## Requirements
 
 - Rust 1.70+
-- GTK4 development libraries
-- Linux (tested on PikaOS with Hyprland)
+- libcosmic development libraries
+- Linux (tested on Arch Linux)
 
 ## Installation
 
 ### Install Dependencies
 
 ```bash
-# Ubuntu/Debian/PikaOS
+# Ubuntu/Debian
 sudo apt update
-sudo apt install libgtk-4-dev libadwaita-1-dev build-essential
+sudo apt install libcosmic-dev build-essential
 
 # Arch Linux
-sudo pacman -S gtk4 libadwaita base-devel
+sudo pacman -S libcosmic base-devel
 
 # Fedora
-sudo dnf install gtk4-devel libadwaita-devel gcc
+sudo dnf install libcosmic-devel gcc
 ```
 
 ### Build and Run
@@ -54,24 +58,26 @@ cargo build --release
 ```
 vortex-fm/
 ├── src/
-│   └── main.rs          # Main application code
-├── resources/
-│   └── style.css        # CSS styling
-├── Cargo.toml           # Rust dependencies
-├── build.rs             # Build script
-└── README.md            # This file
+│   ├── app.rs              # Main application logic
+│   ├── lib.rs              # Library entry point
+│   └── main.rs             # Application entry point
+├── vortex-files-applet/    # Applet components
+├── examples/               # Example code
+├── i18n/                   # Internationalization
+├── res/                    # Resources and icons
+├── Cargo.toml              # Rust dependencies
+└── README.md               # This file
 ```
 
 ## Development
 
-The application is structured with modular functions for different UI components:
+The application is structured with modular components:
 
-- `build_ui()` - Main window setup
-- `create_sidebar()` - Left sidebar with quick access
-- `create_content_area()` - Main content area
-- `create_path_bar()` - Navigation toolbar
-- `create_file_list()` - File grid display
-- `create_status_bar()` - Bottom status bar
+- **App Module**: Main application logic and state management
+- **Tab System**: Multi-tab file browsing
+- **Navigation**: File system navigation and history
+- **Operations**: File operations (copy, move, delete, etc.)
+- **UI Components**: Modern UI built with Iced and libcosmic
 
 ## Contributing
 
@@ -83,7 +89,11 @@ The application is structured with modular functions for different UI components
 
 ## License
 
-GPL v3 License - see LICENSE file for details.
+This project is licensed under [GPLv3](LICENSE)
+
+## Acknowledgments
+
+This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) by System76. The original COSMIC desktop environment is maintained by System76 for use in Pop!_OS. A list of all COSMIC projects can be found in the [cosmic-epoch](https://github.com/pop-os/cosmic-epoch) project's README.
 
 ## Roadmap
 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.system76.VortexFiles</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <project_group>Vortex</project_group>
+  <developer_name>Vortex File Manager Contributors</developer_name>
+  <update_contact>jeremy@system76.com</update_contact>
+  <url type="homepage">https://github.com/ehsator/vortex-fm</url>
+  <url type="bugtracker">https://github.com/ehsator/vortex-fm</url>
+  <name>Vortex File Manager</name>
+  <name xml:lang="ar">مدير ملفات Vortex</name>
+  <name xml:lang="cs">Vortex Správce souborů</name>
+  <name xml:lang="pl">Vortex Menedżer plików</name>
+  <name xml:lang="hu">Vortex Fájlkezelő</name>
+  <name xml:lang="pt_BR">Vortex Gerenciador de Arquivos</name>
+  <name xml:lang="pt">Vortex Gerenciador de Arquivos</name>
+  <name xml:lang="sk">Vortex Správca súborov</name>
+  <name xml:lang="es">Vortex Administrador de Archivos</name>
+  <name xml:lang="it">Vortex Gestore File</name>
+  <summary>Modern file manager built with Iced and libcosmic</summary>
+  <summary xml:lang="ar">مدير ملفات حديث مبني بـ Iced و libcosmic</summary>
+  <summary xml:lang="cs">Moderní správce souborů postavený s Iced a libcosmic</summary>
+  <summary xml:lang="pl">Nowoczesny menedżer plików zbudowany z Iced i libcosmic</summary>
+  <summary xml:lang="hu">Modern fájlkezelő Iced és libcosmic segítségével építve</summary>
+  <summary xml:lang="pt_BR">Gerenciador de arquivos moderno construído com Iced e libcosmic</summary>
+  <summary xml:lang="pt">Gerenciador de arquivos moderno construído com Iced e libcosmic</summary>
+  <summary xml:lang="sk">Moderný správca súborov postavený s Iced a libcosmic</summary>
+  <summary xml:lang="es">Administrador de archivos moderno construido con Iced y libcosmic</summary>
+  <summary xml:lang="it">Gestore file moderno costruito con Iced e libcosmic</summary>
+  <description>
+    <p>Modern file manager built with Iced and libcosmic for Linux systems. Features a Windows Explorer-like interface with sidebar navigation, tabbed browsing, and advanced file operations.</p>
+    <p xml:lang="ar">مدير ملفات حديث مبني بـ Iced و libcosmic لأنظمة Linux. يتميز بواجهة تشبه Windows Explorer مع شريط جانبي للتنقل وتصفح متعدد التبويبات وعمليات ملفات متقدمة.</p>
+    <p xml:lang="cs">Moderní správce souborů postavený s Iced a libcosmic pro Linux systémy. Obsahuje rozhraní podobné Windows Exploreru s postranním navigačním panelem, prohlížením v záložkách a pokročilými operacemi se soubory.</p>
+    <p xml:lang="pl">Nowoczesny menedżer plików zbudowany z Iced i libcosmic dla systemów Linux. Zawiera interfejs podobny do Windows Explorer z bocznym panelem nawigacji, przeglądaniem w zakładkach i zaawansowanymi operacjami na plikach.</p>
+    <p xml:lang="hu">Modern fájlkezelő Iced és libcosmic segítségével építve Linux rendszerekhez. Windows Explorer-szerű felületet tartalmaz oldalsó navigációs panel, lapozható böngészés és fejlett fájl műveletek.</p>
+    <p xml:lang="pt_BR">Gerenciador de arquivos moderno construído com Iced e libcosmic para sistemas Linux. Apresenta interface similar ao Windows Explorer com navegação lateral, navegação em abas e operações avançadas de arquivos.</p>
+    <p xml:lang="pt">Gerenciador de arquivos moderno construído com Iced e libcosmic para sistemas Linux. Apresenta interface similar ao Windows Explorer com navegação lateral, navegação em abas e operações avançadas de arquivos.</p>
+    <p xml:lang="sk">Moderný správca súborov postavený s Iced a libcosmic pre Linux systémy. Obsahuje rozhranie podobné Windows Exploreru s bočným navigačným panelom, prehliadaním v záložkách a pokročilými operáciami so súbormi.</p>
+    <p xml:lang="es">Administrador de archivos moderno construido con Iced y libcosmic para sistemas Linux. Presenta una interfaz similar a Windows Explorer con navegación lateral, navegación por pestañas y operaciones avanzadas de archivos.</p>
+  </description>
+  <launchable type="desktop-id">com.system76.VortexFiles.desktop</launchable>
+  <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/ehsator/vortex-fm/master/res/icons/hicolor/256x256/apps/com.system76.VortexFiles.svg</icon>
+  <provides>
+    <id>com.system76.VortexApplication</id>
+    <mimetypes>
+      <mimetype>inode/directory</mimetype>
+    </mimetypes>
+    <binaries>
+      <binary>vortex-fm</binary>
+    </binaries>
+  </provides>
+</component>

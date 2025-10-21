@@ -1,0 +1,30 @@
+#TODO: more build-out, desktop actions, translations?
+[Desktop Entry]
+Name=Vortex File Manager
+Name[ar]=مدير ملفات Vortex
+Name[cs]=Vortex Správce souborů
+Name[zh_CN]=Vortex 文件管理器
+Name[pl]=Vortex Menedżer plików
+Name[pt_BR]=Vortex Gerenciador de Arquivos
+Name[hu]=Vortex Fájlkezelő
+Name[pt]=Vortex Gerenciador de Arquivos
+Name[sk]=Vortex Správca súborov
+Name[sv]=Vortex Filhanterare
+Name[es]=Vortex Administrador de Archivos
+Name[it]=Vortex Gestore File
+Exec=vortex-fm %U
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=com.system76.VortexFiles
+Categories=Utility;FileManager;
+Keywords=Folder;Manager;
+Keywords[ar]=مجلد;ملف;مدير;
+Keywords[cs]=Složky;Správce;Manažer;Prohlížeč;
+Keywords[pl]=Katalogi;Pliki;Menedżer;
+Keywords[pt]=Pastas;Gerenciador;Arquivos;Gestor;Explorer;
+Keywords[hu]=mappa;fájl;kezelő
+Keywords[sk]=Priečinok;Správca;Súbory;Manažér;Prehliadač;
+Keywords[sv]=Folder;Katalog;Mapp;Manager;
+Keywords[es]=Archivos;Ficheros;Gestor;Explorador;
+MimeType=inode/directory;
