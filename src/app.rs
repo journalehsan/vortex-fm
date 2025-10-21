@@ -4555,7 +4555,7 @@ impl Application for App {
                 return Task::none();
             }
             Message::ClearRecentFiles => {
-                let _ = crate::views::quick_access::clear_recent_files();
+                let _ = crate::core::quick_access::clear_recent_files();
                 return Task::none();
             }
             Message::MountDrive(key, item) => {

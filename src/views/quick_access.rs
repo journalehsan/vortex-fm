@@ -6,15 +6,11 @@ use cosmic::{
     widget,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    path::PathBuf,
-    time::SystemTime,
-};
+use std::time::SystemTime;
 
 use crate::{
     app::Message,
-    core::services::mount::{MounterItem, MounterItems, MounterKey},
+    core::quick_access::{self, DriveInfo, DriveType, LibraryFolder, RecentFile},
     fl,
 };
 
@@ -36,285 +32,6 @@ impl Default for QuickAccessState {
     }
 }
 
-// Library folder entry
-#[derive(Clone, Debug)]
-pub struct LibraryFolder {
-    pub name: String,
-    pub path: PathBuf,
-    pub icon: String,  // system icon name
-}
-
-// Drive entry with mount info
-#[derive(Clone, Debug)]
-pub struct DriveInfo {
-    pub label: String,
-    pub path: Option<PathBuf>,
-    pub total_space: u64,
-    pub used_space: u64,
-    pub is_mounted: bool,
-    pub drive_type: DriveType,
-    pub mounter_key: Option<MounterKey>,
-    pub mounter_item: Option<MounterItem>,
-}
-
-#[derive(Clone, Debug)]
-pub enum DriveType {
-    System,
-    Partition,
-    External,
-    Optical,
-    Usb,
-    Network,
-}
-
-// Recent file entry
-#[derive(Clone, Debug)]
-pub struct RecentFile {
-    pub name: String,
-    pub path: PathBuf,
-    pub modified: SystemTime,
-}
-
-impl DriveInfo {
-    pub fn usage_percent(&self) -> f32 {
-        if self.total_space == 0 { 0.0 }
-        else { (self.used_space as f32 / self.total_space as f32) * 100.0 }
-    }
-    
-    pub fn progress_color(&self) -> Color {
-        let pct = self.usage_percent();
-        if pct >= 95.0 { Color::from_rgb(0.8, 0.0, 0.0) }      // red
-        else if pct >= 80.0 { Color::from_rgb(1.0, 0.5, 0.0) } // orange
-        else if pct >= 70.0 { Color::from_rgb(1.0, 0.8, 0.0) } // #ffcc00
-        else if pct >= 50.0 { Color::from_rgb(0.0, 0.5, 1.0) } // blue
-        else { Color::from_rgb(0.0, 0.8, 0.0) }                 // green
-    }
-}
-
-// XDG User Directories Reading
-pub fn get_library_folders() -> Vec<LibraryFolder> {
-    let mut folders = Vec::new();
-    
-    // Desktop
-    if let Some(path) = dirs::desktop_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("desktop"),
-            path,
-            icon: "user-desktop".to_string(),
-        });
-    }
-    
-    // Downloads
-    if let Some(path) = dirs::download_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("downloads"),
-            path,
-            icon: "folder-download".to_string(),
-        });
-    }
-    
-    // Documents
-    if let Some(path) = dirs::document_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("documents"),
-            path,
-            icon: "folder-documents".to_string(),
-        });
-    }
-    
-    // Music
-    if let Some(path) = dirs::audio_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("music"),
-            path,
-            icon: "folder-music".to_string(),
-        });
-    }
-    
-    // Pictures
-    if let Some(path) = dirs::picture_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("pictures"),
-            path,
-            icon: "folder-pictures".to_string(),
-        });
-    }
-    
-    // Videos
-    if let Some(path) = dirs::video_dir() {
-        folders.push(LibraryFolder {
-            name: fl!("videos"),
-            path,
-            icon: "folder-videos".to_string(),
-        });
-    }
-    
-    folders
-}
-
-// Drive Detection
-pub fn get_drives(mounter_items: &HashMap<MounterKey, MounterItems>) -> Vec<DriveInfo> {
-    let mut drives = Vec::new();
-
-    // Use existing MOUNTERS system
-    for (key, items) in mounter_items {
-        for item in items {
-            let drive = DriveInfo {
-                label: item.name(),
-                path: item.path(),
-                total_space: get_space_total(&item),
-                used_space: get_space_used(&item),
-                is_mounted: item.is_mounted(),
-                drive_type: detect_drive_type(&item),
-                mounter_key: Some(key.clone()),
-                mounter_item: Some(item.clone()),
-            };
-            drives.push(drive);
-        }
-    }
-
-    // Add demo drives if no real drives are detected
-    if drives.is_empty() {
-        drives.push(DriveInfo {
-            label: "System Disk".to_string(),
-            path: Some(std::path::PathBuf::from("/")),
-            total_space: 100_000_000_000, // 100GB
-            used_space: 65_000_000_000,   // 65GB used
-            is_mounted: true,
-            drive_type: DriveType::System,
-            mounter_key: None,
-            mounter_item: None,
-        });
-
-        drives.push(DriveInfo {
-            label: "Data Disk".to_string(),
-            path: Some(std::path::PathBuf::from("/home")),
-            total_space: 500_000_000_000, // 500GB
-            used_space: 150_000_000_000,  // 150GB used
-            is_mounted: true,
-            drive_type: DriveType::Partition,
-            mounter_key: None,
-            mounter_item: None,
-        });
-
-        drives.push(DriveInfo {
-            label: "USB Drive".to_string(),
-            path: Some(std::path::PathBuf::from("/media/usb")),
-            total_space: 32_000_000_000,  // 32GB
-            used_space: 12_000_000_000,   // 12GB used
-            is_mounted: true,
-            drive_type: DriveType::Usb,
-            mounter_key: None,
-            mounter_item: None,
-        });
-    }
-
-    drives
-}
-
-fn detect_drive_type(item: &MounterItem) -> DriveType {
-    // Check mount point, device name patterns
-    if let Some(path) = item.path() {
-        let path_str = path.to_string_lossy();
-        if path_str.contains("/dev/sr") {
-            DriveType::Optical
-        } else if path_str.contains("/media/") || path_str.contains("/run/media/") {
-            DriveType::Usb
-        } else if path_str.contains("/dev/sd") {
-            DriveType::System
-        } else if path_str.starts_with("network://") {
-            DriveType::Network
-        } else {
-            DriveType::External
-        }
-    } else {
-        DriveType::External
-    }
-}
-
-fn get_space_total(item: &MounterItem) -> u64 {
-    if let Some(path) = item.path() {
-        // Use libc statvfs to get filesystem statistics
-        use std::ffi::CString;
-        use std::os::unix::ffi::OsStrExt;
-        
-        if let Ok(c_path) = CString::new(path.as_os_str().as_bytes()) {
-            unsafe {
-                let mut stat: libc::statvfs = std::mem::zeroed();
-                if libc::statvfs(c_path.as_ptr(), &mut stat) == 0 {
-                    return stat.f_blocks as u64 * stat.f_frsize as u64;
-                }
-            }
-        }
-    }
-    0
-}
-
-fn get_space_used(item: &MounterItem) -> u64 {
-    if let Some(path) = item.path() {
-        // Use libc statvfs to get filesystem statistics
-        use std::ffi::CString;
-        use std::os::unix::ffi::OsStrExt;
-        
-        if let Ok(c_path) = CString::new(path.as_os_str().as_bytes()) {
-            unsafe {
-                let mut stat: libc::statvfs = std::mem::zeroed();
-                if libc::statvfs(c_path.as_ptr(), &mut stat) == 0 {
-                    return (stat.f_blocks - stat.f_bavail) as u64 * stat.f_frsize as u64;
-                }
-            }
-        }
-    }
-    0
-}
-
-// Recent Files
-pub fn get_recent_files() -> Vec<RecentFile> {
-    // TODO: Read from recently-used.xbel (XDG recent files)
-    // For now, return demo files with better variety
-    let mut files = Vec::new();
-
-    // Add some demo recent files with different file types and realistic dates
-    if let Some(home) = dirs::home_dir() {
-        let demo_files = vec![
-            ("Project_Proposal.pdf", "Documents", 1),  // 1 day ago
-            ("Family_Photo.jpg", "Pictures", 2),       // 2 days ago
-            ("Vacation_Video.mp4", "Videos", 3),       // 3 days ago
-            ("Favorite_Song.mp3", "Music", 4),         // 4 days ago
-            ("Archive_2024.zip", "Downloads", 5),      // 5 days ago
-            ("main.rs", "Documents/Projects", 1),       // 1 day ago
-            ("Screenshot_001.png", "Pictures", 2),     // 2 days ago
-            ("Budget_2024.xlsx", "Documents", 3),      // 3 days ago
-            ("Meeting_Notes.txt", "Documents", 1),     // 1 day ago
-            ("Presentation.pptx", "Documents", 2),     // 2 days ago
-        ];
-
-        for (filename, folder, days_ago) in demo_files {
-            let path = if folder.contains('/') {
-                let parts: Vec<&str> = folder.split('/').collect();
-                home.join(parts[0]).join(parts[1]).join(filename)
-            } else {
-                home.join(folder).join(filename)
-            };
-
-            // Create a modified time that's a few days ago
-            let modified = std::time::SystemTime::now() - std::time::Duration::from_secs(days_ago * 24 * 60 * 60);
-            files.push(RecentFile {
-                name: filename.to_string(),
-                path,
-                modified,
-            });
-        }
-    }
-
-    files
-}
-
-pub fn clear_recent_files() -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: Clear the recently-used.xbel file
-    Ok(())
-}
-
 // UI Components
 fn section_header(
     title: String,
@@ -331,18 +48,18 @@ fn library_section(
     expanded: bool,
 ) -> Element<'static, Message> {
     let mut column = widget::column().spacing(4);
-    
+
     column = column.push(section_header(
         fl!("library").to_string(),
         expanded,
         Message::ToggleQuickAccessSection(Section::Library),
     ));
-    
+
     if expanded {
         let mut grid = widget::grid()
             .padding(16.into())
             .row_spacing(12);
-            
+
         for folder in folders {
             let tile = widget::container(
                 widget::mouse_area(
@@ -352,7 +69,7 @@ fn library_section(
                         .align_x(Alignment::Center)
                         .spacing(8)
                 )
-                .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the folder
+                .on_press(Message::OpenItemLocation(None))
             )
             .width(Length::Fixed(120.0))
             .height(Length::Fixed(100.0))
@@ -369,10 +86,10 @@ fn library_section(
 
             grid = grid.push(tile);
         }
-        
+
         column = column.push(grid);
     }
-    
+
     column.into()
 }
 
@@ -418,22 +135,22 @@ fn drives_section(
 
 fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
     let icon = widget::icon::from_name(drive_icon_name(&drive.drive_type)).size(48);
-    
+
     let label = widget::text(drive.label.clone())
         .size(16)
         .width(Length::Fill);
-    
+
     let usage_pct = drive.usage_percent();
     let progress_bar = widget::progress_bar(0.0..=100.0, usage_pct)
         .height(6.0);
-    
+
     let space_text = widget::text(format!(
         "{} / {}",
         format_size(drive.used_space),
         format_size(drive.total_space)
     )).size(12)
     .width(Length::Fill);
-    
+
     let content = widget::column()
         .push(icon)
         .push(widget::vertical_space())
@@ -449,8 +166,8 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
     let mut button_content = widget::mouse_area(content);
 
     if drive.is_mounted {
-        if let Some(_path) = &drive.path {
-            button_content = button_content.on_press(Message::OpenItemLocation(None)); // TODO: Fix this to open the drive
+        if let Some(path) = &drive.path {
+            button_content = button_content.on_press(Message::OpenItemLocation(None));
         }
     } else {
         if let (Some(key), Some(item)) = (&drive.mounter_key, &drive.mounter_item) {
@@ -490,7 +207,7 @@ fn recent_section(
     expanded: bool,
 ) -> Element<'static, Message> {
     let mut column = widget::column().spacing(4);
-    
+
     let header = widget::row()
         .push(section_header(
             fl!("recent-files").to_string(),
@@ -502,9 +219,9 @@ fn recent_section(
             .on_press(Message::ClearRecentFiles)
             .tooltip(fl!("clear-recent"))
         );
-    
+
     column = column.push(header);
-    
+
     if expanded {
         if !files.is_empty() {
             // Modern list of recent files
@@ -524,7 +241,7 @@ fn recent_section(
                         .align_y(Alignment::Center)
                         .padding(12)
                 )
-                .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the file
+                .on_press(Message::OpenItemLocation(None))
                 .width(Length::Fill)
                 .height(Length::Fixed(56.0));
 
@@ -541,7 +258,7 @@ fn recent_section(
             );
         }
     }
-    
+
     column.into()
 }
 
@@ -616,12 +333,12 @@ fn format_date(time: &SystemTime) -> String {
 // Main QuickAccess View Function
 pub fn quick_access_view(
     state: &QuickAccessState,
-    mounter_items: &HashMap<MounterKey, MounterItems>,
+    mounter_items: &std::collections::HashMap<crate::core::services::mount::MounterKey, crate::core::services::mount::MounterItems>,
 ) -> Element<'static, Message> {
-    let library_folders = get_library_folders();
-    let drives = get_drives(mounter_items);
-    let recent_files = get_recent_files();
-    
+    let library_folders = quick_access::get_library_folders();
+    let drives = quick_access::get_drives(mounter_items);
+    let recent_files = quick_access::get_recent_files();
+
     widget::scrollable(
         widget::column()
             .push(library_section(library_folders, state.library_expanded))

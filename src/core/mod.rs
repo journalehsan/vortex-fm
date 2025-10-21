@@ -4,3 +4,4 @@ pub mod operations;
 pub mod config;
 pub mod navigation;
 pub mod services;
+pub mod quick_access;
