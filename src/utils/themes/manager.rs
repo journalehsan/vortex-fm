@@ -15,7 +15,7 @@ use super::ThemeInfo;
 use crate::utils::desktop_theme::DesktopEnvironment;
 
 /// Context for color customization
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ColorContext {
     CustomAccent,
     ApplicationBackground,

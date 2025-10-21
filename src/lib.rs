@@ -6,7 +6,7 @@ use std::{env, fs, path::PathBuf, process};
 
 use app::{App, Flags};
 pub mod app;
-mod utils;
+pub mod utils;
 mod common;
 mod core;
 mod views;

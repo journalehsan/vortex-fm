@@ -401,6 +401,7 @@ pub enum Message {
     ToggleContextPage(ContextPage),
     ToggleFoldersFirst,
     ToggleShowHidden,
+    CustomColor(cosmic::iced::Color),
     Undo(usize),
     UndoTrash(widget::ToastId, Arc<[PathBuf]>),
     UndoTrashStart(Vec<TrashItem>),
@@ -1932,6 +1933,42 @@ impl App {
                             Message::AppTheme(selected_theme)
                         },
                     ))
+                })
+                .into(),
+            // Custom Color Picker Section
+            widget::settings::section()
+                .title("Custom Colors")
+                .add({
+                    // Get Omarchy theme colors for the color picker
+                    use crate::utils::themes::omarchy::OMARCHY_THEMES;
+                    
+                    let mut color_buttons = Vec::new();
+                    for theme in OMARCHY_THEMES.iter().take(8) { // Show first 8 themes
+                        let color = cosmic::iced::Color::from_rgb(
+                            theme.accent_color.r,
+                            theme.accent_color.g,
+                            theme.accent_color.b
+                        );
+                        
+                        color_buttons.push(
+                            widget::button::custom(
+                                widget::container(widget::text(""))
+                                    .width(Length::Fixed(32.0))
+                                    .height(Length::Fixed(32.0))
+                            )
+                            .on_press(Message::CustomColor(color))
+                            .padding(4)
+                        );
+                    }
+                    
+                    widget::settings::item::builder("Accent Colors")
+                        .description("Choose from popular Omarchy theme colors")
+                        .control(
+                            widget::row::with_children(
+                                color_buttons.into_iter().map(Element::from).collect()
+                            )
+                            .spacing(8)
+                        )
                 })
                 .into(),
             widget::settings::section()
@@ -3858,6 +3895,29 @@ impl Application for App {
                 let mut config = self.config.tab;
                 config.show_hidden = !config.show_hidden;
                 return self.update(Message::TabConfig(config));
+            }
+
+            Message::CustomColor(color) => {
+                log::info!("🎨 Custom color selected: {:?}", color);
+                
+                // Apply the custom color using the advanced theme system
+                use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
+                use crate::utils::themes::manager::{ColorContext, ThemeStaged};
+                
+                let _desktop = detect_desktop_environment();
+                if let Some(theme_manager_mutex) = get_theme_manager() {
+                    let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+                    if let Some(theme_manager) = theme_manager_guard.as_mut() {
+                        // Set the custom accent color
+                        if let Some(_staged) = theme_manager.set_color(Some(color), ColorContext::CustomAccent) {
+                            log::info!("🎨 Applied custom accent color: {:?}", color);
+                            let _ = theme_manager.build_theme(ThemeStaged::Current);
+                            log::info!("✅ Custom color theme applied successfully");
+                        }
+                    }
+                } else {
+                    log::info!("ℹ️  Custom color selection only available on Cosmic desktop");
+                }
             }
 
             Message::TabMessage(entity_opt, tab_message) => {
