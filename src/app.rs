@@ -2101,10 +2101,10 @@ impl Application for App {
             .license_url("https://spdx.org/licenses/GPL-3.0-only")
             .developers([("Ehsan Tork", "ehsan.tor@hey.com"), ("Jeremy Soller", "jeremy@system76.com")])
             .links([
-                (fl!("repository"), "https://github.com/ehsator/vortex-fm"),
+                (fl!("repository"), "https://github.com/journalehsan/vortex-fm"),
                 (
                     fl!("support"),
-                    "https://github.com/ehsator/vortex-fm/issues",
+                    "https://github.com/journalehsan/issues",
                 ),
             ]);
 

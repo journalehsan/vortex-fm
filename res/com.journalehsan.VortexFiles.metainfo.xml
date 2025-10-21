@@ -6,8 +6,8 @@
   <project_group>Vortex</project_group>
   <developer_name>Ehsan Tork</developer_name>
   <update_contact>ehsan.tor@hey.com</update_contact>
-  <url type="homepage">https://github.com/ehsator/vortex-fm</url>
-  <url type="bugtracker">https://github.com/ehsator/vortex-fm</url>
+  <url type="homepage">https://github.com/journalehsan/vortex-fm</url>
+  <url type="bugtracker">https://github.com/journalehsan/vortex-fm</url>
   <name>Vortex File Manager</name>
   <name xml:lang="ar">مدير ملفات Vortex</name>
   <name xml:lang="cs">Vortex Správce souborů</name>

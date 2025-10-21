@@ -12,7 +12,7 @@ Build-Depends:
     pkg-config,
     rust-all,
 Standards-Version: 4.6.2
-Homepage: https://github.com/ehsator/vortex-fm
+Homepage: https://github.com/journalehsan/vortex-fm
 
 Package: vortex-fm
 Architecture: amd64 arm64
