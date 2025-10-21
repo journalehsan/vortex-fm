@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use super::ThemeInfo;
 use crate::utils::desktop_theme::DesktopEnvironment;
+use super::cosmic_palette::CosmicAccentPalette;
 
 /// Context for color customization
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -190,11 +191,20 @@ impl ThemeManager {
             return Ok(());
         }
 
+        // Map accent color to nearest Cosmic accent for consistency
+        let mapped_accent = CosmicAccentPalette::map_accent_color(
+            theme_info.accent_color,
+            !theme_info.is_light,
+        );
+        
+        log::info!("🎨 Original accent: {:?}, Mapped to Cosmic: {:?}", 
+            theme_info.accent_color, mapped_accent);
+
         // Convert our Color to Srgb/Srgba
         let accent_srgb = Srgb::new(
-            theme_info.accent_color.r,
-            theme_info.accent_color.g,
-            theme_info.accent_color.b,
+            mapped_accent.r,
+            mapped_accent.g,
+            mapped_accent.b,
         );
         
         let bg_srgba = Srgba::new(
@@ -220,12 +230,12 @@ impl ThemeManager {
         // Apply colors to the appropriate theme variant
         let customizer = self.selected_customizer_mut();
         
-        // Set accent color
-        log::info!("🎨 DEBUG: Attempting to set accent color: {:?}", accent_srgb);
+        // Set accent color (now mapped to Cosmic palette)
+        log::info!("🎨 DEBUG: Attempting to set Cosmic accent color: {:?}", accent_srgb);
         if let Some(_staged) = customizer.set_accent(Some(accent_srgb)) {
-            log::info!("✅ DEBUG: Successfully applied accent color: {:?}", accent_srgb);
+            log::info!("✅ DEBUG: Successfully applied Cosmic accent color: {:?}", accent_srgb);
         } else {
-            log::warn!("❌ DEBUG: Failed to apply accent color: {:?}", accent_srgb);
+            log::warn!("❌ DEBUG: Failed to apply Cosmic accent color: {:?}", accent_srgb);
         }
         
         // Set background color
@@ -260,7 +270,7 @@ impl ThemeManager {
 
         // Build the theme to apply changes
         log::info!("🎨 DEBUG: Building theme to apply changes...");
-        let build_task = self.build_theme(ThemeStaged::Current);
+        let _build_task = self.build_theme(ThemeStaged::Current);
         log::info!("🎨 DEBUG: Theme build task created");
         
         // Force the theme to be rebuilt immediately
@@ -268,9 +278,9 @@ impl ThemeManager {
         let customizer = self.selected_customizer_mut();
         let new_theme = customizer.builder.0.clone().build();
         customizer.theme.0 = new_theme;
-        log::info!("🎨 DEBUG: Theme rebuilt with new colors");
+        log::info!("🎨 DEBUG: Theme rebuilt with new colors (mapped Cosmic accents)");
 
-        log::info!("✅ Successfully applied external theme colors");
+        log::info!("✅ Successfully applied external theme colors with Cosmic palette mapping");
         Ok(())
     }
 

@@ -1,7 +1,7 @@
 // Desktop environment theme detection and coordination
 
 use cosmic::iced::Color;
-use super::themes::{ThemeInfo, omarchy, kde, gnome, default, manager::{ThemeManager, ThemeStaged}};
+use super::themes::{ThemeInfo, omarchy, kde, gnome, default, manager::{ThemeManager, ThemeStaged}, CosmicAccentPalette};
 use crate::utils::command_utils::SafeCommand;
 
 /// Desktop environment types
@@ -234,6 +234,14 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Theme properties - is_light: {}, window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
         theme.is_light, theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
     
+    // Map the accent color to Cosmic palette
+    let mapped_accent = CosmicAccentPalette::map_accent_color(
+        theme.accent_color,
+        !theme.is_light,
+    );
+    log::info!("🎨 Mapped accent color from {:?} to Cosmic palette: {:?}", 
+        theme.accent_color, mapped_accent);
+    
     // Use ThemeBuilder when cosmic-settings is available (works on any desktop)
     if command_exists("cosmic-settings") {
         log::info!("🎨 Using ThemeBuilder (cosmic-settings available)");
@@ -248,7 +256,7 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
         }
         
         if let Some(theme_manager) = theme_manager_guard.as_mut() {
-            // Apply external theme colors
+            // Apply external theme colors (which will use Cosmic palette mapping internally)
             if let Err(err) = theme_manager.apply_external_theme(theme) {
                 log::warn!("❌ Failed to apply external theme: {}", err);
             }
@@ -261,18 +269,18 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     // Fallback for non-Cosmic environments
     log::info!("🎨 Using fallback theme system for non-Cosmic desktop");
     
-    // Convert our Color to cosmic::iced::Color
+    // Convert our Color to cosmic::iced::Color (use mapped accent)
     let accent_color = cosmic::iced::Color::from_rgb(
-        theme.accent_color.r,
-        theme.accent_color.g, 
-        theme.accent_color.b
+        mapped_accent.r,
+        mapped_accent.g, 
+        mapped_accent.b
     );
     
     log::info!("🎨 Detected accent color: {:?}", accent_color);
     log::info!("🎨 Target accent color RGB: ({}, {}, {})", 
-        (theme.accent_color.r * 255.0) as u8,
-        (theme.accent_color.g * 255.0) as u8,
-        (theme.accent_color.b * 255.0) as u8
+        (mapped_accent.r * 255.0) as u8,
+        (mapped_accent.g * 255.0) as u8,
+        (mapped_accent.b * 255.0) as u8
     );
     
     // Apply the correct light/dark theme based on detected desktop theme
@@ -314,7 +322,7 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("✅ Applied light/dark theme preference: {} (is_light: {})", 
         if theme.is_light { "LIGHT" } else { "DARK" }, theme.is_light);
     
-    log::info!("✅ Applied theme '{}' to Cosmic theme system", theme.name);
+    log::info!("✅ Applied theme '{}' to Cosmic theme system with Cosmic palette mapping", theme.name);
     cosmic_theme
 }
 
@@ -322,6 +330,14 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
 /// This function provides a high-level interface for applying themes with custom colors
 pub fn apply_advanced_theme(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Applying advanced theme '{}'", theme.name);
+    
+    // Map accent color to Cosmic palette for consistency
+    let mapped_accent = CosmicAccentPalette::map_accent_color(
+        theme.accent_color,
+        !theme.is_light,
+    );
+    log::info!("🎨 Mapped accent for advanced theme from {:?} to {:?}", 
+        theme.accent_color, mapped_accent);
     
     // Use ThemeBuilder when cosmic-settings is available (works on any desktop)
     if command_exists("cosmic-settings") {

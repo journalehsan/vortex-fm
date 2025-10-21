@@ -1,7 +1,7 @@
 // Omarchy theme definitions and detection
 
 use cosmic::iced::Color;
-use super::{DesktopTheme, ThemeInfo};
+use super::{DesktopTheme, ThemeInfo, cosmic_palette::CosmicAccentPalette};
 use crate::utils::command_utils::SafeCommand;
 
 /// Omarchy theme definitions
@@ -32,7 +32,8 @@ impl DesktopTheme for OmarchyTheme {
     }
     
     fn accent_color(&self) -> Color {
-        self.accent_color
+        // Map the accent color to the nearest Cosmic accent for consistency
+        CosmicAccentPalette::map_accent_color(self.accent_color, !self.is_light)
     }
     
     fn foreground(&self) -> Color {
@@ -48,7 +49,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.11, 0.11, 0.15), // #1E1E2E
         view_background: Color::from_rgb(0.15, 0.15, 0.20),   // #24273A
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.91, 0.89, 0.84),        // #E8E4E0
     },
     OmarchyTheme {
@@ -56,7 +57,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,  // Dracula is a dark theme
         window_background: Color::from_rgb(0.100, 0.101, 0.150), //rgb(11, 11, 15)
         view_background: Color::from_rgb(0.16, 0.16, 0.20),   // #282A36
-        accent_color: Color::from_rgb(0.85, 0.05, 0.145),  //rgb(85, 5, 145)
+        accent_color: Color::from_rgb(0.89, 0.56, 0.98),     // #E49BF8 -> will map to Cosmic purple
         foreground: Color::from_rgb(0.95, 0.95, 0.95),        // #F2F2F2
     },
     OmarchyTheme {
@@ -64,7 +65,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.20, 0.24, 0.20), // #323D43
         view_background: Color::from_rgb(0.25, 0.30, 0.25),   // #3F4944
-        accent_color: Color::from_rgb(0.40, 0.95, 0.60),     // #66FF99
+        accent_color: Color::from_rgb(0.40, 0.95, 0.60),     // #66FF99 -> will map to Cosmic green
         foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
     },
     OmarchyTheme {
@@ -72,7 +73,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.15, 0.13, 0.10), // #262626
         view_background: Color::from_rgb(0.20, 0.18, 0.15),    // #32302F
-        accent_color: Color::from_rgb(0.85, 0.55, 0.20),      // #D79921
+        accent_color: Color::from_rgb(0.85, 0.55, 0.20),      // #D79921 -> will map to Cosmic orange
         foreground: Color::from_rgb(0.85, 0.80, 0.70),        // #D5C4A1
     },
     OmarchyTheme {
@@ -80,7 +81,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.09, 0.09, 0.12), // #16161D
         view_background: Color::from_rgb(0.12, 0.12, 0.16),   // #1F1F28
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
     },
     OmarchyTheme {
@@ -88,7 +89,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.05, 0.05, 0.05), // #0D0D0D
         view_background: Color::from_rgb(0.10, 0.10, 0.10),   // #1A1A1A
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.90, 0.90, 0.90),        // #E6E6E6
     },
     OmarchyTheme {
@@ -96,7 +97,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.15, 0.18, 0.22), // #242933
         view_background: Color::from_rgb(0.18, 0.22, 0.27),   // #2E3440
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
     },
     OmarchyTheme {
@@ -104,7 +105,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.05, 0.10, 0.08), // #0D1A14
         view_background: Color::from_rgb(0.08, 0.15, 0.12),   // #14261F
-        accent_color: Color::from_rgb(0.20, 0.80, 0.40),     // #33CC66
+        accent_color: Color::from_rgb(0.20, 0.80, 0.40),     // #33CC66 -> will map to Cosmic green
         foreground: Color::from_rgb(0.85, 0.90, 0.85),        // #D9E6D9
     },
     OmarchyTheme {
@@ -112,7 +113,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.10, 0.08, 0.08), // #1A1414
         view_background: Color::from_rgb(0.15, 0.12, 0.12),   // #261F1F
-        accent_color: Color::from_rgb(0.80, 0.40, 0.40),     // #CC6666
+        accent_color: Color::from_rgb(0.80, 0.40, 0.40),     // #CC6666 -> will map to Cosmic red
         foreground: Color::from_rgb(0.85, 0.80, 0.80),        // #D9CCCC
     },
     OmarchyTheme {
@@ -120,7 +121,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,
         window_background: Color::from_rgb(0.08, 0.08, 0.12), // #14141F
         view_background: Color::from_rgb(0.12, 0.12, 0.18),   // #1F1F2E
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
     },
     // Light themes
@@ -129,7 +130,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: true,
         window_background: Color::from_rgb(0.95, 0.95, 0.95), // #F2F2F2
         view_background: Color::from_rgb(1.0, 1.0, 1.0),      // #FFFFFF
-        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF -> will map to Cosmic blue
         foreground: Color::from_rgb(0.20, 0.20, 0.20),        // #333333
     },
     OmarchyTheme {
@@ -137,7 +138,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: true,
         window_background: Color::from_rgb(0.95, 0.95, 0.95), // #F2F2F2
         view_background: Color::from_rgb(1.0, 1.0, 1.0),      // #FFFFFF
-        accent_color: Color::from_rgb(0.60, 0.40, 0.60),     // #996699
+        accent_color: Color::from_rgb(0.60, 0.40, 0.60),     // #996699 -> will map to Cosmic purple
         foreground: Color::from_rgb(0.20, 0.20, 0.20),        // #333333
     },
 ];
@@ -165,16 +166,21 @@ pub fn detect_omarchy_theme() -> Option<ThemeInfo> {
     for theme in OMARCHY_THEMES {
         log::debug!("🔍 Checking theme: '{}' against '{}'", theme.name, theme_name);
         if theme.name.to_lowercase() == theme_name.to_lowercase() {
+            // Map accent color to Cosmic palette
+            let mapped_accent = theme.accent_color();
+            
             log::info!("✅ Found matching Omarchy theme: '{}' (light: {})", theme.name, theme.is_light);
+            log::info!("🎨 Original accent color: {:?}", theme.accent_color);
+            log::info!("🎨 Mapped to Cosmic accent: {:?}", mapped_accent);
             log::info!("🎨 Theme colors - window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
-                theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
+                theme.window_background, theme.view_background, mapped_accent, theme.foreground);
             
             let theme_info = ThemeInfo::new(
                 theme.name.to_string(),
                 theme.is_light,
                 theme.window_background,
                 theme.view_background,
-                theme.accent_color,
+                mapped_accent,
                 theme.foreground,
             );
             

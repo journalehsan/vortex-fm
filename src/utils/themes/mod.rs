@@ -85,3 +85,6 @@ pub mod kde;
 pub mod gnome;
 pub mod default;
 pub mod manager;
+pub mod cosmic_palette;
+
+pub use cosmic_palette::{CosmicAccentPalette, CosmicAccentStrategy};

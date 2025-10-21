@@ -16,6 +16,7 @@ use std::collections::HashMap;
 
 use crate::utils::desktop_theme::{get_desktop_theme, apply_advanced_theme, get_theme_manager, detect_desktop_environment};
 use crate::utils::themes::manager::{ColorContext, ThemeManager};
+use crate::utils::themes::CosmicAccentPalette;
 
 /// Messages for theme settings interactions
 #[derive(Clone, Debug)]
@@ -147,15 +148,16 @@ impl ThemeSettingsPage {
     fn accent_color_section() -> Element<'static, ThemeMessage> {
         let Spacing { space_xxs, .. } = cosmic::theme::spacing();
         
-        // Default accent colors
-        let accent_colors = vec![
-            cosmic::iced::Color::from_rgb(0.24, 0.60, 0.89), // Blue
-            cosmic::iced::Color::from_rgb(0.86, 0.20, 0.20), // Red (Dracula)
-            cosmic::iced::Color::from_rgb(0.40, 0.95, 0.60), // Green (Everforest)
-            cosmic::iced::Color::from_rgb(0.85, 0.55, 0.20), // Yellow (Gruvbox)
-            cosmic::iced::Color::from_rgb(0.60, 0.40, 0.60), // Purple
-            cosmic::iced::Color::from_rgb(0.80, 0.40, 0.40), // Pink
-        ];
+        // Get default Cosmic accent colors based on theme mode
+        // For now, use dark mode palette (will be updated dynamically based on theme)
+        let cosmic_colors = CosmicAccentPalette::get_palette_colors(false);
+        
+        // Use only the first 6 colors for the UI (Blue, Indigo, Purple, Pink, Red, Orange)
+        let accent_colors: Vec<cosmic::iced::Color> = cosmic_colors
+            .iter()
+            .take(6)
+            .map(|c| cosmic::iced::Color::from_rgb(c.r, c.g, c.b))
+            .collect();
 
         let mut accent_palette_row = Vec::with_capacity(accent_colors.len() + 1);
 
