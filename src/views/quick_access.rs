@@ -12,6 +12,7 @@ use crate::{
     app::Message,
     core::quick_access::{self, DriveInfo, DriveType, LibraryFolder, RecentFile},
     fl,
+    tab,
 };
 
 // Section expansion state (saved in config)
@@ -69,7 +70,7 @@ fn library_section(
                         .align_x(Alignment::Center)
                         .spacing(8)
                 )
-                .on_press(Message::OpenItemLocation(None))
+                .on_press(Message::TabMessage(None, tab::Message::Open(Some(folder.path.clone()))))
             )
             .width(Length::Fixed(120.0))
             .height(Length::Fixed(100.0))
@@ -180,7 +181,7 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
 
     if drive.is_accessible {
         if let Some(_path) = drive.path.to_str() {
-            button_content = button_content.on_press(Message::OpenItemLocation(None));
+            button_content = button_content.on_press(Message::TabMessage(None, tab::Message::Open(Some(drive.path.clone()))));
         }
     } else {
         // For inaccessible drives, we could add mount functionality here
@@ -253,7 +254,7 @@ fn recent_section(
                         .align_y(Alignment::Center)
                         .padding(12)
                 )
-                .on_press(Message::OpenItemLocation(None))
+                .on_press(Message::TabMessage(None, tab::Message::Open(Some(file.path.clone()))))
                 .width(Length::Fill)
                 .height(Length::Fixed(56.0));
 
