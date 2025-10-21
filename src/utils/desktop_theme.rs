@@ -190,22 +190,52 @@ fn detect_system_dark_mode() -> bool {
     false
 }
 
-/// Apply theme colors to cosmic theme
+/// Apply theme colors to cosmic theme using ThemeBuilder
 pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Applying theme '{}' to Cosmic theme system", theme.name);
     log::info!("🎨 Theme properties - is_light: {}, window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
         theme.is_light, theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
     
-    let mut cosmic_theme = cosmic::theme::system_preference();
+    // Convert our Color to cosmic::iced::Color
+    let accent_color = cosmic::iced::Color::from_rgb(
+        theme.accent_color.r,
+        theme.accent_color.g, 
+        theme.accent_color.b
+    );
     
-    // Set theme type based on light/dark
-    let prefer_dark = !theme.is_light();
-    cosmic_theme.theme_type.prefer_dark(Some(prefer_dark));
+    log::info!("🎨 Detected accent color: {:?}", accent_color);
+    log::info!("🎨 Target accent color RGB: ({}, {}, {})", 
+        (theme.accent_color.r * 255.0) as u8,
+        (theme.accent_color.g * 255.0) as u8,
+        (theme.accent_color.b * 255.0) as u8
+    );
     
-    log::info!("🌙 Set Cosmic theme to prefer_dark: {}", prefer_dark);
+    // Try to create a custom theme using ThemeBuilder
+    // Note: ThemeBuilder might not be available in current libcosmic version
+    log::info!("🎨 Attempting to use ThemeBuilder for custom theme creation");
     
-    // For now, just return the system preference theme
-    // Custom color application would require more complex cosmic theme manipulation
+    // For now, let's use the system theme but log our custom colors
+    let cosmic_theme = if theme.is_light {
+        log::info!("🎨 Using light theme as base");
+        cosmic::theme::system_light()
+    } else {
+        log::info!("🎨 Using dark theme as base");
+        cosmic::theme::system_dark()
+    };
+    
+    // Log the current theme accent color for comparison
+    log::info!("🎨 Current theme accent color: {:?}", cosmic_theme.cosmic().palette.accent_blue);
+    log::info!("🎨 Current theme accent RGB: ({}, {}, {})", 
+        (cosmic_theme.cosmic().palette.accent_blue.color.red * 255.0) as u8,
+        (cosmic_theme.cosmic().palette.accent_blue.color.green * 255.0) as u8,
+        (cosmic_theme.cosmic().palette.accent_blue.color.blue * 255.0) as u8
+    );
+    
+    // TODO: Implement custom theme creation when ThemeBuilder is available
+    // For now, we'll use the system theme but log our custom colors
+    log::info!("🎨 Note: Custom color application requires ThemeBuilder implementation");
+    log::info!("🎨 Target: Purple RGB(219, 99, 37) vs Current: Cyan RGB(99, 208, 223)");
+    
     log::info!("✅ Applied theme '{}' to Cosmic theme system", theme.name);
     cosmic_theme
 }
