@@ -144,31 +144,47 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
 
 /// Detect current Omarchy theme
 pub fn detect_omarchy_theme() -> Option<ThemeInfo> {
+    log::info!("🎭 Starting Omarchy theme detection...");
+    
     // Check if omarchy-theme-current command exists
     let output = SafeCommand::new("omarchy-theme-current")
         .output_text()
         .ok()?;
     
     let theme_name = output.trim();
+    log::info!("🎨 Omarchy command output: '{}'", theme_name);
+    
     if theme_name.is_empty() {
+        log::warn!("⚠️ Omarchy command returned empty output");
         return None;
     }
     
-    // Find matching theme
+    log::info!("🔍 Looking for theme: '{}' in {} available themes", theme_name, OMARCHY_THEMES.len());
+    
+    // Find matching theme (case-insensitive)
     for theme in OMARCHY_THEMES {
-        if theme.name == theme_name {
-            return Some(ThemeInfo::new(
+        log::debug!("🔍 Checking theme: '{}' against '{}'", theme.name, theme_name);
+        if theme.name.to_lowercase() == theme_name.to_lowercase() {
+            log::info!("✅ Found matching Omarchy theme: '{}' (light: {})", theme.name, theme.is_light);
+            log::info!("🎨 Theme colors - window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
+                theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
+            
+            let theme_info = ThemeInfo::new(
                 theme.name.to_string(),
                 theme.is_light,
                 theme.window_background,
                 theme.view_background,
                 theme.accent_color,
                 theme.foreground,
-            ));
+            );
+            
+            log::info!("🎭 Successfully created ThemeInfo for '{}'", theme.name);
+            return Some(theme_info);
         }
     }
     
     // If theme not found, return None
-    log::warn!("Unknown Omarchy theme: {}", theme_name);
+    log::warn!("❌ Unknown Omarchy theme: '{}'", theme_name);
+    log::info!("📋 Available themes: {:?}", OMARCHY_THEMES.iter().map(|t| t.name).collect::<Vec<_>>());
     None
 }

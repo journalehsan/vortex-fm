@@ -83,19 +83,25 @@ pub fn get_desktop_theme() -> ThemeInfo {
     
     match desktop {
         DesktopEnvironment::Omarchy => {
+            log::info!("🎭 Detecting Omarchy theme...");
             if let Some(theme) = omarchy::detect_omarchy_theme() {
-                log::info!("Detected Omarchy theme: {}", theme.name);
+                log::info!("✅ Successfully detected Omarchy theme: '{}' (light: {})", theme.name, theme.is_light);
+                log::info!("🎨 Theme colors - window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
+                    theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
                 return theme;
             }
-            log::warn!("Failed to detect Omarchy theme, using fallback");
+            log::warn!("❌ Failed to detect Omarchy theme, using fallback");
         }
         DesktopEnvironment::Hyprland => {
             // Try Omarchy first for Hyprland
+            log::info!("🪟 Detecting theme for Hyprland (trying Omarchy first)...");
             if let Some(theme) = omarchy::detect_omarchy_theme() {
-                log::info!("Detected Omarchy theme for Hyprland: {}", theme.name);
+                log::info!("✅ Successfully detected Omarchy theme for Hyprland: '{}' (light: {})", theme.name, theme.is_light);
+                log::info!("🎨 Theme colors - window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
+                    theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
                 return theme;
             }
-            log::warn!("No Omarchy theme detected for Hyprland, using fallback");
+            log::warn!("❌ No Omarchy theme detected for Hyprland, using fallback");
         }
         DesktopEnvironment::Cosmic => {
             // Cosmic has its own theming, use system preference
@@ -186,12 +192,20 @@ fn detect_system_dark_mode() -> bool {
 
 /// Apply theme colors to cosmic theme
 pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
+    log::info!("🎨 Applying theme '{}' to Cosmic theme system", theme.name);
+    log::info!("🎨 Theme properties - is_light: {}, window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
+        theme.is_light, theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
+    
     let mut cosmic_theme = cosmic::theme::system_preference();
     
     // Set theme type based on light/dark
-    cosmic_theme.theme_type.prefer_dark(Some(!theme.is_light()));
+    let prefer_dark = !theme.is_light();
+    cosmic_theme.theme_type.prefer_dark(Some(prefer_dark));
+    
+    log::info!("🌙 Set Cosmic theme to prefer_dark: {}", prefer_dark);
     
     // For now, just return the system preference theme
     // Custom color application would require more complex cosmic theme manipulation
+    log::info!("✅ Applied theme '{}' to Cosmic theme system", theme.name);
     cosmic_theme
 }
