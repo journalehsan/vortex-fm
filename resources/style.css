@@ -361,7 +361,9 @@ window {
     line-height: 1.3;
     text-align: center;
     word-wrap: break-word;
+    word-break: break-all; /* Allow breaking anywhere for long words */
     hyphens: auto;
+    overflow-wrap: break-word; /* Modern CSS for word wrapping */
 }
 
 /* Grid-specific styling */

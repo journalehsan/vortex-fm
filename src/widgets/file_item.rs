@@ -55,17 +55,63 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     
     item_box.append(&icon_container);
     
-    // File name with proper text wrapping and ellipsis
-    let name_label = Label::new(Some(name));
-    name_label.add_css_class("file-name");
-    name_label.set_halign(gtk::Align::Center);
-    name_label.set_wrap(true);
-    name_label.set_wrap_mode(gtk::pango::WrapMode::Word);
-    name_label.set_max_width_chars(10); // Reduced from 12 to 10 for better fit
-    name_label.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
-    name_label.set_lines(2);
-    name_label.set_vexpand(false); // Don't expand vertically
-    name_label.set_hexpand(false); // Don't expand horizontally
+    // File name with specific character limits based on icon size
+    let max_chars = match icon_size {
+        16..=24 => 8i32,   // Small icons: 8 characters max
+        25..=32 => 10i32,  // Medium icons: 10 characters max
+        33..=48 => 12i32,  // Large icons: 12 characters max
+        49..=64 => 14i32,  // Extra large icons: 14 characters max
+        _ => 10i32,        // Default: 10 characters
+    };
+    
+    // Debug logging for filename truncation
+    let name_length = name.chars().count();
+    let will_truncate = name_length > max_chars as usize;
+    let has_spaces = name.contains(' ');
+    crate::utils::simple_debug::debug_info("FILE_ITEM", &format!(
+        "Filename: '{}', Length: {} chars, Max: {} chars, Icon size: {}px, Will truncate: {}, Has spaces: {}",
+        name, name_length, max_chars, icon_size, will_truncate, has_spaces
+    ));
+    
+        // Handle long filenames without spaces by adding word breaks
+        let display_name = if name.len() > max_chars as usize && !name.contains(' ') {
+            // For filenames without spaces, insert soft hyphens every few characters
+            let mut result = String::new();
+            let chars: Vec<char> = name.chars().collect();
+            let break_interval = (max_chars as usize / 2).max(3); // Break every 3-7 chars depending on max_chars
+            
+            for (i, ch) in chars.iter().enumerate() {
+                if i > 0 && i % break_interval == 0 {
+                    result.push('\u{200B}'); // Zero-width space for word break
+                }
+                result.push(*ch);
+            }
+            
+            // Debug logging for word breaks
+            crate::utils::simple_debug::debug_info("FILE_ITEM", &format!(
+                "Added word breaks to '{}' -> '{}' (break interval: {})",
+                name, result.replace('\u{200B}', "|"), break_interval
+            ));
+            
+            result
+        } else {
+            name.to_string()
+        };
+        
+        let name_label = Label::new(Some(&display_name));
+        name_label.add_css_class("file-name");
+        name_label.set_halign(gtk::Align::Center);
+        name_label.set_wrap(true);
+        name_label.set_wrap_mode(gtk::pango::WrapMode::Word);
+        name_label.set_max_width_chars(max_chars);
+        name_label.set_ellipsize(gtk::pango::EllipsizeMode::End); // Ellipsis at the end
+        name_label.set_lines(2);
+        name_label.set_vexpand(false); // Don't expand vertically
+        name_label.set_hexpand(false); // Don't expand horizontally
+    
+    // Add tooltip with full filename
+    name_label.set_tooltip_text(Some(name));
+    
     item_box.append(&name_label);
     
     // Make it clickable
@@ -73,6 +119,9 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     button.set_child(Some(&item_box));
     button.set_size_request(item_width, item_height); // Force button size too
     button.add_css_class("file-button");
+    
+    // Add tooltip to the entire button with full filename
+    button.set_tooltip_text(Some(name));
     
     // Set up right-click gesture for context menu
     let gesture = GestureClick::new();
