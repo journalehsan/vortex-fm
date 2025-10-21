@@ -84,8 +84,8 @@ use crate::{
     utils::mime_icon::{mime_for_path, mime_icon},
     mounter::MOUNTERS,
     operation::{Controller, OperationError},
-    thumbnail_cacher::{CachedThumbnail, ThumbnailCacher, ThumbnailSize},
-    thumbnailer::thumbnailer,
+    utils::thumbnail_cacher::{CachedThumbnail, ThumbnailCacher, ThumbnailSize},
+    utils::thumbnailer::thumbnailer,
 };
 use uzers::{get_group_by_gid, get_user_by_uid};
 

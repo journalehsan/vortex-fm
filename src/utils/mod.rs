@@ -5,3 +5,5 @@ pub mod mouse_area;
 pub mod localize;
 pub mod mime_app;
 pub mod mime_icon;
+pub mod thumbnail_cacher;
+pub mod thumbnailer;

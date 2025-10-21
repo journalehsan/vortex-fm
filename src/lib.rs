@@ -21,8 +21,6 @@ use tab::Location;
 
 use crate::config::State;
 pub mod tab;
-mod thumbnail_cacher;
-mod thumbnailer;
 
 pub(crate) fn err_str<T: ToString>(err: T) -> String {
     err.to_string()
