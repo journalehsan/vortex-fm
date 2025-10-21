@@ -1445,6 +1445,7 @@ impl App {
         });
 
         for (favorite_i, favorite) in self.config.favorites.iter().enumerate() {
+            // Handle favorites with paths
             if let Some(path) = favorite.path_opt() {
                 let name = if matches!(favorite, Favorite::Home) {
                     fl!("home")
@@ -1469,6 +1470,15 @@ impl App {
                             }
                             _ => Location::Path(path.clone()),
                         })
+                        .data(FavoriteIndex(favorite_i))
+                });
+            }
+            // Handle favorites without paths (like QuickAccess)
+            else if matches!(favorite, Favorite::QuickAccess) {
+                nav_model = nav_model.insert(move |b| {
+                    b.text(fl!("quick-access"))
+                        .icon(icon::from_name("starred-symbolic").size(16))
+                        .data(Location::QuickAccess)
                         .data(FavoriteIndex(favorite_i))
                 });
             }

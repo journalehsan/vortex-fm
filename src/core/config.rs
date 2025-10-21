@@ -229,6 +229,7 @@ impl Default for Config {
             thumb_cfg: ThumbCfg::default(),
             favorites: vec![
                 Favorite::Home,
+                Favorite::QuickAccess,
                 Favorite::Documents,
                 Favorite::Downloads,
                 Favorite::Music,
