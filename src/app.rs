@@ -72,7 +72,7 @@ use crate::{
         AppTheme, Config, DesktopConfig, Favorite, IconSizes, TIME_CONFIG_ID, TabConfig,
         TimeConfig, TypeToSearch,
     },
-    dialog::{Dialog, DialogKind, DialogMessage, DialogResult},
+    views::dialogs::dialog::{Dialog, DialogKind, DialogMessage, DialogResult},
     fl, home_dir,
     key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
@@ -89,7 +89,7 @@ use crate::{
         self, HOVER_DURATION, HeadingOptions, ItemMetadata, Location, SORT_OPTION_FALLBACK, Tab,
     },
 };
-use crate::{core::config::State, dialog::DialogSettings};
+use crate::{core::config::State, views::dialogs::dialog::DialogSettings};
 
 #[derive(Clone, Debug)]
 pub enum Mode {

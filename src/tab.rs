@@ -76,7 +76,7 @@ use crate::{
     app::{Action, PreviewItem, PreviewKind},
     clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
     core::config::{DesktopConfig, ICON_SCALE_MAX, ICON_SIZE_GRID, IconSizes, TabConfig, ThumbCfg},
-    dialog::DialogKind,
+    views::dialogs::dialog::DialogKind,
     fl,
     utils::localize::{LANGUAGE_SORTER, LOCALE},
     menu,
