@@ -39,7 +39,7 @@ use crate::{
     app::{Action, ContextPage, Message as AppMessage, PreviewItem, PreviewKind},
     core::config::{Config, DialogConfig, Favorite, TIME_CONFIG_ID, ThumbCfg, TimeConfig, TypeToSearch},
     fl, home_dir,
-    key_bind::key_binds,
+    utils::key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
     views::menu,
     core::services::mount::{MOUNTERS, MounterItem, MounterItems, MounterKey, MounterMessage},

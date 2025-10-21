@@ -12,7 +12,6 @@ mod core;
 mod views;
 mod widgets;
 use core::config::Config;
-mod key_bind;
 use tab::Location;
 
 use crate::core::config::State;

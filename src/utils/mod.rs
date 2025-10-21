@@ -9,3 +9,4 @@ pub mod thumbnail_cacher;
 pub mod thumbnailer;
 pub mod clipboard;
 pub mod archive;
+pub mod key_bind;

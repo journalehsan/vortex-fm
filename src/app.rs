@@ -74,7 +74,7 @@ use crate::{
     },
     views::dialogs::dialog::{Dialog, DialogKind, DialogMessage, DialogResult},
     fl, home_dir,
-    key_bind::key_binds,
+    utils::key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
     views::menu,
     utils::mime_app::{self, MimeApp, MimeAppCache},
