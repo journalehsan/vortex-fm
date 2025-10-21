@@ -7,7 +7,7 @@ use std::{
 use zip::result::ZipError;
 
 use crate::{
-    mime_icon::mime_for_path,
+    utils::mime_icon::mime_for_path,
     operation::{Controller, OpReader, OperationError, OperationErrorType},
 };
 

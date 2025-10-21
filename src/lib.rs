@@ -15,8 +15,6 @@ pub mod config;
 pub mod dialog;
 mod key_bind;
 mod menu;
-mod mime_app;
-pub mod mime_icon;
 mod mounter;
 pub mod operation;
 use tab::Location;

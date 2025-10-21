@@ -3,3 +3,5 @@
 pub mod spawn_detached;
 pub mod mouse_area;
 pub mod localize;
+pub mod mime_app;
+pub mod mime_icon;

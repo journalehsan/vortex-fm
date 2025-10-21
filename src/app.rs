@@ -77,8 +77,8 @@ use crate::{
     key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
     menu,
-    mime_app::{self, MimeApp, MimeAppCache},
-    mime_icon,
+    utils::mime_app::{self, MimeApp, MimeAppCache},
+    utils::mime_icon,
     mounter::{MOUNTERS, MounterAuth, MounterItem, MounterItems, MounterKey, MounterMessage},
     operation::{
         Controller, Operation, OperationError, OperationErrorType, OperationSelection,
