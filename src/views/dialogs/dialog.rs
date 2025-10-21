@@ -41,7 +41,7 @@ use crate::{
     fl, home_dir,
     key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
-    menu,
+    views::menu,
     core::services::mount::{MOUNTERS, MounterItem, MounterItems, MounterKey, MounterMessage},
     tab::{self, ItemMetadata, Location, Tab},
 };

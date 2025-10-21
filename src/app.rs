@@ -76,7 +76,7 @@ use crate::{
     fl, home_dir,
     key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
-    menu,
+    views::menu,
     utils::mime_app::{self, MimeApp, MimeAppCache},
     utils::mime_icon,
     core::services::mount::{MOUNTERS, MounterAuth, MounterItem, MounterItems, MounterKey, MounterMessage},

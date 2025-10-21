@@ -14,7 +14,6 @@ mod views;
 pub mod clipboard;
 use core::config::Config;
 mod key_bind;
-mod menu;
 use tab::Location;
 
 use crate::core::config::State;

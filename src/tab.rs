@@ -79,7 +79,7 @@ use crate::{
     views::dialogs::dialog::DialogKind,
     fl,
     utils::localize::{LANGUAGE_SORTER, LOCALE},
-    menu,
+    views::menu,
     utils::mime_app,
     utils::mime_icon::{mime_for_path, mime_icon},
     core::services::mount::MOUNTERS,
