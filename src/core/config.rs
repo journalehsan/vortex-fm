@@ -144,31 +144,54 @@ impl Default for State {
 
 impl State {
     pub fn load() -> (Option<cosmic_config::Config>, Self) {
-        match cosmic_config::Config::new_state(App::APP_ID, CONFIG_VERSION) {
-            Ok(config_handler) => {
-                let config = match State::get_entry(&config_handler) {
-                    Ok(ok) => ok,
-                    Err((errs, config)) => {
-                        log::info!("errors loading config: {:?}", errs);
-                        config
-                    }
-                };
-                (Some(config_handler), config)
+        // Only create cosmic config on Cosmic desktop
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+            match cosmic_config::Config::new_state(App::APP_ID, CONFIG_VERSION) {
+                Ok(config_handler) => {
+                    let config = match State::get_entry(&config_handler) {
+                        Ok(ok) => ok,
+                        Err((errs, config)) => {
+                            log::info!("errors loading config: {:?}", errs);
+                            config
+                        }
+                    };
+                    (Some(config_handler), config)
+                }
+                Err(err) => {
+                    log::error!("failed to create config handler: {}", err);
+                    (None, State::default())
+                }
             }
-            Err(err) => {
-                log::error!("failed to create config handler: {}", err);
-                (None, State::default())
-            }
+        } else {
+            log::info!("Skipping cosmic config creation for non-Cosmic desktop: {:?}", desktop);
+            (None, State::default())
         }
     }
 
     pub fn subscription() -> Subscription<cosmic_config::Update<Self>> {
         struct ConfigSubscription;
-        cosmic_config::config_state_subscription(
-            TypeId::of::<ConfigSubscription>(),
-            App::APP_ID.into(),
-            CONFIG_VERSION,
-        )
+        
+        // Only create cosmic config subscriptions on Cosmic desktop
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        log::info!("State::subscription called, desktop: {:?}", desktop);
+        
+        if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+            log::info!("Creating cosmic config state subscription for Cosmic desktop");
+            cosmic_config::config_state_subscription(
+                TypeId::of::<ConfigSubscription>(),
+                App::APP_ID.into(),
+                CONFIG_VERSION,
+            )
+        } else {
+            log::info!("Skipping cosmic config state subscription for non-Cosmic desktop: {:?}", desktop);
+            // Return empty subscription for non-Cosmic environments
+            Subscription::none()
+        }
     }
 }
 
@@ -187,31 +210,54 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> (Option<cosmic_config::Config>, Self) {
-        match cosmic_config::Config::new(App::APP_ID, CONFIG_VERSION) {
-            Ok(config_handler) => {
-                let config = match Config::get_entry(&config_handler) {
-                    Ok(ok) => ok,
-                    Err((errs, config)) => {
-                        log::info!("errors loading config: {:?}", errs);
-                        config
-                    }
-                };
-                (Some(config_handler), config)
+        // Only create cosmic config on Cosmic desktop
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+            match cosmic_config::Config::new(App::APP_ID, CONFIG_VERSION) {
+                Ok(config_handler) => {
+                    let config = match Config::get_entry(&config_handler) {
+                        Ok(ok) => ok,
+                        Err((errs, config)) => {
+                            log::info!("errors loading config: {:?}", errs);
+                            config
+                        }
+                    };
+                    (Some(config_handler), config)
+                }
+                Err(err) => {
+                    log::error!("failed to create config handler: {}", err);
+                    (None, Config::default())
+                }
             }
-            Err(err) => {
-                log::error!("failed to create config handler: {}", err);
-                (None, Config::default())
-            }
+        } else {
+            log::info!("Skipping cosmic config creation for non-Cosmic desktop: {:?}", desktop);
+            (None, Config::default())
         }
     }
 
     pub fn subscription() -> Subscription<cosmic_config::Update<Self>> {
         struct ConfigSubscription;
-        cosmic_config::config_subscription(
-            TypeId::of::<ConfigSubscription>(),
-            App::APP_ID.into(),
-            CONFIG_VERSION,
-        )
+        
+        // Only create cosmic config subscriptions on Cosmic desktop
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        log::info!("Config::subscription called, desktop: {:?}", desktop);
+        
+        if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+            log::info!("Creating cosmic config subscription for Cosmic desktop");
+            cosmic_config::config_subscription(
+                TypeId::of::<ConfigSubscription>(),
+                App::APP_ID.into(),
+                CONFIG_VERSION,
+            )
+        } else {
+            log::info!("Skipping cosmic config subscription for non-Cosmic desktop: {:?}", desktop);
+            // Return empty subscription for non-Cosmic environments
+            Subscription::none()
+        }
     }
 
     /// Construct tab config for dialog

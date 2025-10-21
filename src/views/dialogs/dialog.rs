@@ -1972,21 +1972,43 @@ impl Application for App {
                 }
                 _ => None,
             }),
-            Config::subscription().map(|update| {
-                if !update.errors.is_empty() {
-                    log::info!(
-                        "errors loading config {:?}: {:?}",
-                        update.keys,
-                        update.errors
-                    );
+            // Only create Config subscription on Cosmic desktop
+            {
+                use crate::utils::desktop_theme::detect_desktop_environment;
+                let desktop = detect_desktop_environment();
+                
+                if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+                    Config::subscription().map(|update| {
+                        if !update.errors.is_empty() {
+                            log::info!(
+                                "errors loading config {:?}: {:?}",
+                                update.keys,
+                                update.errors
+                            );
+                        }
+                        Message::Config(update.config)
+                    })
+                } else {
+                    // Return empty subscription for non-Cosmic environments
+                    Subscription::none()
                 }
-                Message::Config(update.config)
-            }),
-            cosmic_config::config_subscription::<_, TimeConfig>(
-                TypeId::of::<TimeSubscription>(),
-                TIME_CONFIG_ID.into(),
-                1,
-            )
+            },
+            // Only create TimeConfig subscription on Cosmic desktop
+            {
+                use crate::utils::desktop_theme::detect_desktop_environment;
+                let desktop = detect_desktop_environment();
+                
+                if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+                    cosmic_config::config_subscription::<_, TimeConfig>(
+                        TypeId::of::<TimeSubscription>(),
+                        TIME_CONFIG_ID.into(),
+                        1,
+                    )
+                } else {
+                    // Return empty subscription for non-Cosmic environments
+                    Subscription::none()
+                }
+            }
             .map(|update| {
                 if !update.errors.is_empty() {
                     log::info!(

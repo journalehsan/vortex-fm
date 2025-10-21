@@ -21,31 +21,44 @@ pub fn detect_desktop_environment() -> DesktopEnvironment {
         .unwrap_or_default()
         .to_lowercase();
     
-    // Check for Omarchy first (highest priority)
-    if command_exists("omarchy-theme-current") {
-        return DesktopEnvironment::Omarchy;
+    log::info!("XDG_CURRENT_DESKTOP: {}", xdg_desktop);
+    
+    // Check for Hyprland first, but if omarchy command exists, use Omarchy themes
+    if xdg_desktop.contains("hyprland") {
+        if command_exists("omarchy-theme-current") {
+            log::info!("Detected Hyprland with Omarchy themes available");
+            return DesktopEnvironment::Omarchy;
+        } else {
+            log::info!("Detected Hyprland desktop environment");
+            return DesktopEnvironment::Hyprland;
+        }
     }
     
-    // Check for Hyprland
-    if xdg_desktop.contains("hyprland") {
-        return DesktopEnvironment::Hyprland;
+    // Check for Omarchy (for other desktop environments)
+    if command_exists("omarchy-theme-current") {
+        log::info!("Detected Omarchy desktop environment");
+        return DesktopEnvironment::Omarchy;
     }
     
     // Check for Cosmic
     if xdg_desktop.contains("cosmic") {
+        log::info!("Detected Cosmic desktop environment");
         return DesktopEnvironment::Cosmic;
     }
     
     // Check for KDE
     if xdg_desktop.contains("kde") {
+        log::info!("Detected KDE desktop environment");
         return DesktopEnvironment::Kde;
     }
     
     // Check for GNOME
     if xdg_desktop.contains("gnome") || xdg_desktop.contains("unity") {
+        log::info!("Detected GNOME desktop environment");
         return DesktopEnvironment::Gnome;
     }
     
+    log::info!("Unknown desktop environment, defaulting to Unknown");
     DesktopEnvironment::Unknown
 }
 
@@ -60,7 +73,8 @@ fn command_exists(command: &str) -> bool {
 /// Detect if running under a window manager (not a full desktop environment)
 pub fn is_window_manager() -> bool {
     let desktop = detect_desktop_environment();
-    matches!(desktop, DesktopEnvironment::Hyprland | DesktopEnvironment::Unknown)
+    // Treat as window manager if it's Hyprland, Omarchy, or Unknown desktop environment
+    matches!(desktop, DesktopEnvironment::Hyprland | DesktopEnvironment::Omarchy | DesktopEnvironment::Unknown)
 }
 
 /// Get theme information for the current desktop environment

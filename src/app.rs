@@ -5882,31 +5882,61 @@ impl Application for App {
                 }
                 _ => None,
             }),
-            Config::subscription().map(|update| {
-                if !update.errors.is_empty() {
-                    log::info!(
-                        "errors loading config {:?}: {:?}",
-                        update.keys,
-                        update.errors
-                    );
+            // Only create Config subscription on Cosmic desktop
+            {
+                use crate::utils::desktop_theme::detect_desktop_environment;
+                let desktop = detect_desktop_environment();
+                
+                log::info!("Config subscription check, desktop: {:?}", desktop);
+                
+                if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+                    log::info!("Creating Config subscription for Cosmic desktop");
+                    Config::subscription().map(|update| {
+                        if !update.errors.is_empty() {
+                            log::info!(
+                                "errors loading config {:?}: {:?}",
+                                update.keys,
+                                update.errors
+                            );
+                        }
+                        Message::Config(update.config)
+                    })
+                } else {
+                    log::info!("Skipping Config subscription for non-Cosmic desktop: {:?}", desktop);
+                    // Return empty subscription for non-Cosmic environments
+                    Subscription::none()
                 }
-                Message::Config(update.config)
-            }),
-            cosmic_config::config_subscription::<_, TimeConfig>(
-                TypeId::of::<TimeSubscription>(),
-                TIME_CONFIG_ID.into(),
-                1,
-            )
-            .map(|update| {
-                if !update.errors.is_empty() {
-                    log::info!(
-                        "errors loading time config {:?}: {:?}",
-                        update.keys,
-                        update.errors
-                    );
+            },
+            // Only create TimeConfig subscription on Cosmic desktop
+            {
+                use crate::utils::desktop_theme::detect_desktop_environment;
+                let desktop = detect_desktop_environment();
+                
+                log::info!("TimeConfig subscription check, desktop: {:?}", desktop);
+                
+                if matches!(desktop, crate::utils::desktop_theme::DesktopEnvironment::Cosmic) {
+                    log::info!("Creating TimeConfig subscription for Cosmic desktop");
+                    cosmic_config::config_subscription::<_, TimeConfig>(
+                        TypeId::of::<TimeSubscription>(),
+                        TIME_CONFIG_ID.into(),
+                        1,
+                    )
+                    .map(|update| {
+                        if !update.errors.is_empty() {
+                            log::info!(
+                                "errors loading time config {:?}: {:?}",
+                                update.keys,
+                                update.errors
+                            );
+                        }
+                        Message::TimeConfigChange(update.config)
+                    })
+                } else {
+                    log::info!("Skipping TimeConfig subscription for non-Cosmic desktop: {:?}", desktop);
+                    // Return empty subscription for non-Cosmic environments
+                    Subscription::none()
                 }
-                Message::TimeConfigChange(update.config)
-            }),
+            },
             Subscription::run_with_id(
                 TypeId::of::<WatcherSubscription>(),
                 stream::channel(100, |mut output| async move {
