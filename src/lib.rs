@@ -11,6 +11,7 @@ mod utils;
 mod common;
 mod core;
 mod views;
+mod widgets;
 pub mod clipboard;
 use core::config::Config;
 mod key_bind;
