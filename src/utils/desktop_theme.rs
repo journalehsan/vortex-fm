@@ -74,8 +74,33 @@ fn command_exists(command: &str) -> bool {
 /// Detect if running under a window manager (not a full desktop environment)
 pub fn is_window_manager() -> bool {
     let desktop = detect_desktop_environment();
-    // Treat as window manager if it's Hyprland, Omarchy, or Unknown desktop environment
-    matches!(desktop, DesktopEnvironment::Hyprland | DesktopEnvironment::Omarchy | DesktopEnvironment::Unknown)
+    
+    // Check for common window manager environment variables
+    let wm_session = std::env::var("XDG_SESSION_DESKTOP")
+        .unwrap_or_default()
+        .to_lowercase();
+    
+    // Common window managers that should hide window controls
+    let is_wm_session = wm_session.contains("hyprland") || 
+                       wm_session.contains("sway") || 
+                       wm_session.contains("i3") || 
+                       wm_session.contains("bspwm") || 
+                       wm_session.contains("awesome") || 
+                       wm_session.contains("dwm") || 
+                       wm_session.contains("xmonad") ||
+                       wm_session.contains("openbox") ||
+                       wm_session.contains("fluxbox");
+    
+    // Treat as window manager if it's Hyprland, Omarchy, Unknown, or detected WM session
+    let is_wm_desktop = matches!(desktop, DesktopEnvironment::Hyprland | DesktopEnvironment::Omarchy | DesktopEnvironment::Unknown);
+    
+    let result = is_wm_desktop || is_wm_session;
+    
+    if result {
+        log::info!("🪟 Window manager detected - desktop: {:?}, session: {}", desktop, wm_session);
+    }
+    
+    result
 }
 
 /// Get theme information for the current desktop environment

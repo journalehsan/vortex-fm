@@ -2157,10 +2157,13 @@ impl Application for App {
         // Check if running under a window manager and adjust window controls
         use crate::utils::desktop_theme::is_window_manager;
         if is_window_manager() {
-            // Hide minimize and maximize buttons for window managers
+            // Hide only window control buttons for window managers like Hyprland
+            // Keep headerbar with menu and other application controls
             core.window.show_minimize = false;
             core.window.show_maximize = false;
-            // Keep close button as it has menu functionality
+            core.window.show_close = false;
+            // Keep headerbar and window menu for application functionality
+            log::info!("🪟 Window manager detected - hiding window control buttons (minimize, maximize, close)");
         }
         
         match flags.mode {
