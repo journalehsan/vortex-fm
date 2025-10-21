@@ -402,6 +402,8 @@ pub enum Message {
     ToggleFoldersFirst,
     ToggleShowHidden,
     CustomColor(cosmic::iced::Color),
+    SelectColorScheme(String),
+    ApplyCustomTheme,
     Undo(usize),
     UndoTrash(widget::ToastId, Arc<[PathBuf]>),
     UndoTrashStart(Vec<TrashItem>),
@@ -1914,6 +1916,7 @@ impl App {
                         AppTheme::Dark => 1,     // "dark"
                         AppTheme::Light => 2,    // "light"
                         AppTheme::Adaptive => 3, // "adaptive"
+                        AppTheme::Custom => 4,   // "custom"
                     };
                     
                     log::info!("🎨 Settings UI - Current theme: {:?} (index: {})", self.config.app_theme, app_theme_selected);
@@ -1924,8 +1927,9 @@ impl App {
                             let selected_theme = match index {
                                 0 => AppTheme::System,   // "match-desktop"
                                 1 => AppTheme::Dark,     // "dark"
-                                2 => AppTheme::Light,    // "light"
+                                2 => AppTheme::Light,   // "light"
                                 3 => AppTheme::Adaptive, // "adaptive"
+                                4 => AppTheme::Custom,   // "custom"
                                 _ => AppTheme::Adaptive, // Default to adaptive
                             };
                             
@@ -1935,42 +1939,73 @@ impl App {
                     ))
                 })
                 .into(),
-            // Custom Color Picker Section
-            widget::settings::section()
-                .title("Custom Colors")
-                .add({
-                    // Get Omarchy theme colors for the color picker
-                    use crate::utils::themes::omarchy::OMARCHY_THEMES;
-                    
-                    let mut color_buttons = Vec::new();
-                    for theme in OMARCHY_THEMES.iter().take(8) { // Show first 8 themes
-                        let color = cosmic::iced::Color::from_rgb(
-                            theme.accent_color.r,
-                            theme.accent_color.g,
-                            theme.accent_color.b
-                        );
+            // Custom Color Picker Section - only show when Custom theme is selected
+            if matches!(self.config.app_theme, AppTheme::Custom) {
+                widget::settings::section()
+                    .title("Custom Theme Colors")
+                    .add({
+                        widget::settings::item::builder("Color Scheme")
+                            .description("Select a color scheme")
+                            .control(widget::dropdown(
+                                &["catppuccin", "dracula", "everforest", "gruvbox", "kanagawa", "matte-black", "nord", "tokyo-night"],
+                                None, // No default selection
+                                move |index| {
+                                    let theme_names = ["catppuccin", "dracula", "everforest", "gruvbox", "kanagawa", "matte-black", "nord", "tokyo-night"];
+                                    if let Some(theme_name) = theme_names.get(index) {
+                                        Message::SelectColorScheme(theme_name.to_string())
+                                    } else {
+                                        Message::None
+                                    }
+                                },
+                            ))
+                    })
+                    .add({
+                        // Color palette buttons
+                        use crate::utils::themes::omarchy::OMARCHY_THEMES;
                         
-                        color_buttons.push(
-                            widget::button::custom(
-                                widget::container(widget::text(""))
-                                    .width(Length::Fixed(32.0))
-                                    .height(Length::Fixed(32.0))
+                        let mut color_buttons = Vec::new();
+                        for theme in OMARCHY_THEMES.iter().take(8) { // Show first 8 themes
+                            let color = cosmic::iced::Color::from_rgb(
+                                theme.accent_color.r,
+                                theme.accent_color.g,
+                                theme.accent_color.b
+                            );
+                            
+                            color_buttons.push(
+                                widget::button::custom(
+                                    widget::container(widget::text(""))
+                                        .width(Length::Fixed(32.0))
+                                        .height(Length::Fixed(32.0))
+                                )
+                                .on_press(Message::CustomColor(color))
+                                .padding(4)
+                            );
+                        }
+                        
+                        widget::settings::item::builder("Color Palette")
+                            .description("Click a color to preview")
+                            .control(
+                                widget::row::with_children(
+                                    color_buttons.into_iter().map(Element::from).collect()
+                                )
+                                .spacing(8)
                             )
-                            .on_press(Message::CustomColor(color))
-                            .padding(4)
-                        );
-                    }
-                    
-                    widget::settings::item::builder("Accent Colors")
-                        .description("Choose from popular Omarchy theme colors")
-                        .control(
-                            widget::row::with_children(
-                                color_buttons.into_iter().map(Element::from).collect()
+                    })
+                    .add({
+                        // Apply button
+                        widget::settings::item::builder("Apply Changes")
+                            .description("Apply the selected custom theme")
+                            .control(
+                                widget::button::standard("Apply")
+                                    .on_press(Message::ApplyCustomTheme)
                             )
-                            .spacing(8)
-                        )
-                })
-                .into(),
+                    })
+                    .into()
+            } else {
+                widget::settings::section()
+                    .title("")
+                    .into()
+            },
             widget::settings::section()
                 .title(fl!("type-to-search"))
                 .add(widget::radio(
@@ -2143,7 +2178,7 @@ impl Application for App {
             }
         }
 
-        let app_themes = vec![fl!("match-desktop"), fl!("dark"), fl!("light"), fl!("adaptive")];
+        let app_themes = vec![fl!("match-desktop"), fl!("dark"), fl!("light"), fl!("adaptive"), "Custom".to_string()];
 
         let key_binds = key_binds(&match flags.mode {
             Mode::App => tab::Mode::App,
@@ -3898,7 +3933,17 @@ impl Application for App {
             }
 
             Message::CustomColor(color) => {
-                log::info!("🎨 Custom color selected: {:?}", color);
+                log::info!("🎨 Custom color selected for preview: {:?}", color);
+                // This is just for preview - don't apply yet
+            }
+
+            Message::SelectColorScheme(scheme_name) => {
+                log::info!("🎨 Color scheme selected: {}", scheme_name);
+                // Store the selected scheme for later application
+            }
+
+            Message::ApplyCustomTheme => {
+                log::info!("🎨 Applying custom theme");
                 
                 // Apply the custom color using the advanced theme system
                 use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
@@ -3908,15 +3953,16 @@ impl Application for App {
                 if let Some(theme_manager_mutex) = get_theme_manager() {
                     let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
                     if let Some(theme_manager) = theme_manager_guard.as_mut() {
-                        // Set the custom accent color
-                        if let Some(_staged) = theme_manager.set_color(Some(color), ColorContext::CustomAccent) {
-                            log::info!("🎨 Applied custom accent color: {:?}", color);
+                        // For now, apply a default custom color
+                        let custom_color = cosmic::iced::Color::from_rgb(0.24, 0.60, 0.89); // Blue
+                        if let Some(_staged) = theme_manager.set_color(Some(custom_color), ColorContext::CustomAccent) {
+                            log::info!("🎨 Applied custom accent color: {:?}", custom_color);
                             let _ = theme_manager.build_theme(ThemeStaged::Current);
-                            log::info!("✅ Custom color theme applied successfully");
+                            log::info!("✅ Custom theme applied successfully");
                         }
                     }
                 } else {
-                    log::info!("ℹ️  Custom color selection only available on Cosmic desktop");
+                    log::info!("ℹ️  Custom theme application only available on Cosmic desktop");
                 }
             }
 

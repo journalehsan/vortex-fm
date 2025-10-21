@@ -37,6 +37,7 @@ pub enum AppTheme {
     Light,
     System,
     Adaptive,
+    Custom,
 }
 
 impl AppTheme {
@@ -66,6 +67,11 @@ impl AppTheme {
                 use crate::utils::desktop_theme::{get_desktop_theme, apply_theme_to_cosmic};
                 let desktop_theme = get_desktop_theme();
                 apply_theme_to_cosmic(&desktop_theme)
+            }
+            Self::Custom => {
+                log::info!("🎨 Using Custom theme - will show custom color picker");
+                // For now, fall back to system theme until custom colors are applied
+                theme::system_preference()
             }
         }
     }
