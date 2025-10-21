@@ -68,7 +68,7 @@ use wayland_client::{Proxy, protocol::wl_output::WlOutput};
 
 use crate::{
     clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
-    config::{
+    core::config::{
         AppTheme, Config, DesktopConfig, Favorite, IconSizes, TIME_CONFIG_ID, TabConfig,
         TimeConfig, TypeToSearch,
     },
@@ -89,7 +89,7 @@ use crate::{
         self, HOVER_DURATION, HeadingOptions, ItemMetadata, Location, SORT_OPTION_FALLBACK, Tab,
     },
 };
-use crate::{config::State, dialog::DialogSettings};
+use crate::{core::config::State, dialog::DialogSettings};
 
 #[derive(Clone, Debug)]
 pub enum Mode {

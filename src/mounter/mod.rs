@@ -7,7 +7,7 @@ use std::{
 };
 use tokio::sync::mpsc;
 
-use crate::{config::IconSizes, tab};
+use crate::{core::config::IconSizes, tab};
 
 #[cfg(feature = "gvfs")]
 mod gvfs;

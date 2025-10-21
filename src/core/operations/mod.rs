@@ -1,6 +1,6 @@
 use crate::{
     app::{ArchiveType, DialogPage, Message},
-    config::IconSizes,
+    core::config::IconSizes,
     fl,
     utils::spawn_detached::spawn_detached,
     tab,

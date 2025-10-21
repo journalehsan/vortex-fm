@@ -11,15 +11,14 @@ mod utils;
 mod common;
 mod core;
 pub mod clipboard;
-use config::Config;
-pub mod config;
+use core::config::Config;
 pub mod dialog;
 mod key_bind;
 mod menu;
 mod mounter;
 use tab::Location;
 
-use crate::config::State;
+use crate::core::config::State;
 pub mod tab;
 
 pub(crate) fn err_str<T: ToString>(err: T) -> String {

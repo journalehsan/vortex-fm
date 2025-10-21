@@ -75,7 +75,7 @@ use walkdir::WalkDir;
 use crate::{
     app::{Action, PreviewItem, PreviewKind},
     clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
-    config::{DesktopConfig, ICON_SCALE_MAX, ICON_SIZE_GRID, IconSizes, TabConfig, ThumbCfg},
+    core::config::{DesktopConfig, ICON_SCALE_MAX, ICON_SIZE_GRID, IconSizes, TabConfig, ThumbCfg},
     dialog::DialogKind,
     fl,
     utils::localize::{LANGUAGE_SORTER, LOCALE},

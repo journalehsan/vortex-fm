@@ -20,7 +20,7 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use crate::{
     app::{Action, Message},
-    config::Config,
+    core::config::Config,
     fl,
     tab::{self, HeadingOptions, Location, LocationMenuAction, Tab},
 };

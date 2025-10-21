@@ -9,7 +9,7 @@ use tokio::sync::{Mutex, mpsc};
 
 use super::{Mounter, MounterAuth, MounterItem, MounterItems, MounterMessage};
 use crate::{
-    config::IconSizes,
+    core::config::IconSizes,
     err_str,
     tab::{self, DirSize, ItemMetadata, ItemThumbnail, Location},
 };
