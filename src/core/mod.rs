@@ -2,3 +2,4 @@
 
 pub mod operations;
 pub mod config;
+pub mod navigation;
