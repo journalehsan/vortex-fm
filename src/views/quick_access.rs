@@ -57,38 +57,67 @@ fn library_section(
     ));
 
     if expanded {
-        let mut grid = widget::grid()
-            .padding(16.into())
-            .row_spacing(12);
+        if !folders.is_empty() {
+            // Create responsive grid layout for library folders
+            let folders_per_row = 3; // Start with 3 per row, will adapt
+            let mut folders_column = widget::column().spacing(12).padding(16);
 
-        for folder in folders {
-            let tile = widget::container(
-                widget::mouse_area(
-                    widget::column()
-                        .push(widget::icon::from_name(&*folder.icon).size(48))
-                        .push(widget::text(folder.name.clone()))
-                        .align_x(Alignment::Center)
-                        .spacing(8)
-                )
-                .on_press(Message::TabMessage(None, tab::Message::Open(Some(folder.path.clone()))))
-            )
-            .width(Length::Fixed(120.0))
-            .height(Length::Fixed(100.0))
-            .padding(16)
-            .style(|theme: &cosmic::Theme| {
-                cosmic::widget::container::Style {
-                    icon_color: Some(Color::TRANSPARENT),
-                    text_color: Some(theme.cosmic().accent_text_color().into()),
-                    background: Some(Background::Color(Color::TRANSPARENT)),
-                    border: cosmic::iced::Border::default(),
-                    shadow: cosmic::iced::Shadow::default(),
+            for chunk in folders.chunks(folders_per_row) {
+                let mut row = widget::row().spacing(12).width(Length::Fill);
+
+                for folder in chunk {
+                    let tile = widget::container(
+                        widget::mouse_area(
+                            widget::column()
+                                .push(widget::icon::from_name(&*folder.icon).size(48))
+                                .push(widget::text(folder.name.clone()))
+                                .align_x(Alignment::Center)
+                                .spacing(8)
+                        )
+                        .on_press(Message::TabMessage(None, tab::Message::Open(Some(folder.path.clone()))))
+                    )
+                    .width(Length::Fill)
+                    .height(Length::Fixed(100.0))
+                    .padding(16)
+                    .style(|theme: &cosmic::Theme| {
+                        cosmic::widget::container::Style {
+                            icon_color: Some(Color::TRANSPARENT),
+                            text_color: Some(theme.cosmic().accent_text_color().into()),
+                            background: Some(Background::Color(Color::TRANSPARENT)),
+                            border: cosmic::iced::Border::default(),
+                            shadow: cosmic::iced::Shadow::default(),
+                        }
+                    });
+
+                    row = row.push(tile);
                 }
-            });
 
-            grid = grid.push(tile);
+                // Fill remaining slots with spacers if needed
+                let spacers_needed = folders_per_row - chunk.len();
+                for _ in 0..spacers_needed {
+                    row = row.push(widget::horizontal_space().width(Length::Fill).height(Length::Fixed(100.0)));
+                }
+
+                folders_column = folders_column.push(row);
+            }
+
+            // Wrap in scrollable for cases where content is too wide
+            let folders_scrollable = widget::scrollable(
+                widget::container(folders_column)
+                    .width(Length::Fill)
+            );
+
+            column = column.push(folders_scrollable);
+        } else {
+            // Show placeholder when no library folders
+            column = column.push(
+                widget::container(
+                    widget::text("No library folders available")
+                        .size(14)
+                )
+                .padding(16)
+            );
         }
-
-        column = column.push(grid);
     }
 
     column.into()
