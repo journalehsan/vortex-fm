@@ -1,29 +1,8 @@
 // Custom Color Picker Example
 // This example demonstrates the custom color picker feature in the settings dialog
 
-use cosmic::{
-    Application, ApplicationExt, Element,
-    app::{Core, Task},
-    cosmic_config, cosmic_theme, executor,
-    iced::{
-        self, Alignment, Length, Size, Subscription,
-        core::SmolStr,
-        event,
-        keyboard::{Event as KeyEvent, Key, Modifiers},
-        window,
-    },
-    theme,
-    widget::{
-        self, button, column, container, row, text,
-    },
-};
-
-use vortex_fm::{
-    app::{App, Message as AppMessage},
-    core::config::Config,
-    utils::desktop_theme::{detect_desktop_environment, get_theme_manager},
-    utils::themes::manager::{ColorContext, ThemeStaged},
-};
+use vortex_fm::utils::desktop_theme::{detect_desktop_environment, get_theme_manager};
+use vortex_fm::utils::themes::manager::{ColorContext, ThemeStaged};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
