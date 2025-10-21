@@ -1,7 +1,7 @@
 // Desktop environment theme detection and coordination
 
 use cosmic::iced::Color;
-use super::themes::{ThemeInfo, DesktopTheme, omarchy, kde, gnome, default};
+use super::themes::{ThemeInfo, omarchy, kde, gnome, default, manager::{ThemeManager, ThemeStaged}};
 use crate::utils::command_utils::SafeCommand;
 
 /// Desktop environment types
@@ -190,11 +190,50 @@ fn detect_system_dark_mode() -> bool {
     false
 }
 
+/// Global theme manager instance
+use std::sync::Mutex;
+use std::sync::OnceLock;
+
+static THEME_MANAGER: OnceLock<Mutex<Option<ThemeManager>>> = OnceLock::new();
+
+/// Initialize the global theme manager
+fn init_theme_manager() -> &'static Mutex<Option<ThemeManager>> {
+    THEME_MANAGER.get_or_init(|| Mutex::new(None))
+}
+
 /// Apply theme colors to cosmic theme using ThemeBuilder
 pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     log::info!("🎨 Applying theme '{}' to Cosmic theme system", theme.name);
     log::info!("🎨 Theme properties - is_light: {}, window_bg: {:?}, view_bg: {:?}, accent: {:?}, fg: {:?}", 
         theme.is_light, theme.window_background, theme.view_background, theme.accent_color, theme.foreground);
+    
+    let desktop = detect_desktop_environment();
+    
+    // Only use ThemeBuilder on Cosmic desktop
+    if desktop == DesktopEnvironment::Cosmic {
+        log::info!("🎨 Using ThemeBuilder for Cosmic desktop");
+        
+        let theme_manager_mutex = init_theme_manager();
+        let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+        
+        // Initialize theme manager if needed
+        if theme_manager_guard.is_none() {
+            *theme_manager_guard = Some(ThemeManager::new(desktop));
+        }
+        
+        if let Some(theme_manager) = theme_manager_guard.as_mut() {
+            // Apply external theme colors
+            if let Err(err) = theme_manager.apply_external_theme(theme) {
+                log::warn!("❌ Failed to apply external theme: {}", err);
+            }
+            
+            // Build and return the custom theme
+            return theme_manager.cosmic_theme();
+        }
+    }
+    
+    // Fallback for non-Cosmic environments
+    log::info!("🎨 Using fallback theme system for non-Cosmic desktop");
     
     // Convert our Color to cosmic::iced::Color
     let accent_color = cosmic::iced::Color::from_rgb(
@@ -246,13 +285,62 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     );
     log::info!("🎨 Target text color: {:?}", text_color);
     
-    // TODO: Implement custom theme creation when ThemeBuilder is available
-    // For now, we'll use the system theme but log our custom colors
-    log::info!("🎨 Note: Custom color application requires ThemeBuilder implementation");
-    log::info!("🎨 Target: Red RGB(219, 51, 51) vs Current: Cyan RGB(99, 208, 223)");
     log::info!("✅ Applied light/dark theme preference: {} (is_light: {})", 
         if theme.is_light { "LIGHT" } else { "DARK" }, theme.is_light);
     
     log::info!("✅ Applied theme '{}' to Cosmic theme system", theme.name);
     cosmic_theme
+}
+
+/// Apply a theme with advanced color customization
+/// This function provides a high-level interface for applying themes with custom colors
+pub fn apply_advanced_theme(theme: &ThemeInfo) -> cosmic::theme::Theme {
+    log::info!("🎨 Applying advanced theme '{}'", theme.name);
+    
+    let desktop = detect_desktop_environment();
+    
+    match desktop {
+        DesktopEnvironment::Cosmic => {
+            log::info!("🎨 Using ThemeBuilder for advanced color customization on Cosmic");
+            let theme_manager_mutex = init_theme_manager();
+            let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
+            
+            // Initialize theme manager if needed
+            if theme_manager_guard.is_none() {
+                *theme_manager_guard = Some(ThemeManager::new(desktop));
+            }
+            
+            if let Some(theme_manager) = theme_manager_guard.as_mut() {
+                // Apply the external theme with full color customization
+                if let Err(err) = theme_manager.apply_external_theme(theme) {
+                    log::warn!("❌ Failed to apply advanced theme: {}", err);
+                    // Fallback to basic theme application
+                    return apply_theme_to_cosmic(theme);
+                }
+                
+                // Build the theme with all customizations
+                let _ = theme_manager.build_theme(ThemeStaged::Current);
+                
+                return theme_manager.cosmic_theme();
+            }
+            
+            // Fallback if theme manager initialization failed
+            apply_theme_to_cosmic(theme)
+        }
+        _ => {
+            log::info!("🎨 Using standard theme application for non-Cosmic desktop");
+            apply_theme_to_cosmic(theme)
+        }
+    }
+}
+
+/// Get the current theme manager (for advanced customization)
+/// Note: This returns a reference to the mutex, not the manager directly
+pub fn get_theme_manager() -> Option<&'static Mutex<Option<ThemeManager>>> {
+    let desktop = detect_desktop_environment();
+    if desktop == DesktopEnvironment::Cosmic {
+        Some(init_theme_manager())
+    } else {
+        None
+    }
 }

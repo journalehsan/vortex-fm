@@ -84,3 +84,4 @@ pub mod omarchy;
 pub mod kde;
 pub mod gnome;
 pub mod default;
+pub mod manager;
