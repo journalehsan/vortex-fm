@@ -66,7 +66,7 @@ async fn handle_replace(
 
 fn get_directory_name(file_name: &str) -> &str {
     // TODO: Chain with COMPOUND_EXTENSIONS once more formats are supported
-    for ext in crate::archive::SUPPORTED_EXTENSIONS {
+    for ext in crate::utils::archive::SUPPORTED_EXTENSIONS {
         if let Some(stripped) = file_name.strip_suffix(ext) {
             return stripped;
         }
@@ -915,7 +915,7 @@ impl Operation {
                                 op_sel.ignored.push(path.clone());
                                 op_sel.selected.push(new_dir.clone());
 
-                                crate::archive::extract(path, &new_dir, &password, &controller)?;
+                                crate::utils::archive::extract(path, &new_dir, &password, &controller)?;
                             }
                         }
 

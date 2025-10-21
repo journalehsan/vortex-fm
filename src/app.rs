@@ -67,7 +67,7 @@ use trash::TrashItem;
 use wayland_client::{Proxy, protocol::wl_output::WlOutput};
 
 use crate::{
-    clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
+    utils::clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
     core::config::{
         AppTheme, Config, DesktopConfig, Favorite, IconSizes, TIME_CONFIG_ID, TabConfig,
         TimeConfig, TypeToSearch,
@@ -702,7 +702,7 @@ impl App {
         // player that is passed every path.
         let mut groups: HashMap<Mime, Vec<PathBuf>> = HashMap::new();
         let mut all_archives = true;
-        let supported_archive_types = crate::archive::SUPPORTED_ARCHIVE_TYPES
+        let supported_archive_types = crate::utils::archive::SUPPORTED_ARCHIVE_TYPES
             .iter()
             .filter_map(|mime_type| mime_type.parse::<Mime>().ok())
             .collect::<Vec<_>>();

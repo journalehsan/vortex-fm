@@ -6,13 +6,11 @@ use std::{env, fs, path::PathBuf, process};
 
 use app::{App, Flags};
 pub mod app;
-mod archive;
 mod utils;
 mod common;
 mod core;
 mod views;
 mod widgets;
-pub mod clipboard;
 use core::config::Config;
 mod key_bind;
 use tab::Location;

@@ -74,7 +74,7 @@ use walkdir::WalkDir;
 
 use crate::{
     app::{Action, PreviewItem, PreviewKind},
-    clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
+    utils::clipboard::{ClipboardCopy, ClipboardKind, ClipboardPaste},
     core::config::{DesktopConfig, ICON_SCALE_MAX, ICON_SIZE_GRID, IconSizes, TabConfig, ThumbCfg},
     views::dialogs::dialog::DialogKind,
     fl,
@@ -5442,7 +5442,7 @@ impl Tab {
                 let drag_list = RcElementWrapper::<Message>(Rc::new(RefCell::new(drag_list)));
                 item_view
                     .drag_content(move || {
-                        ClipboardCopy::new(crate::clipboard::ClipboardKind::Copy, &files)
+                        ClipboardCopy::new(crate::utils::clipboard::ClipboardKind::Copy, &files)
                     })
                     .drag_icon(move |_| {
                         let state: tree::State = Widget::<Message, _, _>::state(&drag_list);

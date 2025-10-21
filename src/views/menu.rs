@@ -207,7 +207,7 @@ pub fn context_menu<'a>(
                 children.push(menu_item(fl!("copy"), Action::Copy).into());
 
                 children.push(divider::horizontal::light().into());
-                let supported_archive_types = crate::archive::SUPPORTED_ARCHIVE_TYPES
+                let supported_archive_types = crate::utils::archive::SUPPORTED_ARCHIVE_TYPES
                     .iter()
                     .filter_map(|mime_type| mime_type.parse::<Mime>().ok())
                     .collect::<Vec<_>>();

@@ -7,3 +7,5 @@ pub mod mime_app;
 pub mod mime_icon;
 pub mod thumbnail_cacher;
 pub mod thumbnailer;
+pub mod clipboard;
+pub mod archive;
