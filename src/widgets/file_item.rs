@@ -15,8 +15,8 @@ pub fn create_file_item(icon: &str, name: &str, _file_type: &str, path: PathBuf,
 
 pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path: PathBuf, config: &VortexConfig, icon_size: i32) -> Button {
     // Calculate dynamic tile dimensions based on icon size
-    let base_width = 120;
-    let base_height = 100;
+    let base_width = 110;  // Slightly smaller for better density
+    let base_height = 90;  // Slightly smaller for better density
     
     // Scale tile size based on icon size (16px = 0.5x, 256px = 2x)
     let scale_factor = (icon_size as f32 / 64.0).max(0.5).min(2.0);
@@ -57,11 +57,11 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
     
     // File name with specific character limits based on icon size
     let max_chars = match icon_size {
-        16..=24 => 8i32,   // Small icons: 8 characters max
-        25..=32 => 10i32,  // Medium icons: 10 characters max
-        33..=48 => 12i32,  // Large icons: 12 characters max
+        16..=24 => 12i32,  // Small icons: more characters since we have more columns
+        25..=32 => 15i32,  // Medium icons: more characters for better readability
+        33..=48 => 12i32,  // Large icons: balanced characters
         49..=64 => 14i32,  // Extra large icons: 14 characters max
-        _ => 10i32,        // Default: 10 characters
+        _ => 12i32,        // Default: more generous
     };
     
     // Debug logging for filename truncation
@@ -78,7 +78,7 @@ pub fn create_file_item_with_size(icon: &str, name: &str, _file_type: &str, path
             // For filenames without spaces, insert soft hyphens every few characters
             let mut result = String::new();
             let chars: Vec<char> = name.chars().collect();
-            let break_interval = (max_chars as usize / 2).max(3); // Break every 3-7 chars depending on max_chars
+            let break_interval = (max_chars as usize / 2).max(4); // Break every 4-8 chars depending on max_chars
             
             for (i, ch) in chars.iter().enumerate() {
                 if i > 0 && i % break_interval == 0 {

@@ -307,18 +307,18 @@ window {
 
 /* File Items - Improved Grid View */
 .file-item {
-    padding: 8px;
+    padding: 6px;
     border-radius: 8px;
     background: transparent !important;
     border: 2px solid transparent !important;
     transition: all 0.2s ease;
     box-shadow: none !important;
-    height: 100px !important; /* Force fixed height */
-    width: 120px !important; /* Force fixed width */
-    min-height: 100px !important;
-    max-height: 100px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
+    height: 90px !important; /* Slightly smaller for better density */
+    width: 110px !important; /* Slightly smaller for better density */
+    min-height: 90px !important;
+    max-height: 90px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -370,15 +370,15 @@ window {
 .grid-item {
     background: transparent !important;
     border: none !important;
-    padding: 8px;
+    padding: 6px;
     border-radius: 8px;
     transition: all 0.2s ease;
-    height: 100px !important; /* Force fixed height */
-    width: 120px !important; /* Force fixed width */
-    min-height: 100px !important;
-    max-height: 100px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
+    height: 90px !important; /* Slightly smaller for better density */
+    width: 110px !important; /* Slightly smaller for better density */
+    min-height: 90px !important;
+    max-height: 90px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -403,12 +403,12 @@ window {
     margin: 0;
     border-radius: 8px;
     transition: all 0.2s ease;
-    height: 100px !important;
-    width: 120px !important;
-    min-height: 100px !important;
-    max-height: 100px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
+    height: 90px !important;
+    width: 110px !important;
+    min-height: 90px !important;
+    max-height: 90px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
 }
 
 .file-button:hover {
@@ -420,12 +420,12 @@ window {
     background: transparent !important;
     border: none !important;
     opacity: 0 !important;
-    height: 100px !important;
-    width: 120px !important;
-    min-height: 100px !important;
-    max-height: 100px !important;
-    min-width: 120px !important;
-    max-width: 120px !important;
+    height: 90px !important;
+    width: 110px !important;
+    min-height: 90px !important;
+    max-height: 90px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
 }
 
 /* Icon size scale styling */

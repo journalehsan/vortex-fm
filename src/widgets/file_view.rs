@@ -190,22 +190,19 @@ impl FileViewAdapter for GridViewAdapter {
         let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
         
         // Calculate tile dimensions
-        let base_tile_width = 120;
+        let base_tile_width = 110;  // Slightly smaller for better density
         let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
         let tile_width = (base_tile_width as f32 * scale_factor) as i32;
         let total_item_width = tile_width + spacing;
         
-        // Conservative column calculation - use fixed reasonable values
-        // Since we can't easily get real-time window dimensions, use conservative estimates
-        let estimated_available_width = 400; // Conservative estimate for typical content area
-        
-        // For different icon sizes, adjust the available width estimate
+        // Improved column calculation based on typical screen widths and icon sizes
+        // Use more generous estimates to better utilize available space
         let available_width = match icon_pixels {
-            16..=24 => 350, // Small icons: less space needed
-            25..=32 => 400, // Medium icons: standard space
-            33..=48 => 450, // Large icons: more space
-            49..=64 => 500, // Extra large icons: even more space
-            _ => 400, // Default
+            16..=24 => 600, // Small icons: can fit many columns
+            25..=32 => 700, // Medium icons: more space available
+            33..=48 => 600, // Large icons: balanced space
+            49..=64 => 500, // Extra large icons: less columns but larger items
+            _ => 600, // Default: more generous
         };
         
         // Calculate how many items can actually fit in the available width
@@ -302,18 +299,19 @@ impl FileViewAdapter for GridViewAdapter {
             let margin = (icon_pixels as f32 * 0.15) as i32; // 15% of icon size
             
             // Calculate tile dimensions
-            let base_tile_width = 120;
+            let base_tile_width = 110;  // Slightly smaller for better density
             let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
             let tile_width = (base_tile_width as f32 * scale_factor) as i32;
             let total_item_width = tile_width + spacing;
             
-            // Conservative column calculation - use fixed reasonable values
+            // Improved column calculation based on typical screen widths and icon sizes
+            // Use more generous estimates to better utilize available space
             let available_width = match icon_pixels {
-                16..=24 => 350, // Small icons: less space needed
-                25..=32 => 400, // Medium icons: standard space
-                33..=48 => 450, // Large icons: more space
-                49..=64 => 500, // Extra large icons: even more space
-                _ => 400, // Default
+                16..=24 => 600, // Small icons: can fit many columns
+                25..=32 => 700, // Medium icons: more space available
+                33..=48 => 600, // Large icons: balanced space
+                49..=64 => 500, // Extra large icons: less columns but larger items
+                _ => 600, // Default: more generous
             };
             
             // Calculate how many items can actually fit in the available width
@@ -391,8 +389,8 @@ impl GridViewAdapter {
         
         // Calculate dynamic size based on icon size
         let icon_pixels = self.icon_size.to_pixels();
-        let base_width = 120;
-        let base_height = 100;
+        let base_width = 110;  // Slightly smaller for better density
+        let base_height = 90;  // Slightly smaller for better density
         let scale_factor = (icon_pixels as f32 / 64.0).max(0.5).min(2.0);
         let item_width = (base_width as f32 * scale_factor) as i32;
         let item_height = (base_height as f32 * scale_factor) as i32;
