@@ -198,12 +198,17 @@ fn detect_drive_type(item: &MounterItem) -> DriveType {
 }
 
 fn get_space_total(item: &MounterItem) -> u64 {
-    // Use statvfs on mount point if available
     if let Some(path) = item.path() {
-        if let Ok(stat) = std::fs::metadata(path) {
-            if stat.is_dir() {
-                // TODO: Implement actual space calculation using statvfs
-                return 100_000_000_000; // 100GB placeholder
+        // Use libc statvfs to get filesystem statistics
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+        
+        if let Ok(c_path) = CString::new(path.as_os_str().as_bytes()) {
+            unsafe {
+                let mut stat: libc::statvfs = std::mem::zeroed();
+                if libc::statvfs(c_path.as_ptr(), &mut stat) == 0 {
+                    return stat.f_blocks as u64 * stat.f_frsize as u64;
+                }
             }
         }
     }
@@ -211,11 +216,17 @@ fn get_space_total(item: &MounterItem) -> u64 {
 }
 
 fn get_space_used(item: &MounterItem) -> u64 {
-    // TODO: Implement actual used space calculation
     if let Some(path) = item.path() {
-        if let Ok(stat) = std::fs::metadata(path) {
-            if stat.is_dir() {
-                return 50_000_000_000; // 50GB placeholder
+        // Use libc statvfs to get filesystem statistics
+        use std::ffi::CString;
+        use std::os::unix::ffi::OsStrExt;
+        
+        if let Ok(c_path) = CString::new(path.as_os_str().as_bytes()) {
+            unsafe {
+                let mut stat: libc::statvfs = std::mem::zeroed();
+                if libc::statvfs(c_path.as_ptr(), &mut stat) == 0 {
+                    return (stat.f_blocks - stat.f_bavail) as u64 * stat.f_frsize as u64;
+                }
             }
         }
     }
@@ -225,8 +236,35 @@ fn get_space_used(item: &MounterItem) -> u64 {
 // Recent Files
 pub fn get_recent_files() -> Vec<RecentFile> {
     // TODO: Read from recently-used.xbel (XDG recent files)
-    // For now, return empty list
-    Vec::new()
+    // For now, return demo files
+    let mut files = Vec::new();
+    
+    // Add some demo recent files
+    if let Some(home) = dirs::home_dir() {
+        let demo_files = vec![
+            ("Document.pdf", "Documents"),
+            ("Photo.jpg", "Pictures"),
+            ("Video.mp4", "Videos"),
+            ("Music.mp3", "Music"),
+            ("Archive.zip", "Downloads"),
+            ("Code.rs", "Documents"),
+            ("Image.png", "Pictures"),
+            ("Spreadsheet.xlsx", "Documents"),
+            ("Presentation.pptx", "Documents"),
+            ("Text.txt", "Documents"),
+        ];
+        
+        for (filename, folder) in demo_files {
+            let path = home.join(folder).join(filename);
+            files.push(RecentFile {
+                name: filename.to_string(),
+                path,
+                modified: std::time::SystemTime::now(),
+            });
+        }
+    }
+    
+    files
 }
 
 pub fn clear_recent_files() -> Result<(), Box<dyn std::error::Error>> {
@@ -296,9 +334,27 @@ fn drives_section(
     ));
     
     if expanded {
-        for drive in drives {
-            let tile = drive_tile(&drive);
-            column = column.push(tile);
+        if !drives.is_empty() {
+            let mut grid = widget::grid()
+                .padding(16.into())
+                .row_spacing(16)
+                .column_spacing(16);
+                
+            for drive in drives {
+                let tile = drive_tile(&drive);
+                grid = grid.push(tile);
+            }
+            
+            column = column.push(grid);
+        } else {
+            // Show placeholder when no drives are available
+            column = column.push(
+                widget::container(
+                    widget::text("No drives available")
+                        .size(14)
+                )
+                .padding(16)
+            );
         }
     }
     
@@ -306,34 +362,38 @@ fn drives_section(
 }
 
 fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
-    let icon = widget::icon::from_name(drive_icon_name(&drive.drive_type)).size(32);
+    let icon = widget::icon::from_name(drive_icon_name(&drive.drive_type)).size(48);
     
     let label = widget::text(drive.label.clone())
-        .size(14)
+        .size(16)
         .width(Length::Fill);
     
     let usage_pct = drive.usage_percent();
-    let progress_bar = widget::progress_bar(0.0..=100.0, usage_pct);
+    let progress_bar = widget::progress_bar(0.0..=100.0, usage_pct)
+        .height(6.0);
     
     let space_text = widget::text(format!(
         "{} / {}",
         format_size(drive.used_space),
         format_size(drive.total_space)
-    )).size(12);
+    )).size(12)
+    .width(Length::Fill);
     
-    let content = widget::row()
+    let content = widget::column()
         .push(icon)
-        .push(widget::column()
-            .push(label)
-            .push(progress_bar)
-            .push(space_text)
-            .spacing(4)
-        )
-        .spacing(12)
-        .align_y(Alignment::Center);
+        .push(widget::vertical_space())
+        .push(label)
+        .push(widget::vertical_space())
+        .push(progress_bar)
+        .push(widget::vertical_space())
+        .push(space_text)
+        .align_x(Alignment::Center)
+        .spacing(0)
+        .padding(16);
     
     let mut button = widget::button::custom(content)
-        .padding(12);
+        .width(Length::Fixed(160.0))
+        .height(Length::Fixed(140.0));
     
     if drive.is_mounted {
         if let Some(_path) = &drive.path {
@@ -380,18 +440,37 @@ fn recent_section(
     column = column.push(header);
     
     if expanded {
-        // Three-column list: Name, Date, Path
-        for file in files.iter().take(10) {
-            let row = widget::button::custom(
-                widget::row()
-                    .push(widget::text(file.name.clone()).width(Length::FillPortion(3)))
-                    .push(widget::text(format_date(&file.modified)).width(Length::FillPortion(2)))
-                    .push(widget::text(file.path.display().to_string()).width(Length::FillPortion(5)))
-                    .spacing(12)
-            )
-            .on_press(Message::OpenItemLocation(None)); // TODO: Fix this to open the file
-            
-            column = column.push(row);
+        if !files.is_empty() {
+            // List of recent files with better layout
+            for file in files.iter().take(10) {
+                let file_icon = widget::icon::from_name("text-x-generic").size(16);
+                let row = widget::button::custom(
+                    widget::row()
+                        .push(file_icon)
+                        .push(widget::horizontal_space())
+                        .push(widget::column()
+                            .push(widget::text(file.name.clone()).size(14))
+                            .push(widget::text(format_date(&file.modified)).size(12))
+                            .spacing(2)
+                        )
+                        .push(widget::horizontal_space())
+                        .align_y(Alignment::Center)
+                        .padding(8)
+                )
+                .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the file
+                .width(Length::Fill);
+                
+                column = column.push(row);
+            }
+        } else {
+            // Show placeholder when no recent files
+            column = column.push(
+                widget::container(
+                    widget::text("No recent files")
+                        .size(14)
+                )
+                .padding(16)
+            );
         }
     }
     
