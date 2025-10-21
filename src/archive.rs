@@ -8,7 +8,7 @@ use zip::result::ZipError;
 
 use crate::{
     utils::mime_icon::mime_for_path,
-    operation::{Controller, OpReader, OperationError, OperationErrorType},
+    core::operations::{Controller, OpReader, OperationError, OperationErrorType},
 };
 
 pub const SUPPORTED_ARCHIVE_TYPES: &[&str] = &[

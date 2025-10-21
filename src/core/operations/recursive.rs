@@ -7,7 +7,7 @@ use std::time::Instant;
 use std::{cell::Cell, error::Error, fs, ops::ControlFlow, path::PathBuf, rc::Rc};
 use walkdir::WalkDir;
 
-use crate::operation::OperationError;
+use crate::core::operations::OperationError;
 
 use super::{Controller, OperationSelection, ReplaceResult, copy_unique_path};
 

@@ -9,6 +9,7 @@ pub mod app;
 mod archive;
 mod utils;
 mod common;
+mod core;
 pub mod clipboard;
 use config::Config;
 pub mod config;
@@ -16,7 +17,6 @@ pub mod dialog;
 mod key_bind;
 mod menu;
 mod mounter;
-pub mod operation;
 use tab::Location;
 
 use crate::config::State;
