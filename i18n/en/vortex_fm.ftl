@@ -11,6 +11,25 @@ recents = Recents
 undo = Undo
 today = Today
 
+# Quick Access
+quick-access = Quick Access
+library = Library
+drives = Drives
+recent-files = Recent Files
+clear-recent = Clear Recent Files
+desktop = Desktop
+downloads = Downloads
+documents = Documents
+music = Music
+pictures = Pictures
+videos = Videos
+system-disk = System Disk
+external-disk = External Disk
+optical-drive = Optical Drive
+usb-drive = USB Drive
+mounted = Mounted
+unmounted = Unmounted (Click to mount)
+
 # Desktop view options
 desktop-view-options = Desktop view options...
 show-on-desktop = Show on Desktop

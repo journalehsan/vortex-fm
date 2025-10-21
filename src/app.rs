@@ -420,6 +420,9 @@ pub enum Message {
     DndDropTab(Entity, Option<ClipboardPaste>, DndAction),
     DndDropNav(Entity, Option<ClipboardPaste>, DndAction),
     Recents,
+    ToggleQuickAccessSection(crate::views::quick_access::Section),
+    ClearRecentFiles,
+    MountDrive(MounterKey, MounterItem),
     #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
     OutputEvent(OutputEvent, WlOutput),
     Cosmic(app::Action),
@@ -4527,6 +4530,28 @@ impl Application for App {
             Message::Recents => {
                 return self.open_tab(Location::Recents, false, None);
             }
+            Message::ToggleQuickAccessSection(section) => {
+                match section {
+                    crate::views::quick_access::Section::Library => {
+                        self.state.quick_access_state.library_expanded = !self.state.quick_access_state.library_expanded;
+                    }
+                    crate::views::quick_access::Section::Drives => {
+                        self.state.quick_access_state.drives_expanded = !self.state.quick_access_state.drives_expanded;
+                    }
+                    crate::views::quick_access::Section::Recent => {
+                        self.state.quick_access_state.recent_expanded = !self.state.quick_access_state.recent_expanded;
+                    }
+                }
+                return Task::none();
+            }
+            Message::ClearRecentFiles => {
+                let _ = crate::views::quick_access::clear_recent_files();
+                return Task::none();
+            }
+            Message::MountDrive(key, item) => {
+                // Use existing MOUNTERS system to mount
+                return Task::none();
+            }
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             Message::OutputEvent(output_event, output) => {
                 match output_event {
@@ -5672,9 +5697,18 @@ impl Application for App {
         let entity = self.tab_model.active();
         match self.tab_model.data::<Tab>(entity) {
             Some(tab) => {
-                let tab_view = tab
-                    .view(&self.key_binds)
-                    .map(move |message| Message::TabMessage(Some(entity), message));
+                let tab_view = if tab.location == tab::Location::QuickAccess {
+                    // Render QuickAccess view instead of regular tab view
+                    crate::views::quick_access::quick_access_view(
+                        &self.state.quick_access_state,
+                        &self.mounter_items,
+                    )
+                    .map(move |message| message)
+                } else {
+                    tab
+                        .view(&self.key_binds)
+                        .map(move |message| Message::TabMessage(Some(entity), message))
+                };
                 tab_column = tab_column.push(tab_view);
             }
             None => {

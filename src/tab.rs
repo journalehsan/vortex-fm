@@ -1369,6 +1369,7 @@ pub enum Location {
     Desktop(PathBuf, String, DesktopConfig),
     Network(String, String, Option<PathBuf>),
     Path(PathBuf),
+    QuickAccess,
     Recents,
     Search(PathBuf, String, bool, Instant),
     Trash,
@@ -1382,6 +1383,7 @@ impl std::fmt::Display for Location {
             }
             Self::Network(uri, ..) => write!(f, "{}", uri),
             Self::Path(path) => write!(f, "{}", path.display()),
+            Self::QuickAccess => write!(f, "quick-access"),
             Self::Recents => write!(f, "recents"),
             Self::Search(path, term, ..) => write!(f, "search {} for {}", path.display(), term),
             Self::Trash => write!(f, "trash"),
@@ -1420,6 +1422,7 @@ impl Location {
             Self::Path(path) => Some(path),
             Self::Search(path, ..) => Some(path),
             Self::Network(_, _, path) => path.as_ref(),
+            Self::QuickAccess => None,
             _ => None,
         }
     }
@@ -1434,6 +1437,7 @@ impl Location {
                 Self::Search(path, term.clone(), *show_hidden, *time)
             }
             Self::Network(id, name, path) => Self::Network(id.clone(), name.clone(), path.clone()),
+            Self::QuickAccess => Self::QuickAccess,
 
             other => other.clone(),
         }
@@ -1445,6 +1449,10 @@ impl Location {
                 scan_desktop(path, display, *desktop_config, sizes)
             }
             Self::Path(path) => scan_path(path, sizes),
+            Self::QuickAccess => {
+                // Return empty items for QuickAccess - it will be handled by the view
+                Vec::new()
+            }
             Self::Search(..) => {
                 // Search is done incrementally
                 Vec::new()
@@ -1489,6 +1497,7 @@ impl Location {
                 fl!("recents")
             }
             Self::Network(display_name, ..) => display_name.clone(),
+            Self::QuickAccess => fl!("quick-access"),
         }
     }
 }
@@ -4602,6 +4611,9 @@ impl Tab {
                         .class(theme::Button::Text)
                         .into(),
                 );
+            }
+            Location::QuickAccess => {
+                // QuickAccess doesn't need breadcrumb navigation
             }
         }
 

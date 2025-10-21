@@ -156,6 +156,7 @@ pub fn context_menu<'a>(
             | Location::Path(..)
             | Location::Search(..)
             | Location::Recents
+            | Location::QuickAccess
             | Location::Network(_, _, Some(_)),
         ) => {
             if selected_trash_only {
@@ -353,6 +354,9 @@ pub fn context_menu<'a>(
                 children.push(sort_item(fl!("sort-by-trashed"), HeadingOptions::TrashedOn));
                 children.push(sort_item(fl!("sort-by-size"), HeadingOptions::Size));
             }
+        }
+        (&tab::Mode::Dialog(_), &tab::Location::QuickAccess) => {
+            // QuickAccess in dialog mode - no special handling needed
         }
     }
 

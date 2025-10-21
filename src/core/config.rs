@@ -59,6 +59,7 @@ impl AppTheme {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum Favorite {
     Home,
+    QuickAccess,
     Documents,
     Downloads,
     Music,
@@ -95,6 +96,7 @@ impl Favorite {
     pub fn path_opt(&self) -> Option<PathBuf> {
         match self {
             Self::Home => dirs::home_dir(),
+            Self::QuickAccess => None, // QuickAccess doesn't have a path
             Self::Documents => dirs::document_dir(),
             Self::Downloads => dirs::download_dir(),
             Self::Music => dirs::audio_dir(),
@@ -116,6 +118,7 @@ pub enum TypeToSearch {
 #[serde(default)]
 pub struct State {
     pub sort_names: ordermap::OrderMap<String, (HeadingOptions, bool)>,
+    pub quick_access_state: crate::views::quick_access::QuickAccessState,
 }
 
 impl Default for State {
@@ -127,6 +130,7 @@ impl Default for State {
                     (HeadingOptions::Modified, false),
                 )
             })),
+            quick_access_state: crate::views::quick_access::QuickAccessState::default(),
         }
     }
 }
