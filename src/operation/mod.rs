@@ -2,7 +2,7 @@ use crate::{
     app::{ArchiveType, DialogPage, Message},
     config::IconSizes,
     fl,
-    spawn_detached::spawn_detached,
+    utils::spawn_detached::spawn_detached,
     tab,
 };
 use cosmic::iced::futures::{SinkExt, channel::mpsc::Sender};

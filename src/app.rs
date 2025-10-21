@@ -75,7 +75,7 @@ use crate::{
     dialog::{Dialog, DialogKind, DialogMessage, DialogResult},
     fl, home_dir,
     key_bind::key_binds,
-    localize::LANGUAGE_SORTER,
+    utils::localize::LANGUAGE_SORTER,
     menu,
     mime_app::{self, MimeApp, MimeAppCache},
     mime_icon,
@@ -84,7 +84,7 @@ use crate::{
         Controller, Operation, OperationError, OperationErrorType, OperationSelection,
         ReplaceResult,
     },
-    spawn_detached::spawn_detached,
+    utils::spawn_detached::spawn_detached,
     tab::{
         self, HOVER_DURATION, HeadingOptions, ItemMetadata, Location, SORT_OPTION_FALLBACK, Tab,
     },

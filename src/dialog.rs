@@ -40,7 +40,7 @@ use crate::{
     config::{Config, DialogConfig, Favorite, TIME_CONFIG_ID, ThumbCfg, TimeConfig, TypeToSearch},
     fl, home_dir,
     key_bind::key_binds,
-    localize::LANGUAGE_SORTER,
+    utils::localize::LANGUAGE_SORTER,
     menu,
     mounter::{MOUNTERS, MounterItem, MounterItems, MounterKey, MounterMessage},
     tab::{self, ItemMetadata, Location, Tab},
@@ -253,7 +253,7 @@ impl<M: Send + 'static> Dialog<M> {
         on_result: impl Fn(DialogResult) -> M + 'static,
     ) -> (Self, Task<M>) {
         //TODO: only do this once somehow?
-        crate::localize::localize();
+        crate::utils::localize::localize();
 
         let (config_handler, config) = Config::load();
 

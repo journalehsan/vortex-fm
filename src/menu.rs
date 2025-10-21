@@ -139,7 +139,7 @@ pub fn context_menu<'a>(
     #[cfg(feature = "desktop")]
     let selected_desktop_entry = selected_desktop_entry.and_then(|path| {
         if selected == 1 {
-            let lang_id = crate::localize::LANGUAGE_LOADER.current_language();
+            let lang_id = crate::utils::localize::LANGUAGE_LOADER.current_language();
             let language = lang_id.language.as_str();
             // Cache?
             cosmic::desktop::load_desktop_file(&[language.into()], path.into())

@@ -78,11 +78,11 @@ use crate::{
     config::{DesktopConfig, ICON_SCALE_MAX, ICON_SIZE_GRID, IconSizes, TabConfig, ThumbCfg},
     dialog::DialogKind,
     fl,
-    localize::{LANGUAGE_SORTER, LOCALE},
-    menu, mime_app,
+    utils::localize::{LANGUAGE_SORTER, LOCALE},
+    menu,
+    mime_app,
     mime_icon::{mime_for_path, mime_icon},
     mounter::MOUNTERS,
-    mouse_area,
     operation::{Controller, OperationError},
     thumbnail_cacher::{CachedThumbnail, ThumbnailCacher, ThumbnailSize},
     thumbnailer::thumbnailer,
@@ -3256,7 +3256,7 @@ impl Tab {
             }
             #[cfg(feature = "desktop")]
             Message::ExecEntryAction(path, action) => {
-                let lang_id = crate::localize::LANGUAGE_LOADER.current_language();
+                let lang_id = crate::utils::localize::LANGUAGE_LOADER.current_language();
                 let language = lang_id.language.as_str();
                 match path.map_or_else(
                     || {
@@ -4237,7 +4237,7 @@ impl Tab {
             );
             row = row.push(widget::Space::with_width(Length::Fixed(space_m.into())));
             // This mouse area provides window drag while the header bar is hidden
-            let mouse_area = mouse_area::MouseArea::new(row)
+            let mouse_area = crate::utils::mouse_area::MouseArea::new(row)
                 .on_press(|_| Message::WindowDrag)
                 .on_double_click(|_| Message::WindowToggleMaximize);
             column = column.push(mouse_area);
@@ -4376,7 +4376,7 @@ impl Tab {
                 _ => {}
             }
             //TODO: make it possible to resize with the mouse
-            mouse_area::MouseArea::new(row)
+            crate::utils::mouse_area::MouseArea::new(row)
                 .on_press(move |_point_opt| Message::ToggleSort(msg))
                 .into()
         };
@@ -4476,7 +4476,7 @@ impl Tab {
             }
         } else if let Some(path) = self.location.path_opt() {
             row = row.push(
-                crate::mouse_area::MouseArea::new(
+                crate::utils::mouse_area::MouseArea::new(
                     widget::button::custom(widget::icon::from_name("edit-symbolic").size(16))
                         .padding(space_xxs)
                         .class(theme::Button::Icon)
@@ -4531,7 +4531,7 @@ impl Tab {
                     }
 
                     let location = self.location.with_path(ancestor.to_path_buf());
-                    let mut mouse_area = crate::mouse_area::MouseArea::new(
+                    let mut mouse_area = crate::utils::mouse_area::MouseArea::new(
                         widget::button::custom(row)
                             .padding(space_xxxs)
                             .class(theme::Button::Link)
@@ -4617,7 +4617,7 @@ impl Tab {
             column = column.push(heading_rule);
         }
 
-        let mouse_area = crate::mouse_area::MouseArea::new(column)
+        let mouse_area = crate::utils::mouse_area::MouseArea::new(column)
             .on_right_press(Message::LocationContextMenuPoint);
 
         let mut popover = widget::popover(mouse_area);
@@ -4636,7 +4636,7 @@ impl Tab {
     pub fn empty_view(&self, has_hidden: bool) -> Element<'_, Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
 
-        mouse_area::MouseArea::new(widget::column::with_children(vec![
+        crate::utils::mouse_area::MouseArea::new(widget::column::with_children(vec![
             widget::container(
                 widget::column::with_children(match self.mode {
                     Mode::App | Mode::Dialog(_) => vec![
@@ -4819,7 +4819,7 @@ impl Tab {
                             column = column.push(button)
                         } else {
                             column = column.push(
-                                mouse_area::MouseArea::new(button)
+                                crate::utils::mouse_area::MouseArea::new(button)
                                     .on_right_press_no_capture()
                                     .wayland_on_right_press_window_position()
                                     .on_right_press(move |point_opt| {
@@ -4843,7 +4843,7 @@ impl Tab {
                         drag_e_i = drag_e_i.max(col);
                         drag_s_i = drag_s_i.max(row);
                     }
-                    let mouse_area = crate::mouse_area::MouseArea::new(column)
+                    let mouse_area = crate::utils::mouse_area::MouseArea::new(column)
                         .on_press(move |_| Message::Click(Some(i)))
                         .on_double_click(move |_| Message::DoubleClick(Some(i)))
                         .on_release(move |_| Message::ClickRelease(Some(i)))
@@ -4992,7 +4992,7 @@ impl Tab {
         });
 
         let mut mouse_area =
-            mouse_area::MouseArea::new(widget::column::with_children(children).width(Length::Fill))
+            crate::utils::mouse_area::MouseArea::new(widget::column::with_children(children).width(Length::Fill))
                 .on_press(|_| Message::Click(None))
                 .on_auto_scroll(Message::AutoScroll)
                 .on_drag_end(|_| Message::DragEnd)
@@ -5223,7 +5223,7 @@ impl Tab {
                     };
 
                     let button = |row| {
-                        let mouse_area = crate::mouse_area::MouseArea::new(
+                        let mouse_area = crate::utils::mouse_area::MouseArea::new(
                             widget::button::custom(row)
                                 .width(Length::Fill)
                                 .id(item.button_id.clone())
@@ -5381,7 +5381,7 @@ impl Tab {
         let drag_col = (!drag_items.is_empty())
             .then(|| Element::from(widget::column::with_children(drag_items)));
 
-        let mut mouse_area = mouse_area::MouseArea::new(
+        let mut mouse_area = crate::utils::mouse_area::MouseArea::new(
             widget::column::with_children(children).padding([0, space_s]),
         )
         .with_id(Id::new("list-view"))
@@ -5464,7 +5464,7 @@ impl Tab {
         };
 
         let tab_location = self.location.clone();
-        let mouse_area = mouse_area::MouseArea::new(item_view)
+        let mouse_area = crate::utils::mouse_area::MouseArea::new(item_view)
             .on_press(move |_point_opt| Message::Click(None))
             .on_release(|_| Message::ClickRelease(None))
             .on_resize(Message::Resize)

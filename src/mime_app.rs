@@ -244,7 +244,7 @@ impl MimeAppCache {
     // Only available when using desktop feature of libcosmic, which only works on Unix-likes
     #[cfg(feature = "desktop")]
     pub fn reload(&mut self) {
-        use crate::localize::LANGUAGE_SORTER;
+        use crate::utils::localize::LANGUAGE_SORTER;
 
         let start = Instant::now();
 

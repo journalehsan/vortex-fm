@@ -7,19 +7,18 @@ use std::{env, fs, path::PathBuf, process};
 use app::{App, Flags};
 pub mod app;
 mod archive;
+mod utils;
+mod common;
 pub mod clipboard;
 use config::Config;
 pub mod config;
 pub mod dialog;
 mod key_bind;
-mod localize;
 mod menu;
 mod mime_app;
 pub mod mime_icon;
 mod mounter;
-mod mouse_area;
 pub mod operation;
-mod spawn_detached;
 use tab::Location;
 
 use crate::config::State;
@@ -65,7 +64,7 @@ pub fn is_wayland() -> bool {
 pub fn desktop() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
-    localize::localize();
+    utils::localize::localize();
 
     let (config_handler, config) = Config::load();
     let (state_handler, state) = State::load();
@@ -100,7 +99,7 @@ pub fn desktop() -> Result<(), Box<dyn std::error::Error>> {
 pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
-    localize::localize();
+    utils::localize::localize();
 
     let (config_handler, config) = Config::load();
     let (state_handler, state) = State::load();
