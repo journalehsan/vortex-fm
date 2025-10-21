@@ -11,3 +11,5 @@ pub mod clipboard;
 pub mod archive;
 pub mod key_bind;
 pub mod command_utils;
+pub mod desktop_theme;
+pub mod themes;

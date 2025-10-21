@@ -1906,6 +1906,7 @@ impl App {
                         AppTheme::Dark => 1,
                         AppTheme::Light => 2,
                         AppTheme::System => 0,
+                        AppTheme::Adaptive => 0, // Map to "match-desktop" option
                     };
                     widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
                         &self.app_themes,
@@ -1914,7 +1915,7 @@ impl App {
                             Message::AppTheme(match index {
                                 1 => AppTheme::Dark,
                                 2 => AppTheme::Light,
-                                _ => AppTheme::System,
+                                _ => AppTheme::Adaptive, // Default to adaptive
                             })
                         },
                     ))
@@ -2067,6 +2068,16 @@ impl Application for App {
     /// Creates the application, and optionally emits command on initialize.
     fn init(mut core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>) {
         core.window.context_is_overlay = false;
+        
+        // Check if running under a window manager and adjust window controls
+        use crate::utils::desktop_theme::is_window_manager;
+        if is_window_manager() {
+            // Hide minimize and maximize buttons for window managers
+            core.window.show_minimize = false;
+            core.window.show_maximize = false;
+            // Keep close button as it has menu functionality
+        }
+        
         match flags.mode {
             Mode::App => {
                 core.window.show_context = flags.config.show_details;

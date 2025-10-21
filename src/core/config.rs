@@ -36,6 +36,7 @@ pub enum AppTheme {
     Dark,
     Light,
     System,
+    Adaptive,
 }
 
 impl AppTheme {
@@ -52,6 +53,12 @@ impl AppTheme {
                 t
             }
             Self::System => theme::system_preference(),
+            Self::Adaptive => {
+                // Use adaptive desktop theming
+                use crate::utils::desktop_theme::{get_desktop_theme, apply_theme_to_cosmic};
+                let desktop_theme = get_desktop_theme();
+                apply_theme_to_cosmic(&desktop_theme)
+            }
         }
     }
 }
@@ -223,7 +230,7 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            app_theme: AppTheme::System,
+            app_theme: AppTheme::Adaptive,
             desktop: DesktopConfig::default(),
             dialog: DialogConfig::default(),
             thumb_cfg: ThumbCfg::default(),

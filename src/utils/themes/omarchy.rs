@@ -1,0 +1,174 @@
+// Omarchy theme definitions and detection
+
+use cosmic::iced::Color;
+use super::{DesktopTheme, ThemeInfo};
+use crate::utils::command_utils::SafeCommand;
+
+/// Omarchy theme definitions
+pub struct OmarchyTheme {
+    pub name: &'static str,
+    pub is_light: bool,
+    pub window_background: Color,
+    pub view_background: Color,
+    pub accent_color: Color,
+    pub foreground: Color,
+}
+
+impl DesktopTheme for OmarchyTheme {
+    fn name(&self) -> &str {
+        self.name
+    }
+    
+    fn is_light(&self) -> bool {
+        self.is_light
+    }
+    
+    fn window_background(&self) -> Color {
+        self.window_background
+    }
+    
+    fn view_background(&self) -> Color {
+        self.view_background
+    }
+    
+    fn accent_color(&self) -> Color {
+        self.accent_color
+    }
+    
+    fn foreground(&self) -> Color {
+        self.foreground
+    }
+}
+
+/// All available Omarchy themes
+pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
+    // Dark themes
+    OmarchyTheme {
+        name: "catppuccin",
+        is_light: false,
+        window_background: Color::from_rgb(0.11, 0.11, 0.15), // #1E1E2E
+        view_background: Color::from_rgb(0.15, 0.15, 0.20),   // #24273A
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.91, 0.89, 0.84),        // #E8E4E0
+    },
+    OmarchyTheme {
+        name: "dracula",
+        is_light: false,
+        window_background: Color::from_rgb(0.11, 0.11, 0.15), // #1E1E2E
+        view_background: Color::from_rgb(0.16, 0.16, 0.20),   // #282A36
+        accent_color: Color::from_rgb(0.40, 0.95, 0.60),     // #66FF99
+        foreground: Color::from_rgb(0.95, 0.95, 0.95),        // #F2F2F2
+    },
+    OmarchyTheme {
+        name: "everforest",
+        is_light: false,
+        window_background: Color::from_rgb(0.20, 0.24, 0.20), // #323D43
+        view_background: Color::from_rgb(0.25, 0.30, 0.25),   // #3F4944
+        accent_color: Color::from_rgb(0.40, 0.95, 0.60),     // #66FF99
+        foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
+    },
+    OmarchyTheme {
+        name: "gruvbox",
+        is_light: false,
+        window_background: Color::from_rgb(0.15, 0.13, 0.10), // #262626
+        view_background: Color::from_rgb(0.20, 0.18, 0.15),    // #32302F
+        accent_color: Color::from_rgb(0.85, 0.55, 0.20),      // #D79921
+        foreground: Color::from_rgb(0.85, 0.80, 0.70),        // #D5C4A1
+    },
+    OmarchyTheme {
+        name: "kanagawa",
+        is_light: false,
+        window_background: Color::from_rgb(0.09, 0.09, 0.12), // #16161D
+        view_background: Color::from_rgb(0.12, 0.12, 0.16),   // #1F1F28
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
+    },
+    OmarchyTheme {
+        name: "matte-black",
+        is_light: false,
+        window_background: Color::from_rgb(0.05, 0.05, 0.05), // #0D0D0D
+        view_background: Color::from_rgb(0.10, 0.10, 0.10),   // #1A1A1A
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.90, 0.90, 0.90),        // #E6E6E6
+    },
+    OmarchyTheme {
+        name: "nord",
+        is_light: false,
+        window_background: Color::from_rgb(0.15, 0.18, 0.22), // #242933
+        view_background: Color::from_rgb(0.18, 0.22, 0.27),   // #2E3440
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
+    },
+    OmarchyTheme {
+        name: "osaka-jade",
+        is_light: false,
+        window_background: Color::from_rgb(0.05, 0.10, 0.08), // #0D1A14
+        view_background: Color::from_rgb(0.08, 0.15, 0.12),   // #14261F
+        accent_color: Color::from_rgb(0.20, 0.80, 0.40),     // #33CC66
+        foreground: Color::from_rgb(0.85, 0.90, 0.85),        // #D9E6D9
+    },
+    OmarchyTheme {
+        name: "ristretto",
+        is_light: false,
+        window_background: Color::from_rgb(0.10, 0.08, 0.08), // #1A1414
+        view_background: Color::from_rgb(0.15, 0.12, 0.12),   // #261F1F
+        accent_color: Color::from_rgb(0.80, 0.40, 0.40),     // #CC6666
+        foreground: Color::from_rgb(0.85, 0.80, 0.80),        // #D9CCCC
+    },
+    OmarchyTheme {
+        name: "tokyo-night",
+        is_light: false,
+        window_background: Color::from_rgb(0.08, 0.08, 0.12), // #14141F
+        view_background: Color::from_rgb(0.12, 0.12, 0.18),   // #1F1F2E
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.85, 0.85, 0.80),        // #D8D8D0
+    },
+    // Light themes
+    OmarchyTheme {
+        name: "catppuccin-latte",
+        is_light: true,
+        window_background: Color::from_rgb(0.95, 0.95, 0.95), // #F2F2F2
+        view_background: Color::from_rgb(1.0, 1.0, 1.0),      // #FFFFFF
+        accent_color: Color::from_rgb(0.24, 0.60, 0.89),     // #3E9BFF
+        foreground: Color::from_rgb(0.20, 0.20, 0.20),        // #333333
+    },
+    OmarchyTheme {
+        name: "rose-pine",
+        is_light: true,
+        window_background: Color::from_rgb(0.95, 0.95, 0.95), // #F2F2F2
+        view_background: Color::from_rgb(1.0, 1.0, 1.0),      // #FFFFFF
+        accent_color: Color::from_rgb(0.60, 0.40, 0.60),     // #996699
+        foreground: Color::from_rgb(0.20, 0.20, 0.20),        // #333333
+    },
+];
+
+/// Detect current Omarchy theme
+pub fn detect_omarchy_theme() -> Option<ThemeInfo> {
+    // Check if omarchy-theme-current command exists
+    let output = SafeCommand::new("omarchy-theme-current")
+        .output_text()
+        .ok()?;
+    
+    let theme_name = output.trim();
+    if theme_name.is_empty() {
+        return None;
+    }
+    
+    // Find matching theme
+    for theme in OMARCHY_THEMES {
+        if theme.name == theme_name {
+            return Some(ThemeInfo::new(
+                theme.name.to_string(),
+                theme.is_light,
+                theme.window_background,
+                theme.view_background,
+                theme.accent_color,
+                theme.foreground,
+            ));
+        }
+    }
+    
+    // If theme not found, return None
+    log::warn!("Unknown Omarchy theme: {}", theme_name);
+    None
+}
