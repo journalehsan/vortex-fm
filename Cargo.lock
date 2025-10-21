@@ -1453,77 +1453,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cosmic-files"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bzip2",
- "chrono",
- "compio",
- "cosmic-client-toolkit",
- "cosmic-mime-apps",
- "dirs 6.0.0",
- "env_logger",
- "fastrand 2.3.0",
- "flate2",
- "fork",
- "freedesktop_entry_parser",
- "futures",
- "gio",
- "glib",
- "glob",
- "i18n-embed",
- "i18n-embed-fl",
- "icu",
- "ignore",
- "image",
- "io-uring",
- "jxl-oxide",
- "libc",
- "libcosmic",
- "log",
- "lzma-rust2 0.14.3",
- "md-5",
- "mime_guess",
- "notify-debouncer-full",
- "notify-rust",
- "num_cpus",
- "open",
- "ordermap",
- "paste",
- "png 0.18.0",
- "procfs",
- "recently-used-xbel",
- "regex",
- "rust-embed",
- "serde",
- "shlex",
- "slotmap",
- "tar",
- "tempfile",
- "test-log",
- "tikv-jemallocator",
- "tokio",
- "trash",
- "url",
- "uzers",
- "walkdir",
- "wayland-client",
- "xdg 3.0.0",
- "xdg-mime",
- "zip",
-]
-
-[[package]]
-name = "cosmic-files-applet"
-version = "0.1.0"
-dependencies = [
- "cosmic-files",
- "log",
- "zbus 4.4.0",
-]
-
-[[package]]
 name = "cosmic-freedesktop-icons"
 version = "0.3.0"
 source = "git+https://github.com/pop-os/freedesktop-icons#8a05c322c482ff3c69cf34bacfee98907ac45307"
@@ -7734,6 +7663,77 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vortex-files-applet"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "vortex-fm",
+ "zbus 4.4.0",
+]
+
+[[package]]
+name = "vortex-fm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bzip2",
+ "chrono",
+ "compio",
+ "cosmic-client-toolkit",
+ "cosmic-mime-apps",
+ "dirs 6.0.0",
+ "env_logger",
+ "fastrand 2.3.0",
+ "flate2",
+ "fork",
+ "freedesktop_entry_parser",
+ "futures",
+ "gio",
+ "glib",
+ "glob",
+ "i18n-embed",
+ "i18n-embed-fl",
+ "icu",
+ "ignore",
+ "image",
+ "io-uring",
+ "jxl-oxide",
+ "libc",
+ "libcosmic",
+ "log",
+ "lzma-rust2 0.14.3",
+ "md-5",
+ "mime_guess",
+ "notify-debouncer-full",
+ "notify-rust",
+ "num_cpus",
+ "open",
+ "ordermap",
+ "paste",
+ "png 0.18.0",
+ "procfs",
+ "recently-used-xbel",
+ "regex",
+ "rust-embed",
+ "serde",
+ "shlex",
+ "slotmap",
+ "tar",
+ "tempfile",
+ "test-log",
+ "tikv-jemallocator",
+ "tokio",
+ "trash",
+ "url",
+ "uzers",
+ "walkdir",
+ "wayland-client",
+ "xdg 3.0.0",
+ "xdg-mime",
+ "zip",
+]
 
 [[package]]
 name = "waker-fn"
