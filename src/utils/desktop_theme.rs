@@ -210,11 +210,8 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
         (theme.accent_color.b * 255.0) as u8
     );
     
-    // Try to create a custom theme using ThemeBuilder
-    // Note: ThemeBuilder might not be available in current libcosmic version
-    log::info!("🎨 Attempting to use ThemeBuilder for custom theme creation");
-    
-    // For now, let's use the system theme but log our custom colors
+    // Since ThemeBuilder is not available in current libcosmic version,
+    // we'll use the system theme but log our custom colors for now
     let cosmic_theme = if theme.is_light {
         log::info!("🎨 Using light theme as base");
         cosmic::theme::system_light()
@@ -230,6 +227,21 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
         (cosmic_theme.cosmic().palette.accent_blue.color.green * 255.0) as u8,
         (cosmic_theme.cosmic().palette.accent_blue.color.blue * 255.0) as u8
     );
+    
+    // Log our target colors
+    let window_bg_color = cosmic::iced::Color::from_rgb(
+        theme.window_background.r,
+        theme.window_background.g,
+        theme.window_background.b
+    );
+    log::info!("🎨 Target window background color: {:?}", window_bg_color);
+    
+    let text_color = cosmic::iced::Color::from_rgb(
+        theme.foreground.r,
+        theme.foreground.g,
+        theme.foreground.b
+    );
+    log::info!("🎨 Target text color: {:?}", text_color);
     
     // TODO: Implement custom theme creation when ThemeBuilder is available
     // For now, we'll use the system theme but log our custom colors
