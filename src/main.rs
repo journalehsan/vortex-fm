@@ -6,5 +6,5 @@ use tikv_jemallocator::Jemalloc;
 static GLOBAL: Jemalloc = Jemalloc;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cosmic_files::main()
+    vortex_fm::main()
 }
