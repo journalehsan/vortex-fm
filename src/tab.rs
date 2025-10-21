@@ -82,7 +82,7 @@ use crate::{
     menu,
     utils::mime_app,
     utils::mime_icon::{mime_for_path, mime_icon},
-    mounter::MOUNTERS,
+    core::services::mount::MOUNTERS,
     core::operations::{Controller, OperationError},
     utils::thumbnail_cacher::{CachedThumbnail, ThumbnailCacher, ThumbnailSize},
     utils::thumbnailer::thumbnailer,

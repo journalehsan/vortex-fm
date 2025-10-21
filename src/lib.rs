@@ -15,7 +15,6 @@ use core::config::Config;
 pub mod dialog;
 mod key_bind;
 mod menu;
-mod mounter;
 use tab::Location;
 
 use crate::core::config::State;

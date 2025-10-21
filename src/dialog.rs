@@ -42,7 +42,7 @@ use crate::{
     key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
     menu,
-    mounter::{MOUNTERS, MounterItem, MounterItems, MounterKey, MounterMessage},
+    core::services::mount::{MOUNTERS, MounterItem, MounterItems, MounterKey, MounterMessage},
     tab::{self, ItemMetadata, Location, Tab},
 };
 

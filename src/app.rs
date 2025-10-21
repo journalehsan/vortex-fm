@@ -79,7 +79,7 @@ use crate::{
     menu,
     utils::mime_app::{self, MimeApp, MimeAppCache},
     utils::mime_icon,
-    mounter::{MOUNTERS, MounterAuth, MounterItem, MounterItems, MounterKey, MounterMessage},
+    core::services::mount::{MOUNTERS, MounterAuth, MounterItem, MounterItems, MounterKey, MounterMessage},
     core::operations::{
         Controller, Operation, OperationError, OperationErrorType, OperationSelection,
         ReplaceResult,
