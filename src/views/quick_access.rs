@@ -2,7 +2,7 @@
 
 use cosmic::{
     Element,
-    iced::{Alignment, Color, Length},
+    iced::{Alignment, Background, Color, Length},
     widget,
 };
 use serde::{Deserialize, Serialize};
@@ -16,7 +16,6 @@ use crate::{
     app::Message,
     core::services::mount::{MounterItem, MounterItems, MounterKey},
     fl,
-    tab,
 };
 
 // Section expansion state (saved in config)
@@ -345,16 +344,28 @@ fn library_section(
             .row_spacing(12);
             
         for folder in folders {
-            let tile = widget::button::custom(
-                widget::column()
-                    .push(widget::icon::from_name(&*folder.icon).size(48))
-                    .push(widget::text(folder.name.clone()))
-                    .align_x(Alignment::Center)
-                    .spacing(8)
+            let tile = widget::container(
+                widget::mouse_area(
+                    widget::column()
+                        .push(widget::icon::from_name(&*folder.icon).size(48))
+                        .push(widget::text(folder.name.clone()))
+                        .align_x(Alignment::Center)
+                        .spacing(8)
+                )
+                .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the folder
             )
-            .on_press(Message::OpenItemLocation(None)) // TODO: Fix this to open the folder
             .width(Length::Fixed(120.0))
-            .height(Length::Fixed(100.0));
+            .height(Length::Fixed(100.0))
+            .padding(16)
+            .style(|theme: &cosmic::Theme| {
+                cosmic::widget::container::Style {
+                    icon_color: Some(Color::TRANSPARENT),
+                    text_color: Some(Color::TRANSPARENT),
+                    background: Some(Background::Color(Color::TRANSPARENT)),
+                    border: cosmic::iced::Border::default(),
+                    shadow: cosmic::iced::Shadow::default(),
+                }
+            });
 
             grid = grid.push(tile);
         }
@@ -434,21 +445,32 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
         .align_x(Alignment::Center)
         .spacing(0)
         .padding(16);
-    
-    let mut button = widget::button::custom(content)
-        .width(Length::Fixed(160.0))
-        .height(Length::Fixed(140.0));
-    
+
+    let mut button_content = widget::mouse_area(content);
+
     if drive.is_mounted {
         if let Some(_path) = &drive.path {
-            button = button.on_press(Message::OpenItemLocation(None)); // TODO: Fix this to open the drive
+            button_content = button_content.on_press(Message::OpenItemLocation(None)); // TODO: Fix this to open the drive
         }
     } else {
         if let (Some(key), Some(item)) = (&drive.mounter_key, &drive.mounter_item) {
-            button = button.on_press(Message::MountDrive(key.clone(), item.clone()));
+            button_content = button_content.on_press(Message::MountDrive(key.clone(), item.clone()));
         }
     }
-    
+
+    let mut button = widget::container(button_content)
+        .width(Length::Fixed(160.0))
+        .height(Length::Fixed(140.0))
+        .style(|theme: &cosmic::Theme| {
+            cosmic::widget::container::Style {
+                icon_color: Some(Color::TRANSPARENT),
+                text_color: Some(Color::TRANSPARENT),
+                background: Some(Background::Color(Color::TRANSPARENT)),
+                border: cosmic::iced::Border::default(),
+                shadow: cosmic::iced::Shadow::default(),
+            }
+        });
+
     button.into()
 }
 
@@ -561,7 +583,6 @@ fn get_file_icon(filename: &str) -> &'static str {
 }
 
 fn format_date(time: &SystemTime) -> String {
-    use std::time::Duration;
 
     if let Ok(duration) = time.elapsed() {
         let days = duration.as_secs() / (24 * 60 * 60);
