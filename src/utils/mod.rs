@@ -10,3 +10,4 @@ pub mod thumbnailer;
 pub mod clipboard;
 pub mod archive;
 pub mod key_bind;
+pub mod command_utils;

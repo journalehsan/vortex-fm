@@ -74,7 +74,7 @@ fn library_section(
             .width(Length::Fixed(120.0))
             .height(Length::Fixed(100.0))
             .padding(16)
-            .style(|theme: &cosmic::Theme| {
+            .style(|_theme: &cosmic::Theme| {
                 cosmic::widget::container::Style {
                     icon_color: Some(Color::TRANSPARENT),
                     text_color: Some(Color::TRANSPARENT),
@@ -144,11 +144,7 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
     let progress_bar = widget::progress_bar(0.0..=100.0, usage_pct)
         .height(6.0);
 
-    let space_text = widget::text(format!(
-        "{} / {}",
-        format_size(drive.used_space),
-        format_size(drive.total_space)
-    )).size(12)
+    let space_text = widget::text(drive.format_size()).size(12)
     .width(Length::Fill);
 
     let content = widget::column()
@@ -165,20 +161,19 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
 
     let mut button_content = widget::mouse_area(content);
 
-    if drive.is_mounted {
-        if let Some(path) = &drive.path {
+    if drive.is_accessible {
+        if let Some(_path) = drive.path.to_str() {
             button_content = button_content.on_press(Message::OpenItemLocation(None));
         }
     } else {
-        if let (Some(key), Some(item)) = (&drive.mounter_key, &drive.mounter_item) {
-            button_content = button_content.on_press(Message::MountDrive(key.clone(), item.clone()));
-        }
+        // For inaccessible drives, we could add mount functionality here
+        // For now, just show them as disabled
     }
 
-    let mut button = widget::container(button_content)
+    let button = widget::container(button_content)
         .width(Length::Fixed(160.0))
         .height(Length::Fixed(140.0))
-        .style(|theme: &cosmic::Theme| {
+        .style(|_theme: &cosmic::Theme| {
             cosmic::widget::container::Style {
                 icon_color: Some(Color::TRANSPARENT),
                 text_color: Some(Color::TRANSPARENT),
@@ -193,12 +188,12 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
 
 fn drive_icon_name(drive_type: &DriveType) -> &'static str {
     match drive_type {
-        DriveType::System => "drive-harddisk",
-        DriveType::Partition => "drive-harddisk",
-        DriveType::External => "drive-removable-media",
-        DriveType::Optical => "media-optical",
-        DriveType::Usb => "drive-removable-media-usb",
-        DriveType::Network => "network-workgroup",
+        crate::core::quick_access::DriveType::FixedDisk => "drive-harddisk",
+        crate::core::quick_access::DriveType::RemovableDisk => "drive-removable-media",
+        crate::core::quick_access::DriveType::NetworkDrive => "network-workgroup",
+        crate::core::quick_access::DriveType::CDRom => "media-optical",
+        crate::core::quick_access::DriveType::RamDisk => "media-flash",
+        crate::core::quick_access::DriveType::Unknown => "drive-harddisk",
     }
 }
 
@@ -262,22 +257,7 @@ fn recent_section(
     column.into()
 }
 
-fn format_size(bytes: u64) -> String {
-    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
-    let mut size = bytes as f64;
-    let mut unit_index = 0;
-    
-    while size >= 1024.0 && unit_index < UNITS.len() - 1 {
-        size /= 1024.0;
-        unit_index += 1;
-    }
-    
-    if unit_index == 0 {
-        format!("{} {}", size as u64, UNITS[unit_index])
-    } else {
-        format!("{:.1} {}", size, UNITS[unit_index])
-    }
-}
+// format_size function removed - now using DriveInfo.format_size() method
 
 fn get_file_icon(filename: &str) -> &'static str {
     if let Some(extension) = std::path::Path::new(filename).extension() {
@@ -333,10 +313,9 @@ fn format_date(time: &SystemTime) -> String {
 // Main QuickAccess View Function
 pub fn quick_access_view(
     state: &QuickAccessState,
-    mounter_items: &std::collections::HashMap<crate::core::services::mount::MounterKey, crate::core::services::mount::MounterItems>,
 ) -> Element<'static, Message> {
     let library_folders = quick_access::get_library_folders();
-    let drives = quick_access::get_drives(mounter_items);
+    let drives = quick_access::get_drives();
     let recent_files = quick_access::get_recent_files();
 
     widget::scrollable(

@@ -1,19 +1,15 @@
 // Main window view for Vortex File Manager
 
 use cosmic::{
-    app::Core,
     Element,
     iced::{
-        window::{self, Id as WindowId},
-        Length,
+        window::Id as WindowId,
     },
     widget,
 };
 
 use crate::{
     app::{App, Message},
-    core::config::Config,
-    tab::Tab,
 };
 
 /// Main window view implementation
@@ -63,7 +59,7 @@ impl App {
     }
 
     /// View for specific windows
-    pub fn view_window(&self, id: WindowId) -> Element<'_, Message> {
+    pub fn view_window(&self, _id: WindowId) -> Element<'_, Message> {
         // TODO: Extract window-specific view logic from app.rs
         // This will handle different window types (dialogs, previews, etc.)
         widget::text("Window View - TODO: Extract from app.rs")

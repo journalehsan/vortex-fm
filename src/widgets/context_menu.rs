@@ -24,7 +24,7 @@ impl ContextMenuWidget {
     }
 
     /// Build the context menu for a tab
-    pub fn build(&self, tab: &Tab) -> Element<'_, Message> {
+    pub fn build(&self, _tab: &Tab) -> Element<'_, Message> {
         // TODO: Extract context menu logic from menu.rs
         // This will contain the right-click menu for files and folders
         widget::text("Context Menu Widget - TODO: Extract from menu.rs")

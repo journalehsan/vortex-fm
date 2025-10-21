@@ -4558,7 +4558,7 @@ impl Application for App {
                 let _ = crate::core::quick_access::clear_recent_files();
                 return Task::none();
             }
-            Message::MountDrive(key, item) => {
+            Message::MountDrive(_key, _item) => {
                 // Use existing MOUNTERS system to mount
                 return Task::none();
             }
@@ -5711,7 +5711,6 @@ impl Application for App {
                     // Render QuickAccess view instead of regular tab view
                     crate::views::quick_access::quick_access_view(
                         &self.state.quick_access_state,
-                        &self.mounter_items,
                     )
                     .map(move |message| message)
                 } else {
