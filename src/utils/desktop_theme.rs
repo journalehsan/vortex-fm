@@ -23,28 +23,29 @@ pub fn detect_desktop_environment() -> DesktopEnvironment {
     
     log::info!("XDG_CURRENT_DESKTOP: {}", xdg_desktop);
     
-    // Check for Cosmic first (highest priority for theme customization)
+    // Check for Omarchy first (highest priority for theme customization)
+    // If omarchy command exists, use Omarchy themes regardless of desktop
+    if command_exists("omarchy-theme-current") {
+        if xdg_desktop.contains("hyprland") {
+            log::info!("Detected Hyprland with Omarchy themes available");
+            return DesktopEnvironment::Omarchy;
+        } else {
+            log::info!("Detected Omarchy desktop environment");
+            return DesktopEnvironment::Omarchy;
+        }
+    }
+    
+    // Check for Hyprland (without Omarchy)
+    if xdg_desktop.contains("hyprland") {
+        log::info!("Detected Hyprland desktop environment");
+        return DesktopEnvironment::Hyprland;
+    }
+    
+    // Check for Cosmic (fallback for theme customization)
     // cosmic-settings availability means we can use Cosmic theme system
     if xdg_desktop.contains("cosmic") || command_exists("cosmic-settings") {
         log::info!("Detected Cosmic desktop environment (cosmic-settings available)");
         return DesktopEnvironment::Cosmic;
-    }
-    
-    // Check for Hyprland, but if omarchy command exists, use Omarchy themes
-    if xdg_desktop.contains("hyprland") {
-        if command_exists("omarchy-theme-current") {
-            log::info!("Detected Hyprland with Omarchy themes available");
-            return DesktopEnvironment::Omarchy;
-        } else {
-            log::info!("Detected Hyprland desktop environment");
-            return DesktopEnvironment::Hyprland;
-        }
-    }
-    
-    // Check for Omarchy (for other desktop environments)
-    if command_exists("omarchy-theme-current") {
-        log::info!("Detected Omarchy desktop environment");
-        return DesktopEnvironment::Omarchy;
     }
     
     // Check for KDE

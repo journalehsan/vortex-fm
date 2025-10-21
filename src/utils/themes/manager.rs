@@ -183,9 +183,10 @@ impl ThemeManager {
     pub fn apply_external_theme(&mut self, theme_info: &ThemeInfo) -> Result<(), String> {
         log::info!("🎨 Applying external theme '{}' to ThemeManager", theme_info.name);
         
-        // Only apply custom colors on Cosmic desktop
-        if self.desktop_environment != DesktopEnvironment::Cosmic {
-            log::info!("🎨 Skipping color application - not on Cosmic desktop");
+        // Apply custom colors on Cosmic desktop or when using Omarchy themes
+        if self.desktop_environment != DesktopEnvironment::Cosmic && 
+           self.desktop_environment != DesktopEnvironment::Omarchy {
+            log::info!("🎨 Skipping color application - not on Cosmic or Omarchy desktop");
             return Ok(());
         }
 
@@ -220,28 +221,54 @@ impl ThemeManager {
         let customizer = self.selected_customizer_mut();
         
         // Set accent color
+        log::info!("🎨 DEBUG: Attempting to set accent color: {:?}", accent_srgb);
         if let Some(_staged) = customizer.set_accent(Some(accent_srgb)) {
-            log::info!("🎨 Applied accent color: {:?}", accent_srgb);
+            log::info!("✅ DEBUG: Successfully applied accent color: {:?}", accent_srgb);
+        } else {
+            log::warn!("❌ DEBUG: Failed to apply accent color: {:?}", accent_srgb);
         }
         
         // Set background color
+        log::info!("🎨 DEBUG: Attempting to set background color: {:?}", bg_srgba);
         if let Some(_staged) = customizer.set_bg_color(Some(bg_srgba)) {
-            log::info!("🎨 Applied background color: {:?}", bg_srgba);
+            log::info!("✅ DEBUG: Successfully applied background color: {:?}", bg_srgba);
+        } else {
+            log::warn!("❌ DEBUG: Failed to apply background color: {:?}", bg_srgba);
         }
         
         // Set container background
+        log::info!("🎨 DEBUG: Attempting to set container background: {:?}", container_bg_srgba);
         if let Some(_staged) = customizer.set_primary_container_bg(Some(container_bg_srgba)) {
-            log::info!("🎨 Applied container background: {:?}", container_bg_srgba);
+            log::info!("✅ DEBUG: Successfully applied container background: {:?}", container_bg_srgba);
+        } else {
+            log::warn!("❌ DEBUG: Failed to apply container background: {:?}", container_bg_srgba);
         }
         
         // Set text color
+        log::info!("🎨 DEBUG: Attempting to set text color: {:?}", text_srgb);
         if let Some(_staged) = customizer.set_text_tint(Some(text_srgb)) {
-            log::info!("🎨 Applied text color: {:?}", text_srgb);
+            log::info!("✅ DEBUG: Successfully applied text color: {:?}", text_srgb);
+        } else {
+            log::warn!("❌ DEBUG: Failed to apply text color: {:?}", text_srgb);
         }
 
         // Apply the changes
+        log::info!("🎨 DEBUG: Applying builder changes...");
         customizer.apply_builder();
+        log::info!("🎨 DEBUG: Applying theme changes...");
         customizer.apply_theme();
+
+        // Build the theme to apply changes
+        log::info!("🎨 DEBUG: Building theme to apply changes...");
+        let build_task = self.build_theme(ThemeStaged::Current);
+        log::info!("🎨 DEBUG: Theme build task created");
+        
+        // Force the theme to be rebuilt immediately
+        log::info!("🎨 DEBUG: Forcing theme rebuild...");
+        let customizer = self.selected_customizer_mut();
+        let new_theme = customizer.builder.0.clone().build();
+        customizer.theme.0 = new_theme;
+        log::info!("🎨 DEBUG: Theme rebuilt with new colors");
 
         log::info!("✅ Successfully applied external theme colors");
         Ok(())
@@ -332,6 +359,13 @@ impl ThemeManager {
         log::info!("🎨 Current theme: {:?}", theme);
         log::info!("🎨 Theme accent color: {:?}", theme.accent.base.color);
         log::info!("🎨 Theme background color: {:?}", theme.bg_color());
+        
+        // Debug: Check if our custom colors are actually applied
+        let builder = self.builder();
+        log::info!("🎨 DEBUG: Builder accent color: {:?}", builder.accent);
+        log::info!("🎨 DEBUG: Builder background color: {:?}", builder.bg_color);
+        log::info!("🎨 DEBUG: Builder text tint: {:?}", builder.text_tint);
+        log::info!("🎨 DEBUG: Builder primary container bg: {:?}", builder.primary_container_bg);
         
         let cosmic_theme = cosmic::Theme {
             theme_type: ThemeType::Custom(Arc::new(theme.clone())),
@@ -529,9 +563,11 @@ impl ThemeCustomizer {
         
         if let Some(config) = config {
             log::info!("🎨 Setting accent color in ThemeBuilder");
+            log::info!("🎨 DEBUG: Before set_accent - builder accent: {:?}", self.builder.0.accent);
             match self.builder.0.set_accent(config, color) {
                 Ok(_) => {
                     log::info!("✅ Successfully set accent color in ThemeBuilder");
+                    log::info!("🎨 DEBUG: After set_accent - builder accent: {:?}", self.builder.0.accent);
                     Some(ThemeStaged::Current)
                 }
                 Err(err) => {
