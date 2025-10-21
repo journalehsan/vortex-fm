@@ -1,7 +1,8 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: vortex-fm
-Upstream-Contact: Jeremy Soller <jeremy@system76.com>
-Source: https://github.com/ehsator/vortex-fm
+Upstream-Contact: Ehsan Tork <ehsan.tor@hey.com>
+Source: https://github.com/journalehsan/vortex-fm
 Files: *
+Copyright: Ehsan Tork <ehsan.tor@hey.com>
 Copyright: System76 <info@system76.com>
 License: GPL-3.0

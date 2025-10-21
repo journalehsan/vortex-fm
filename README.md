@@ -3,7 +3,7 @@
 A modern, Windows Explorer-like file manager built with Iced and libcosmic for Linux systems.
 
 > [!NOTE]
-> This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) and is still a work in progress
+> This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) by [Ehsan Tork](https://journalehsan.github.io/) and is still a work in progress
 
 ## Features
 
@@ -42,7 +42,7 @@ sudo dnf install libcosmic-devel gcc
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/journalehsan/vortex-fm.git
 cd vortex-fm
 
 # Build and run
@@ -93,7 +93,7 @@ This project is licensed under [GPLv3](LICENSE)
 
 ## Acknowledgments
 
-This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) by System76. The original COSMIC desktop environment is maintained by System76 for use in Pop!_OS. A list of all COSMIC projects can be found in the [cosmic-epoch](https://github.com/pop-os/cosmic-epoch) project's README.
+This project is a fork of [cosmic-files](https://github.com/pop-os/cosmic-files) by [Ehsan Tork](https://journalehsan.github.io/). The original COSMIC desktop environment is maintained by System76 for use in Pop!_OS. A list of all COSMIC projects can be found in the [cosmic-epoch](https://github.com/pop-os/cosmic-epoch) project's README.
 
 ## Roadmap
 

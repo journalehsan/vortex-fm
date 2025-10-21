@@ -2041,7 +2041,7 @@ impl Application for App {
     type Message = Message;
 
     /// The unique application ID to supply to the window manager.
-    const APP_ID: &'static str = "com.system76.CosmicFiles";
+    const APP_ID: &'static str = "com.journalehsan.VortexFiles";
 
     fn core(&self) -> &Core {
         &self.core
@@ -2096,10 +2096,10 @@ impl Application for App {
             .name(fl!("cosmic-files"))
             .icon(icon::from_name(Self::APP_ID))
             .version(env!("CARGO_PKG_VERSION"))
-            .author("System76")
+            .author("Ehsan Tork")
             .license("GPL-3.0-only")
             .license_url("https://spdx.org/licenses/GPL-3.0-only")
-            .developers([("Jeremy Soller", "jeremy@system76.com")])
+            .developers([("Ehsan Tork", "ehsan.tor@hey.com"), ("Jeremy Soller", "jeremy@system76.com")])
             .links([
                 (fl!("repository"), "https://github.com/ehsator/vortex-fm"),
                 (

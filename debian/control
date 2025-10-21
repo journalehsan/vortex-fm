@@ -1,7 +1,7 @@
 Source: vortex-fm
 Section: admin
 Priority: optional
-Maintainer: Jeremy Soller <jeremy@system76.com>
+Maintainer: Ehsan Tork <ehsan.tor@hey.com>
 Build-Depends:
     debhelper-compat (=13),
     git,

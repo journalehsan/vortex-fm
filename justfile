@@ -1,5 +1,5 @@
 name := 'vortex-fm'
-export APPID := 'com.system76.CosmicFiles'
+export APPID := 'com.journalehsan.VortexFiles'
 
 rootdir := ''
 prefix := '/usr'

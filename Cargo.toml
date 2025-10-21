@@ -1,7 +1,7 @@
 [package]
 name = "vortex-fm"
 version = "0.1.0"
-authors = ["Jeremy Soller <jeremy@system76.com>", "Vortex File Manager Contributors"]
+authors = ["Ehsan Tork <ehsan.tor@hey.com>", "Jeremy Soller <jeremy@system76.com>"]
 edition = "2024"
 license = "GPL-3.0-only"
 rust-version = "1.85"
