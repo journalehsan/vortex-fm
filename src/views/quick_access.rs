@@ -75,10 +75,10 @@ fn library_section(
             .width(Length::Fixed(120.0))
             .height(Length::Fixed(100.0))
             .padding(16)
-            .style(|_theme: &cosmic::Theme| {
+            .style(|theme: &cosmic::Theme| {
                 cosmic::widget::container::Style {
                     icon_color: Some(Color::TRANSPARENT),
-                    text_color: Some(Color::TRANSPARENT),
+                    text_color: Some(theme.cosmic().accent_text_color().into()),
                     background: Some(Background::Color(Color::TRANSPARENT)),
                     border: cosmic::iced::Border::default(),
                     shadow: cosmic::iced::Shadow::default(),
@@ -191,10 +191,10 @@ fn drive_tile(drive: &DriveInfo) -> Element<'static, Message> {
     let button = widget::container(button_content)
         .width(Length::Fixed(160.0))
         .height(Length::Fixed(140.0))
-        .style(|_theme: &cosmic::Theme| {
+        .style(|theme: &cosmic::Theme| {
             cosmic::widget::container::Style {
                 icon_color: Some(Color::TRANSPARENT),
-                text_color: Some(Color::TRANSPARENT),
+                text_color: Some(theme.cosmic().accent_text_color().into()),
                 background: Some(Background::Color(Color::TRANSPARENT)),
                 border: cosmic::iced::Border::default(),
                 shadow: cosmic::iced::Shadow::default(),
