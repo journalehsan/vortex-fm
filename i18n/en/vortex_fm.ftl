@@ -310,6 +310,7 @@ theme = Theme
 match-desktop = Match desktop
 dark = Dark
 light = Light
+adaptive = Adaptive
 
 ### Type to Search
 type-to-search = Type to Search

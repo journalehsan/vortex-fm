@@ -41,19 +41,27 @@ pub enum AppTheme {
 
 impl AppTheme {
     pub fn theme(&self) -> theme::Theme {
+        log::info!("🎨 AppTheme::theme() called for: {:?}", self);
+        
         match self {
             Self::Dark => {
+                log::info!("🎨 Using Dark theme");
                 let mut t = theme::system_dark();
                 t.theme_type.prefer_dark(Some(true));
                 t
             }
             Self::Light => {
+                log::info!("🎨 Using Light theme");
                 let mut t = theme::system_light();
                 t.theme_type.prefer_dark(Some(false));
                 t
             }
-            Self::System => theme::system_preference(),
+            Self::System => {
+                log::info!("🎨 Using System theme");
+                theme::system_preference()
+            }
             Self::Adaptive => {
+                log::info!("🎨 Using Adaptive theme - detecting desktop environment");
                 // Use adaptive desktop theming
                 use crate::utils::desktop_theme::{get_desktop_theme, apply_theme_to_cosmic};
                 let desktop_theme = get_desktop_theme();

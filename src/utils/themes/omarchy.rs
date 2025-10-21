@@ -54,9 +54,9 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
     OmarchyTheme {
         name: "dracula",
         is_light: false,
-        window_background: Color::from_rgb(0.11, 0.11, 0.15), // #1E1E2E
+        window_background: Color::from_rgb(0.100, 0.101, 0.150), //rgb(11, 11, 15)
         view_background: Color::from_rgb(0.16, 0.16, 0.20),   // #282A36
-        accent_color: Color::from_rgb(0.40, 0.95, 0.60),     // #66FF99
+        accent_color: Color::from_rgb(0.86, 0.39, 0.147),     //rgb(86, 39, 147)
         foreground: Color::from_rgb(0.95, 0.95, 0.95),        // #F2F2F2
     },
     OmarchyTheme {

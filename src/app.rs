@@ -1381,12 +1381,18 @@ impl App {
     }
 
     fn update_config(&mut self) -> Task<Message> {
+        log::info!("🎨 update_config called with theme: {:?}", self.config.app_theme);
+        
+        // Log the theme that will be applied
+        let theme = self.config.app_theme.theme();
+        log::info!("🎨 Applying theme: {:?}", theme);
+        
         self.update_nav_model();
         // Tabs are collected first to placate the borrowck
         let tabs: Vec<_> = self.tab_model.iter().collect();
         // Update main conf and each tab with the new config
         let commands: Vec<_> =
-            std::iter::once(cosmic::command::set_theme(self.config.app_theme.theme()))
+            std::iter::once(cosmic::command::set_theme(theme))
                 .chain(tabs.into_iter().map(|entity| {
                     self.update(Message::TabMessage(
                         Some(entity),
@@ -1903,20 +1909,27 @@ impl App {
                 .title(fl!("appearance"))
                 .add({
                     let app_theme_selected = match self.config.app_theme {
-                        AppTheme::Dark => 1,
-                        AppTheme::Light => 2,
-                        AppTheme::System => 0,
-                        AppTheme::Adaptive => 0, // Map to "match-desktop" option
+                        AppTheme::System => 0,    // "match-desktop"
+                        AppTheme::Dark => 1,     // "dark"
+                        AppTheme::Light => 2,    // "light"
+                        AppTheme::Adaptive => 3, // "adaptive"
                     };
+                    
+                    log::info!("🎨 Settings UI - Current theme: {:?} (index: {})", self.config.app_theme, app_theme_selected);
                     widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
                         &self.app_themes,
                         Some(app_theme_selected),
                         move |index| {
-                            Message::AppTheme(match index {
-                                1 => AppTheme::Dark,
-                                2 => AppTheme::Light,
+                            let selected_theme = match index {
+                                0 => AppTheme::System,   // "match-desktop"
+                                1 => AppTheme::Dark,     // "dark"
+                                2 => AppTheme::Light,    // "light"
+                                3 => AppTheme::Adaptive, // "adaptive"
                                 _ => AppTheme::Adaptive, // Default to adaptive
-                            })
+                            };
+                            
+                            log::info!("🎨 Settings UI - User selected theme index: {} -> {:?}", index, selected_theme);
+                            Message::AppTheme(selected_theme)
                         },
                     ))
                 })
@@ -2093,7 +2106,7 @@ impl Application for App {
             }
         }
 
-        let app_themes = vec![fl!("match-desktop"), fl!("dark"), fl!("light")];
+        let app_themes = vec![fl!("match-desktop"), fl!("dark"), fl!("light"), fl!("adaptive")];
 
         let key_binds = key_binds(&match flags.mode {
             Mode::App => tab::Mode::App,
@@ -2565,7 +2578,10 @@ impl Application for App {
                 return self.update_config();
             }
             Message::AppTheme(app_theme) => {
+                log::info!("🎨 AppTheme message received: {:?}", app_theme);
+                log::info!("🎨 Previous theme was: {:?}", self.config.app_theme);
                 config_set!(app_theme, app_theme);
+                log::info!("🎨 Theme updated to: {:?}", app_theme);
                 return self.update_config();
             }
             Message::Compress(entity_opt) => {
