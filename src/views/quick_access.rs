@@ -215,6 +215,56 @@ fn drive_icon_name(drive_type: &DriveType) -> &'static str {
     }
 }
 
+// File type badge component
+fn file_type_badge(file_name: &str) -> Element<'static, Message> {
+    let file_type = get_file_type_label(file_name);
+
+    widget::container(
+        widget::text(file_type)
+            .size(10)
+    )
+    .padding(4)
+    .style(|theme: &cosmic::Theme| {
+        cosmic::widget::container::Style {
+            icon_color: Some(Color::TRANSPARENT),
+            text_color: Some(Color::WHITE.into()),
+            background: Some(Background::Color(
+                theme.cosmic().accent_color().into()
+            )),
+            border: cosmic::iced::Border {
+                radius: 12.0.into(),
+                ..Default::default()
+            },
+            shadow: cosmic::iced::Shadow::default(),
+        }
+    })
+    .into()
+}
+
+fn get_file_type_label(filename: &str) -> &'static str {
+    if let Some(extension) = std::path::Path::new(filename).extension() {
+        match extension.to_str().unwrap_or("").to_lowercase().as_str() {
+            "pdf" => "PDF",
+            "jpg" | "jpeg" | "png" | "gif" | "bmp" | "webp" | "svg" => "Image",
+            "mp4" | "avi" | "mkv" | "mov" | "wmv" => "Video",
+            "mp3" | "wav" | "flac" | "ogg" => "Audio",
+            "zip" | "rar" | "7z" | "tar" | "gz" => "Archive",
+            "rs" => "Rust",
+            "py" => "Python",
+            "js" => "JavaScript",
+            "html" => "HTML",
+            "css" => "CSS",
+            "xlsx" | "xls" => "Excel",
+            "docx" | "doc" => "Document",
+            "pptx" | "ppt" => "Presentation",
+            "txt" => "Text",
+            _ => "File",
+        }
+    } else {
+        "File"
+    }
+}
+
 fn recent_section(
     files: Vec<RecentFile>,
     expanded: bool,
@@ -237,29 +287,15 @@ fn recent_section(
 
     if expanded {
         if !files.is_empty() {
-            // Modern list of recent files
+            // Modern card-based layout for recent files with full width
+            let mut files_column = widget::column().spacing(8).padding(16);
+            
             for file in files.iter().take(8) { // Limit to 8 items
-                let file_icon = widget::icon::from_name(get_file_icon(&file.name)).size(20);
-
-                let row = widget::button::custom(
-                    widget::row()
-                        .push(file_icon)
-                        .push(widget::horizontal_space())
-                        .push(widget::column()
-                            .push(widget::text(file.name.clone()).size(14))
-                            .push(widget::text(format_date(&file.modified)).size(11))
-                            .spacing(2)
-                        )
-                        .push(widget::horizontal_space())
-                        .align_y(Alignment::Center)
-                        .padding(12)
-                )
-                .on_press(Message::TabMessage(None, tab::Message::Open(Some(file.path.clone()))))
-                .width(Length::Fill)
-                .height(Length::Fixed(56.0));
-
-                column = column.push(row);
+                let card = recent_file_card(file);
+                files_column = files_column.push(card);
             }
+            
+            column = column.push(files_column);
         } else {
             // Show placeholder when no recent files
             column = column.push(
@@ -273,6 +309,80 @@ fn recent_section(
     }
 
     column.into()
+}
+
+fn recent_file_card(file: &RecentFile) -> Element<'static, Message> {
+    // Left section: File icon and name
+    let file_icon = widget::icon::from_name(get_file_icon(&file.name)).size(24);
+    let file_name = widget::text(file.name.clone())
+        .size(13)
+        .width(Length::Fill);
+
+    let left_section = widget::container(
+        widget::row()
+            .push(file_icon)
+            .push(widget::horizontal_space().width(Length::Fixed(12.0)))
+            .push(file_name)
+            .align_y(Alignment::Center)
+            .spacing(0)
+    )
+    .width(Length::Fill)
+    .height(Length::Fixed(60.0))
+    .align_x(Alignment::Start)
+    .align_y(Alignment::Center)
+    .padding(12);
+
+    // Center section: Date
+    let center_section = widget::container(
+        widget::text(format_date(&file.modified))
+            .size(12)
+    )
+    .width(Length::Fixed(100.0))
+    .height(Length::Fixed(60.0))
+    .align_x(Alignment::Center)
+    .align_y(Alignment::Center);
+
+    // Right section: File type badge
+    let right_section = widget::container(
+        file_type_badge(&file.name)
+    )
+    .width(Length::Fixed(80.0))
+    .height(Length::Fixed(60.0))
+    .align_x(Alignment::Center)
+    .align_y(Alignment::Center);
+
+    // Combine all three sections with proper spacing
+    let content = widget::row()
+        .push(left_section)
+        .push(center_section)
+        .push(right_section)
+        .width(Length::Fill)
+        .spacing(0);
+
+    // Create the card container with hover effect
+    widget::button::custom(
+        widget::container(content)
+            .style(|theme: &cosmic::Theme| {
+                cosmic::widget::container::Style {
+                    icon_color: Some(Color::TRANSPARENT),
+                    text_color: Some(theme.cosmic().accent_text_color().into()),
+                    background: Some(Background::Color(
+                        theme.cosmic().background.base.into()
+                    )),
+                    border: cosmic::iced::Border {
+                        radius: 8.0.into(),
+                        width: 1.0,
+                        color: theme.cosmic().background.component.border.into(),
+                    },
+                    shadow: cosmic::iced::Shadow::default(),
+                }
+            })
+            .padding(0)
+    )
+    .on_press(Message::TabMessage(None, tab::Message::Open(Some(file.path.clone()))))
+    .width(Length::Fill)
+    .height(Length::Fixed(60.0))
+    .into()
 }
 
 // format_size function removed - now using DriveInfo.format_size() method
