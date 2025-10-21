@@ -107,17 +107,34 @@ fn drives_section(
     
     if expanded {
         if !drives.is_empty() {
-            let mut grid = widget::grid()
-                .padding(16.into())
-                .row_spacing(16)
-                .column_spacing(16);
-                
-            for drive in drives {
-                let tile = drive_tile(&drive);
-                grid = grid.push(tile);
+            // Create rows of drives (3 per row) that wrap properly
+            let drives_per_row = 3;
+            let mut drives_column = widget::column().spacing(16).padding(16);
+
+            for chunk in drives.chunks(drives_per_row) {
+                let mut row = widget::row().spacing(16).width(Length::Fill);
+
+                for drive in chunk {
+                    row = row.push(drive_tile(drive));
+                }
+
+                // Fill remaining slots with spacers if needed (calculate how many we need)
+                let spacers_needed = drives_per_row - chunk.len();
+                for _ in 0..spacers_needed {
+                    row = row.push(widget::horizontal_space().width(Length::Fixed(160.0)).height(Length::Fixed(140.0)));
+                }
+
+                drives_column = drives_column.push(row);
             }
-            
-            column = column.push(grid);
+
+            // Wrap in scrollable for cases where content is still too wide
+            let drives_scrollable = widget::scrollable(
+                widget::container(drives_column)
+                    .width(Length::Shrink)
+                    .height(Length::Fixed(156.0)) // Account for tile height (140) + padding (16)
+            );
+
+            column = column.push(drives_scrollable);
         } else {
             // Show placeholder when no drives are available
             column = column.push(
