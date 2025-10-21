@@ -210,15 +210,18 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
         (theme.accent_color.b * 255.0) as u8
     );
     
-    // Since ThemeBuilder is not available in current libcosmic version,
-    // we'll use the system theme but log our custom colors for now
-    let cosmic_theme = if theme.is_light {
-        log::info!("🎨 Using light theme as base");
+    // Apply the correct light/dark theme based on detected desktop theme
+    let mut cosmic_theme = if theme.is_light {
+        log::info!("🎨 Using light theme as base (detected light theme)");
         cosmic::theme::system_light()
     } else {
-        log::info!("🎨 Using dark theme as base");
+        log::info!("🎨 Using dark theme as base (detected dark theme)");
         cosmic::theme::system_dark()
     };
+    
+    // Set the theme type to match the detected desktop theme
+    cosmic_theme.theme_type.prefer_dark(Some(!theme.is_light));
+    log::info!("🌙 Set theme to prefer_dark: {} (theme is_light: {})", !theme.is_light, theme.is_light);
     
     // Log the current theme accent color for comparison
     log::info!("🎨 Current theme accent color: {:?}", cosmic_theme.cosmic().palette.accent_blue);
@@ -246,7 +249,9 @@ pub fn apply_theme_to_cosmic(theme: &ThemeInfo) -> cosmic::theme::Theme {
     // TODO: Implement custom theme creation when ThemeBuilder is available
     // For now, we'll use the system theme but log our custom colors
     log::info!("🎨 Note: Custom color application requires ThemeBuilder implementation");
-    log::info!("🎨 Target: Purple RGB(219, 99, 37) vs Current: Cyan RGB(99, 208, 223)");
+    log::info!("🎨 Target: Red RGB(219, 51, 51) vs Current: Cyan RGB(99, 208, 223)");
+    log::info!("✅ Applied light/dark theme preference: {} (is_light: {})", 
+        if theme.is_light { "LIGHT" } else { "DARK" }, theme.is_light);
     
     log::info!("✅ Applied theme '{}' to Cosmic theme system", theme.name);
     cosmic_theme
