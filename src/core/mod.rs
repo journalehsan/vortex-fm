@@ -9,3 +9,4 @@ pub mod drive_detector;
 pub mod file_helpers;
 pub mod tab_helpers;
 pub mod operation_helpers;
+pub mod search_helpers;
