@@ -7,7 +7,7 @@ use cosmic::{
         Alignment, Length, Padding,
         widget::{button, container, row, Space, tooltip},
     },
-    widget::icon,
+    widget::{self, icon},
 };
 
 use crate::app::Message;
@@ -157,25 +157,28 @@ impl RibbonToolbar {
     pub fn view(&self) -> Element<'_, Message> {
         let toolbar_row = row![
             // New dropdown
-            self.new_dropdown(),
+            container(self.new_dropdown())
+                .align_x(Alignment::Start),
             Space::with_width(Length::Fixed(8.0)),
-            
+
             // Cut, Copy, Paste buttons
             self.action_buttons(),
             Space::with_width(Length::Fixed(8.0)),
-            
+
             // Sort dropdown
-            self.sort_dropdown(),
+            container(self.sort_dropdown())
+                .align_x(Alignment::Start),
             Space::with_width(Length::Fixed(8.0)),
-            
+
             // View dropdown
-            self.view_dropdown(),
+            container(self.view_dropdown())
+                .align_x(Alignment::Start),
             Space::with_width(Length::Fixed(8.0)),
-            
+
             // Move to trash button
             self.trash_button(),
             Space::with_width(Length::Fixed(8.0)),
-            
+
             // Terminal button
             self.terminal_button(),
         ]
@@ -193,15 +196,17 @@ impl RibbonToolbar {
             .on_press(RibbonMessage::ToggleNewDropdown.to_app_message());
 
         if self.new_dropdown_open {
-            row![
-                tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom),
-                Space::with_width(Length::Fixed(4.0)),
+            widget::column::with_children(vec![
+                tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom).into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("New File")
-                    .on_press(RibbonMessage::NewFile.to_app_message()),
-                Space::with_width(Length::Fixed(4.0)),
+                    .on_press(RibbonMessage::NewFile.to_app_message())
+                    .into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("New Folder")
-                    .on_press(RibbonMessage::NewFolder.to_app_message()),
-            ]
+                    .on_press(RibbonMessage::NewFolder.to_app_message())
+                    .into(),
+            ])
             .spacing(4)
             .into()
         } else {
@@ -214,7 +219,7 @@ impl RibbonToolbar {
         row![
             // Cut button
             tooltip(
-                button(icon::from_name("edit-cut").size(16))
+                button(icon::from_name("edit-cut-symbolic").size(16))
                     .on_press(RibbonMessage::Cut.to_app_message()),
                 "Cut (Ctrl+X)",
                 tooltip::Position::Bottom
@@ -222,7 +227,7 @@ impl RibbonToolbar {
 
             // Copy button
             tooltip(
-                button(icon::from_name("edit-copy").size(16))
+                button(icon::from_name("edit-copy-symbolic").size(16))
                     .on_press(RibbonMessage::Copy.to_app_message()),
                 "Copy (Ctrl+C)",
                 tooltip::Position::Bottom
@@ -230,7 +235,7 @@ impl RibbonToolbar {
 
             // Paste button
             tooltip(
-                button(icon::from_name("edit-paste").size(16))
+                button(icon::from_name("edit-paste-symbolic").size(16))
                     .on_press(RibbonMessage::Paste.to_app_message()),
                 "Paste (Ctrl+V)",
                 tooltip::Position::Bottom
@@ -245,21 +250,25 @@ impl RibbonToolbar {
             .on_press(RibbonMessage::ToggleSortDropdown.to_app_message());
 
         if self.sort_dropdown_open {
-            row![
-                tooltip(sort_button, "Sort Options", tooltip::Position::Bottom),
-                Space::with_width(Length::Fixed(4.0)),
+            widget::column::with_children(vec![
+                tooltip(sort_button, "Sort Options", tooltip::Position::Bottom).into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("Name")
-                    .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message()),
-                Space::with_width(Length::Fixed(4.0)),
+                    .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message())
+                    .into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("Size")
-                    .on_press(RibbonMessage::SortBy("size".to_string()).to_app_message()),
-                Space::with_width(Length::Fixed(4.0)),
+                    .on_press(RibbonMessage::SortBy("size".to_string()).to_app_message())
+                    .into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("Date")
-                    .on_press(RibbonMessage::SortBy("date".to_string()).to_app_message()),
-                Space::with_width(Length::Fixed(4.0)),
+                    .on_press(RibbonMessage::SortBy("date".to_string()).to_app_message())
+                    .into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("Type")
-                    .on_press(RibbonMessage::SortBy("type".to_string()).to_app_message()),
-            ]
+                    .on_press(RibbonMessage::SortBy("type".to_string()).to_app_message())
+                    .into(),
+            ])
             .spacing(4)
             .into()
         } else {
@@ -273,15 +282,17 @@ impl RibbonToolbar {
             .on_press(RibbonMessage::ToggleViewDropdown.to_app_message());
 
         if self.view_dropdown_open {
-            row![
-                tooltip(view_button, "View Options", tooltip::Position::Bottom),
-                Space::with_width(Length::Fixed(4.0)),
+            widget::column::with_children(vec![
+                tooltip(view_button, "View Options", tooltip::Position::Bottom).into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("List")
-                    .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message()),
-                Space::with_width(Length::Fixed(4.0)),
+                    .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message())
+                    .into(),
+                Space::with_height(Length::Fixed(4.0)).into(),
                 button("Grid")
-                    .on_press(RibbonMessage::ViewMode("grid".to_string()).to_app_message()),
-            ]
+                    .on_press(RibbonMessage::ViewMode("grid".to_string()).to_app_message())
+                    .into(),
+            ])
             .spacing(4)
             .into()
         } else {
@@ -292,7 +303,7 @@ impl RibbonToolbar {
 
     fn trash_button(&self) -> Element<'_, Message> {
         tooltip(
-            button(icon::from_name("user-trash").size(16))
+            button(icon::from_name("user-trash-symbolic").size(16))
                 .on_press(RibbonMessage::MoveToTrash.to_app_message()),
             "Move to Trash (Delete)",
             tooltip::Position::Bottom
@@ -302,7 +313,7 @@ impl RibbonToolbar {
 
     fn terminal_button(&self) -> Element<'_, Message> {
         tooltip(
-            button(icon::from_name("utilities-terminal").size(16))
+            button(icon::from_name("utilities-terminal-symbolic").size(16))
                 .on_press(RibbonMessage::OpenTerminal.to_app_message()),
             "Open Terminal",
             tooltip::Position::Bottom
