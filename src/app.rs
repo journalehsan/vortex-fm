@@ -74,6 +74,7 @@ use crate::{
     },
     views::dialogs::dialog::{Dialog, DialogKind, DialogMessage, DialogResult},
     views::dialogs::dialog_pages::{ArchiveType, DialogPage, DialogPages},
+    views::ribbon_toolbar::{RibbonMessage, RibbonToolbar},
     fl, home_dir,
     utils::key_bind::key_binds,
     utils::localize::LANGUAGE_SORTER,
@@ -433,6 +434,7 @@ pub enum Message {
     None,
     Surface(surface::Action),
     CutPaths(Vec<PathBuf>),
+    RibbonMessage(RibbonMessage),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -544,6 +546,7 @@ pub struct App {
     tab_drag_id: DragId,
     auto_scroll_speed: Option<i16>,
     file_dialog_opt: Option<Dialog<Message>>,
+    ribbon_toolbar: RibbonToolbar,
 }
 
 impl App {
@@ -2227,6 +2230,7 @@ impl Application for App {
             tab_drag_id: DragId::new(),
             auto_scroll_speed: None,
             file_dialog_opt: None,
+            ribbon_toolbar: RibbonToolbar::new(),
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             layer_sizes: HashMap::new(),
         };
@@ -2762,7 +2766,10 @@ impl Application for App {
             space_xxs, space_s, ..
         } = theme::active().cosmic().spacing;
 
-        let mut tab_column = widget::column::with_capacity(4);
+        let mut tab_column = widget::column::with_capacity(5);
+
+        // Add ribbon toolbar at the top
+        tab_column = tab_column.push(self.ribbon_toolbar.view());
 
         if self.core.is_condensed() {
             if let Some(term) = self.search_get() {
@@ -5285,6 +5292,12 @@ impl Application for App {
             }
             Message::NetworkDriveOpenTabAfterMount { location } => {
                 return self.open_tab(location, false, None);
+            }
+            Message::RibbonMessage(ribbon_msg) => {
+                // Update the ribbon toolbar state
+                self.ribbon_toolbar.update(ribbon_msg.clone());
+                // Convert ribbon message to app message and handle it
+                return self.update(ribbon_msg.to_app_message());
             }
         }
 
