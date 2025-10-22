@@ -4669,6 +4669,8 @@ impl Application for App {
                 }
                 let mut config = self.config.tab;
                 config.view = view;
+                // Sync ribbon toolbar with new view
+                self.ribbon_toolbar.set_view(view);
                 return self.update(Message::TabConfig(config));
             }
             Message::CutPaths(paths) => {
@@ -5294,10 +5296,38 @@ impl Application for App {
                 return self.open_tab(location, false, None);
             }
             Message::RibbonMessage(ribbon_msg) => {
+                // Handle specific ribbon messages that need special processing
+                let msg_to_handle = match &ribbon_msg {
+                    RibbonMessage::ToggleView => {
+                        // Get the new view from the ribbon toolbar
+                        let new_view = match self.ribbon_toolbar.get_view() {
+                            crate::tab::View::Grid => crate::tab::View::List,
+                            crate::tab::View::List => crate::tab::View::Grid,
+                        };
+                        Some(Message::TabView(None, new_view))
+                    }
+                    RibbonMessage::ToggleSort => {
+                        // Get the new sort from the ribbon toolbar
+                        let new_sort = match self.ribbon_toolbar.get_sort() {
+                            crate::tab::HeadingOptions::Name => crate::tab::HeadingOptions::Modified,
+                            crate::tab::HeadingOptions::Modified => crate::tab::HeadingOptions::Size,
+                            crate::tab::HeadingOptions::Size => crate::tab::HeadingOptions::TrashedOn,
+                            crate::tab::HeadingOptions::TrashedOn => crate::tab::HeadingOptions::Name,
+                        };
+                        Some(Message::TabMessage(None, crate::tab::Message::SetSort(new_sort, false)))
+                    }
+                    _ => None,
+                };
+
                 // Update the ribbon toolbar state
                 self.ribbon_toolbar.update(ribbon_msg.clone());
-                // Convert ribbon message to app message and handle it
-                return self.update(ribbon_msg.to_app_message());
+                
+                // If we have a special message, handle that; otherwise convert normally
+                if let Some(msg) = msg_to_handle {
+                    return self.update(msg);
+                } else {
+                    return self.update(ribbon_msg.to_app_message());
+                }
             }
         }
 

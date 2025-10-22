@@ -11,6 +11,7 @@ use cosmic::{
 };
 
 use crate::app::Message;
+use crate::tab::{HeadingOptions, View};
 
 #[derive(Clone, Debug)]
 pub enum RibbonMessage {
@@ -22,14 +23,10 @@ pub enum RibbonMessage {
     Delete,
     MoveToTrash,
     OpenTerminal,
-    SortBy(String),
-    ViewMode(String),
+    ToggleSort,  // Cycles through sort options
+    ToggleView,  // Cycles through view modes
     ShowHidden(bool),
     FoldersFirst(bool),
-    ToggleNewDropdown,
-    ToggleSortDropdown,
-    ToggleViewDropdown,
-    CloseDropdowns,
 }
 
 impl RibbonMessage {
@@ -43,22 +40,13 @@ impl RibbonMessage {
             RibbonMessage::Delete => Message::Delete(None),
             RibbonMessage::MoveToTrash => Message::Delete(None),
             RibbonMessage::OpenTerminal => Message::OpenTerminal(None),
-            RibbonMessage::SortBy(sort_type) => {
-                // Map string to actual sort action
-                match sort_type.as_str() {
-                    "name" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Name, false)),
-                    "size" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Size, false)),
-                    "modified" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Modified, false)),
-                    "trashed" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::TrashedOn, false)),
-                    _ => Message::None,
-                }
+            RibbonMessage::ToggleSort => {
+                // This will be handled in the app's update_ribbon
+                Message::None
             }
-            RibbonMessage::ViewMode(view_mode) => {
-                match view_mode.as_str() {
-                    "list" => Message::TabView(None, crate::tab::View::List),
-                    "grid" => Message::TabView(None, crate::tab::View::Grid),
-                    _ => Message::None,
-                }
+            RibbonMessage::ToggleView => {
+                // This will be handled in the app's update_ribbon
+                Message::None
             }
             RibbonMessage::ShowHidden(show) => {
                 if *show {
@@ -74,22 +62,15 @@ impl RibbonMessage {
                     Message::None
                 }
             }
-            RibbonMessage::ToggleNewDropdown => Message::None,
-            RibbonMessage::ToggleSortDropdown => Message::None,
-            RibbonMessage::ToggleViewDropdown => Message::None,
-            RibbonMessage::CloseDropdowns => Message::None,
         }
     }
 }
 
 pub struct RibbonToolbar {
-    sort_options: Vec<String>,
-    view_options: Vec<String>,
+    current_view: View,
+    current_sort: HeadingOptions,
     show_hidden: bool,
     folders_first: bool,
-    new_dropdown_open: bool,
-    sort_dropdown_open: bool,
-    view_dropdown_open: bool,
 }
 
 impl Default for RibbonToolbar {
@@ -101,22 +82,27 @@ impl Default for RibbonToolbar {
 impl RibbonToolbar {
     pub fn new() -> Self {
         Self {
-            sort_options: vec![
-                "name".to_string(),
-                "size".to_string(),
-                "date".to_string(),
-                "type".to_string(),
-            ],
-            view_options: vec![
-                "list".to_string(),
-                "grid".to_string(),
-            ],
+            current_view: View::Grid,
+            current_sort: HeadingOptions::Name,
             show_hidden: false,
             folders_first: false,
-            new_dropdown_open: false,
-            sort_dropdown_open: false,
-            view_dropdown_open: false,
         }
+    }
+
+    pub fn set_view(&mut self, view: View) {
+        self.current_view = view;
+    }
+
+    pub fn set_sort(&mut self, sort: HeadingOptions) {
+        self.current_sort = sort;
+    }
+
+    pub fn get_view(&self) -> View {
+        self.current_view
+    }
+
+    pub fn get_sort(&self) -> HeadingOptions {
+        self.current_sort
     }
 
     pub fn update(&mut self, message: RibbonMessage) {
@@ -127,28 +113,21 @@ impl RibbonToolbar {
             RibbonMessage::FoldersFirst(folders_first) => {
                 self.folders_first = folders_first;
             }
-            RibbonMessage::ToggleNewDropdown => {
-                self.new_dropdown_open = !self.new_dropdown_open;
-                // Close other dropdowns
-                self.sort_dropdown_open = false;
-                self.view_dropdown_open = false;
+            RibbonMessage::ToggleView => {
+                // Cycle through view modes
+                self.current_view = match self.current_view {
+                    View::Grid => View::List,
+                    View::List => View::Grid,
+                };
             }
-            RibbonMessage::ToggleSortDropdown => {
-                self.sort_dropdown_open = !self.sort_dropdown_open;
-                // Close other dropdowns
-                self.new_dropdown_open = false;
-                self.view_dropdown_open = false;
-            }
-            RibbonMessage::ToggleViewDropdown => {
-                self.view_dropdown_open = !self.view_dropdown_open;
-                // Close other dropdowns
-                self.new_dropdown_open = false;
-                self.sort_dropdown_open = false;
-            }
-            RibbonMessage::CloseDropdowns => {
-                self.new_dropdown_open = false;
-                self.sort_dropdown_open = false;
-                self.view_dropdown_open = false;
+            RibbonMessage::ToggleSort => {
+                // Cycle through sort options
+                self.current_sort = match self.current_sort {
+                    HeadingOptions::Name => HeadingOptions::Modified,
+                    HeadingOptions::Modified => HeadingOptions::Size,
+                    HeadingOptions::Size => HeadingOptions::TrashedOn,
+                    HeadingOptions::TrashedOn => HeadingOptions::Name,
+                };
             }
             _ => {}
         }
@@ -156,34 +135,35 @@ impl RibbonToolbar {
 
     pub fn view(&self) -> Element<'_, Message> {
         let toolbar_row = row![
-            // New dropdown
-            container(self.new_dropdown())
-                .align_x(Alignment::Start),
-            Space::with_width(Length::Fixed(8.0)),
+            // New File button
+            self.new_file_button(),
+            Space::with_width(Length::Fixed(4.0)),
+
+            // New Folder button
+            self.new_folder_button(),
+            Space::with_width(Length::Fixed(12.0)),
 
             // Cut, Copy, Paste buttons
             self.action_buttons(),
-            Space::with_width(Length::Fixed(8.0)),
+            Space::with_width(Length::Fixed(12.0)),
 
-            // Sort dropdown
-            container(self.sort_dropdown())
-                .align_x(Alignment::Start),
-            Space::with_width(Length::Fixed(8.0)),
+            // View toggle (Grid/List)
+            self.view_toggle(),
+            Space::with_width(Length::Fixed(4.0)),
 
-            // View dropdown
-            container(self.view_dropdown())
-                .align_x(Alignment::Start),
-            Space::with_width(Length::Fixed(8.0)),
+            // Sort toggle
+            self.sort_toggle(),
+            Space::with_width(Length::Fixed(12.0)),
 
             // Move to trash button
             self.trash_button(),
-            Space::with_width(Length::Fixed(8.0)),
+            Space::with_width(Length::Fixed(4.0)),
 
             // Terminal button
             self.terminal_button(),
         ]
         .align_y(Alignment::Center)
-        .spacing(4)
+        .spacing(0)
         .padding(Padding::from([8, 12, 8, 12]));
 
         container(toolbar_row)
@@ -191,52 +171,103 @@ impl RibbonToolbar {
             .into()
     }
 
-    fn new_dropdown(&self) -> Element<'_, Message> {
-        let new_button = button("New")
-            .on_press(RibbonMessage::ToggleNewDropdown.to_app_message());
+    fn new_file_button(&self) -> Element<'_, Message> {
+        tooltip(
+            button(
+                container(icon::from_name("document-new-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::NewFile.to_app_message()),
+            "New File",
+            tooltip::Position::Bottom
+        )
+        .into()
+    }
 
-        if self.new_dropdown_open {
-            widget::column::with_children(vec![
-                tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom).into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("New File")
-                    .on_press(RibbonMessage::NewFile.to_app_message())
-                    .into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("New Folder")
-                    .on_press(RibbonMessage::NewFolder.to_app_message())
-                    .into(),
-            ])
-            .spacing(4)
-            .into()
-        } else {
-            tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom)
-                .into()
-        }
+    fn new_folder_button(&self) -> Element<'_, Message> {
+        tooltip(
+            button(
+                container(icon::from_name("folder-new-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::NewFolder.to_app_message()),
+            "New Folder",
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
     fn action_buttons(&self) -> Element<'_, Message> {
         row![
             // Cut button
             tooltip(
-                button(icon::from_name("edit-cut-symbolic").size(16))
-                    .on_press(RibbonMessage::Cut.to_app_message()),
+                button(
+                    container(icon::from_name("edit-cut-symbolic").size(16))
+                        .width(Length::Fixed(28.0))
+                        .height(Length::Fixed(28.0))
+                        .align_x(Alignment::Center)
+                        .align_y(Alignment::Center)
+                        .style(|_theme| {
+                            let mut style = widget::container::Style::default();
+                            style.background = None; // Transparent background
+                            style
+                        })
+                )
+                .on_press(RibbonMessage::Cut.to_app_message()),
                 "Cut (Ctrl+X)",
                 tooltip::Position::Bottom
             ),
 
             // Copy button
             tooltip(
-                button(icon::from_name("edit-copy-symbolic").size(16))
-                    .on_press(RibbonMessage::Copy.to_app_message()),
+                button(
+                    container(icon::from_name("edit-copy-symbolic").size(16))
+                        .width(Length::Fixed(28.0))
+                        .height(Length::Fixed(28.0))
+                        .align_x(Alignment::Center)
+                        .align_y(Alignment::Center)
+                        .style(|_theme| {
+                            let mut style = widget::container::Style::default();
+                            style.background = None; // Transparent background
+                            style
+                        })
+                )
+                .on_press(RibbonMessage::Copy.to_app_message()),
                 "Copy (Ctrl+C)",
                 tooltip::Position::Bottom
             ),
 
             // Paste button
             tooltip(
-                button(icon::from_name("edit-paste-symbolic").size(16))
-                    .on_press(RibbonMessage::Paste.to_app_message()),
+                button(
+                    container(icon::from_name("edit-paste-symbolic").size(16))
+                        .width(Length::Fixed(28.0))
+                        .height(Length::Fixed(28.0))
+                        .align_x(Alignment::Center)
+                        .align_y(Alignment::Center)
+                        .style(|_theme| {
+                            let mut style = widget::container::Style::default();
+                            style.background = None; // Transparent background
+                            style
+                        })
+                )
+                .on_press(RibbonMessage::Paste.to_app_message()),
                 "Paste (Ctrl+V)",
                 tooltip::Position::Bottom
             ),
@@ -245,66 +276,75 @@ impl RibbonToolbar {
         .into()
     }
 
-    fn sort_dropdown(&self) -> Element<'_, Message> {
-        let sort_button = button("Sort")
-            .on_press(RibbonMessage::ToggleSortDropdown.to_app_message());
+    fn view_toggle(&self) -> Element<'_, Message> {
+        let (icon_name, label) = match self.current_view {
+            View::Grid => ("view-grid-symbolic", "Grid View (click to toggle to List)"),
+            View::List => ("view-list-symbolic", "List View (click to toggle to Grid)"),
+        };
 
-        if self.sort_dropdown_open {
-            widget::column::with_children(vec![
-                tooltip(sort_button, "Sort Options", tooltip::Position::Bottom).into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("Name")
-                    .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message())
-                    .into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("Size")
-                    .on_press(RibbonMessage::SortBy("size".to_string()).to_app_message())
-                    .into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("Date")
-                    .on_press(RibbonMessage::SortBy("date".to_string()).to_app_message())
-                    .into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("Type")
-                    .on_press(RibbonMessage::SortBy("type".to_string()).to_app_message())
-                    .into(),
-            ])
-            .spacing(4)
-            .into()
-        } else {
-            tooltip(sort_button, "Sort Options", tooltip::Position::Bottom)
-                .into()
-        }
+        tooltip(
+            button(
+                container(icon::from_name(icon_name).size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::ToggleView.to_app_message()),
+            label,
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
-    fn view_dropdown(&self) -> Element<'_, Message> {
-        let view_button = button("View")
-            .on_press(RibbonMessage::ToggleViewDropdown.to_app_message());
+    fn sort_toggle(&self) -> Element<'_, Message> {
+        let sort_label = match self.current_sort {
+            HeadingOptions::Name => "Sort by Name",
+            HeadingOptions::Modified => "Sort by Date",
+            HeadingOptions::Size => "Sort by Size",
+            HeadingOptions::TrashedOn => "Sort by Trashed",
+        };
 
-        if self.view_dropdown_open {
-            widget::column::with_children(vec![
-                tooltip(view_button, "View Options", tooltip::Position::Bottom).into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("List")
-                    .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message())
-                    .into(),
-                Space::with_height(Length::Fixed(4.0)).into(),
-                button("Grid")
-                    .on_press(RibbonMessage::ViewMode("grid".to_string()).to_app_message())
-                    .into(),
-            ])
-            .spacing(4)
-            .into()
-        } else {
-            tooltip(view_button, "View Options", tooltip::Position::Bottom)
-                .into()
-        }
+        tooltip(
+            button(
+                container(icon::from_name("view-sort-ascending-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::ToggleSort.to_app_message()),
+            widget::text(format!("{} (click to cycle)", sort_label)),
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
     fn trash_button(&self) -> Element<'_, Message> {
         tooltip(
-            button(icon::from_name("user-trash-symbolic").size(16))
-                .on_press(RibbonMessage::MoveToTrash.to_app_message()),
+            button(
+                container(icon::from_name("user-trash-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::MoveToTrash.to_app_message()),
             "Move to Trash (Delete)",
             tooltip::Position::Bottom
         )
@@ -313,12 +353,23 @@ impl RibbonToolbar {
 
     fn terminal_button(&self) -> Element<'_, Message> {
         tooltip(
-            button(icon::from_name("utilities-terminal-symbolic").size(16))
-                .on_press(RibbonMessage::OpenTerminal.to_app_message()),
+            button(
+                container(icon::from_name("utilities-terminal-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press(RibbonMessage::OpenTerminal.to_app_message()),
             "Open Terminal",
             tooltip::Position::Bottom
         )
         .into()
     }
-   }
+}
 

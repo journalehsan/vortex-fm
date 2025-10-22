@@ -80,23 +80,15 @@ pub fn handle_ribbon_message(message: RibbonMessage) -> Message {
             // Handle open terminal
             Message::OpenTerminal(None)
         }
-        RibbonMessage::SortBy(sort_type) => {
-            // Handle sort by type
-            match sort_type.as_str() {
-                "name" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Name, false)),
-                "size" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Size, false)),
-                "modified" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::Modified, false)),
-                "trashed" => Message::TabMessage(None, crate::tab::Message::SetSort(crate::tab::HeadingOptions::TrashedOn, false)),
-                _ => Message::None,
-            }
+        RibbonMessage::ToggleView => {
+            // Handle view toggle (cycles between Grid and List)
+            // This is handled in the app.rs RibbonMessage handler
+            Message::None
         }
-        RibbonMessage::ViewMode(view_mode) => {
-            // Handle view mode change
-            match view_mode.as_str() {
-                "list" => Message::TabView(None, crate::tab::View::List),
-                "grid" => Message::TabView(None, crate::tab::View::Grid),
-                _ => Message::None,
-            }
+        RibbonMessage::ToggleSort => {
+            // Handle sort toggle (cycles through sort options)
+            // This is handled in the app.rs RibbonMessage handler
+            Message::None
         }
         RibbonMessage::ShowHidden(show) => {
             if show {
@@ -112,21 +104,5 @@ pub fn handle_ribbon_message(message: RibbonMessage) -> Message {
                 Message::None
             }
         }
-        RibbonMessage::ToggleNewDropdown => {
-            println!("Toggle New Dropdown triggered!");
-            Message::None
-        },
-        RibbonMessage::ToggleSortDropdown => {
-            println!("Toggle Sort Dropdown triggered!");
-            Message::None
-        },
-        RibbonMessage::ToggleViewDropdown => {
-            println!("Toggle View Dropdown triggered!");
-            Message::None
-        },
-        RibbonMessage::CloseDropdowns => {
-            println!("Close Dropdowns triggered!");
-            Message::None
-        },
     }
 }
