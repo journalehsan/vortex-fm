@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.title }} - System-Wide Theme Sync</title>
+    <meta name="description" content="{{ config.description }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Omarchy Theme Colors - System Wide Sync
+                        'omarchy-catppuccin': {
+                            window: '#1E1E2E',
+                            view: '#24273A',
+                            accent: '#3E9BFF',
+                            foreground: '#E8E4E0'
+                        },
+                        'omarchy-dracula': {
+                            window: '#0B0B0F',
+                            view: '#282A36',
+                            accent: '#E49BF8',
+                            foreground: '#F2F2F2'
+                        },
+                        'omarchy-everforest': {
+                            window: '#323D43',
+                            view: '#3F4944',
+                            accent: '#66FF99',
+                            foreground: '#D8D8D0'
+                        },
+                        'omarchy-gruvbox': {
+                            window: '#262626',
+                            view: '#32302F',
+                            accent: '#D79921',
+                            foreground: '#D5C4A1'
+                        },
+                        'omarchy-kanagawa': {
+                            window: '#16161D',
+                            view: '#1F1F28',
+                            accent: '#3E9BFF',
+                            foreground: '#D8D8D0'
+                        },
+                        'omarchy-matte-black': {
+                            window: '#0D0D0D',
+                            view: '#1A1A1A',
+                            accent: '#3E9BFF',
+                            foreground: '#E6E6E6'
+                        },
+                        'omarchy-nord': {
+                            window: '#242933',
+                            view: '#2E3440',
+                            accent: '#3E9BFF',
+                            foreground: '#D8D8D0'
+                        },
+                        'omarchy-osaka-jade': {
+                            window: '#0D1A14',
+                            view: '#14261F',
+                            accent: '#33CC66',
+                            foreground: '#D9E6D9'
+                        },
+                        'omarchy-ristretto': {
+                            window: '#1A1414',
+                            view: '#261F1F',
+                            accent: '#CC6666',
+                            foreground: '#D9CCCC'
+                        },
+                        'omarchy-tokyo-night': {
+                            window: '#14141F',
+                            view: '#1F1F2E',
+                            accent: '#3E9BFF',
+                            foreground: '#D8D8D0'
+                        },
+                        'omarchy-catppuccin-latte': {
+                            window: '#F2F2F2',
+                            view: '#FFFFFF',
+                            accent: '#3E9BFF',
+                            foreground: '#333333'
+                        },
+                        'omarchy-rose-pine': {
+                            window: '#F2F2F2',
+                            view: '#FFFFFF',
+                            accent: '#996699',
+                            foreground: '#333333'
+                        }
+                    },
+                    animation: {
+                        'theme-switch': 'themeSwitch 0.5s ease-in-out',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'sync-wave': 'syncWave 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        themeSwitch: {
+                            '0%': { opacity: '0.8', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        syncWave: {
+                            '0%, 100%': { 
+                                transform: 'scale(1)',
+                                opacity: '1'
+                            },
+                            '50%': { 
+                                transform: 'scale(1.1)',
+                                opacity: '0.8'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .theme-preview {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .theme-preview:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark .glass-effect {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        .sync-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .app-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .app-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .theme-sync-line {
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass-effect border-b border-gray-200 dark:border-gray-800">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center sync-glow">
+                        <i class="fas fa-sync-alt text-white text-lg"></i>
+                    </div>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {{ config.title }}
+                    </span>
+                </div>
+                
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
+                    <a href="#sync" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Theme Sync</a>
+                    <a href="#themes" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Themes</a>
+                    <a href="#installation" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Installation</a>
+                    <a href="/blog" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Blog</a>
+                    <a href="/wiki" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Wiki</a>
+                    <a href="/dev-journey" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Dev Journey</a>
+                </nav>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="themeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-moon text-gray-700 dark:text-yellow-400"></i>
+                    </button>
+                    
+                    <a href="#installation" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="flex justify-center mb-6">
+                <div class="animate-sync-wave bg-white bg-opacity-20 rounded-full p-4">
+                    <i class="fas fa-sync-alt text-4xl"></i>
+                </div>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6">
+                System-Wide Theme Sync
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
+                Change a theme in Vortex FM and watch as <span class="font-semibold">ALL Cosmic applications</span> instantly synchronize with the beautiful Omarchy theme system
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="#installation" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-download mr-2"></i>
+                    Install Vortex FM
+                </a>
+                <a href="#sync" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-600 transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    See Sync in Action
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white dark:bg-gray-900">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Modern File Management
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Built with Rust and libcosmic for optimal performance and seamless integration
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for feature in config.extra.features %}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 hover:shadow-xl transition-shadow">
+                    <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-{% if loop.index == 1 %}sync-alt{% elif loop.index == 2 %}desktop{% elif loop.index == 3 %}bookmark{% elif loop.index == 4 %}bolt{% elif loop.index == 5 %}palette{% else %}star{% endif %} text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ feature }}</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        {% if loop.index == 1 %}
+                        Synchronize themes across all Cosmic applications instantly
+                        {% elif loop.index == 2 %}
+                        Familiar Windows Explorer-like interface for easy navigation
+                        {% elif loop.index == 3 %}
+                        Quick access to your most used directories and files
+                        {% elif loop.index == 4 %}
+                        Built with Rust for blazing fast performance and reliability
+                        {% elif loop.index == 5 %}
+                        Seamless integration with the Cosmic desktop environment
+                        {% else %}
+                        Support for multiple beautiful themes and customization options
+                        {% endif %}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- System-Wide Sync Demo -->
+    <section id="sync" class="py-20 bg-gray-50 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    One Theme, Everywhere
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Experience true system-wide theme synchronization. Change once in Vortex FM, and all Cosmic apps follow instantly.
+                </p>
+            </div>
+
+            <!-- Sync Visualization -->
+            <div class="max-w-6xl mx-auto">
+                <!-- Theme Selector -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-2xl mb-12">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            Omarchy Theme Controller
+                        </h3>
+                        <div class="flex items-center space-x-2 text-green-600">
+                            <i class="fas fa-sync-alt animate-pulse"></i>
+                            <span class="font-semibold">System Sync Active</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700 dark:text-gray-300 font-medium">Active Theme:</span>
+                            <div class="relative">
+                                <select id="themeSelector" class="appearance-none bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 pr-8 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    {% for theme in config.extra.themes %}
+                                    <option value="{{ theme | lower | replace(from=" ", to="-") }}" {% if loop.first %}selected{% endif %}>{{ theme }}{% if loop.first %} (Default){% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Vortex FM -->
+                    <div class="app-card bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border-2 border-blue-500">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="app-icon w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-folder text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 dark:text-white">Vortex FM</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">File Manager</p>
+                            </div>
+                        </div>
+                        <div id="vortexPreview" class="theme-preview-container h-32 rounded-lg overflow-hidden relative">
+                            <!-- Preview will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Cosmic Text Editor -->
+                    <div class="app-card bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="app-icon w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-file-alt text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 dark:text-white">Cosmic Edit</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Text Editor</p>
+                            </div>
+                        </div>
+                        <div id="editorPreview" class="theme-preview-container h-32 rounded-lg overflow-hidden relative">
+                            <!-- Preview will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Cosmic Terminal -->
+                    <div class="app-card bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="app-icon w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-terminal text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 dark:text-white">Cosmic Term</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Terminal</p>
+                            </div>
+                        </div>
+                        <div id="terminalPreview" class="theme-preview-container h-32 rounded-lg overflow-hidden relative">
+                            <!-- Preview will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Cosmic Settings -->
+                    <div class="app-card bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="app-icon w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-cog text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 dark:text-white">Cosmic Settings</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">System Settings</p>
+                            </div>
+                        </div>
+                        <div id="settingsPreview" class="theme-preview-container h-32 rounded-lg overflow-hidden relative">
+                            <!-- Preview will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sync Animation Line -->
+                <div class="relative mb-12">
+                    <div class="theme-sync-line h-1 rounded-full mb-4"></div>
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                        <span>Vortex FM</span>
+                        <span class="flex items-center">
+                            <i class="fas fa-sync-alt animate-spin mr-2"></i>
+                            Real-time Sync
+                        </span>
+                        <span>All Cosmic Apps</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="py-20 bg-white dark:bg-gray-900">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    See It In Action
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Beautiful screenshots showcasing Vortex FM's interface and capabilities
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+                    <img src="/docs/assets/img/vertex_file_manager.png" alt="Vortex File Manager Interface" class="w-full rounded-lg shadow-lg mb-4">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Main Interface</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Clean, modern interface with sidebar navigation and grid view</p>
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+                    <img src="/docs/assets/img/quick_access.png" alt="Quick Access Sidebar" class="w-full rounded-lg shadow-lg mb-4">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Quick Access</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Easy navigation to your most used directories and files</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Theme Showcase -->
+    <section id="themes" class="py-20 bg-gray-50 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Omarchy Theme Collection
+                </h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    Beautiful, carefully crafted themes that synchronize perfectly across your entire Cosmic desktop environment
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Theme Cards -->
+                <div class="theme-card group cursor-pointer" data-theme="tokyo-night">
+                    <div class="bg-gradient-to-br from-omarchy-tokyo-night-window to-omarchy-tokyo-night-view p-6 rounded-t-2xl relative overflow-hidden">
+                        <div class="absolute top-4 right-4">
+                            <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold">Default</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-omarchy-tokyo-night-foreground font-semibold">Tokyo Night</span>
+                            <i class="fas fa-sync-alt text-omarchy-tokyo-night-foreground opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                        <div class="flex space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-omarchy-tokyo-night-window border border-omarchy-tokyo-night-foreground opacity-30"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-tokyo-night-view border border-omarchy-tokyo-night-foreground opacity-50"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-tokyo-night-accent"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-tokyo-night-foreground opacity-80"></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-b-2xl">
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Deep blue theme with perfect contrast for coding sessions</p>
+                    </div>
+                </div>
+
+                <div class="theme-card group cursor-pointer" data-theme="catppuccin">
+                    <div class="bg-gradient-to-br from-omarchy-catppuccin-window to-omarchy-catppuccin-view p-6 rounded-t-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-omarchy-catppuccin-foreground font-semibold">Catppuccin</span>
+                            <i class="fas fa-sync-alt text-omarchy-catppuccin-foreground opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                        <div class="flex space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-omarchy-catppuccin-window border border-omarchy-catppuccin-foreground opacity-30"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-catppuccin-view border border-omarchy-catppuccin-foreground opacity-50"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-catppuccin-accent"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-catppuccin-foreground opacity-80"></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-b-2xl">
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Warm mid-tone theme for comfortable coding</p>
+                    </div>
+                </div>
+
+                <div class="theme-card group cursor-pointer" data-theme="dracula">
+                    <div class="bg-gradient-to-br from-omarchy-dracula-window to-omarchy-dracula-view p-6 rounded-t-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-omarchy-dracula-foreground font-semibold">Dracula</span>
+                            <i class="fas fa-sync-alt text-omarchy-dracula-foreground opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
+                        <div class="flex space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-omarchy-dracula-window border border-omarchy-dracula-foreground opacity-30"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-dracula-view border border-omarchy-dracula-foreground opacity-50"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-dracula-accent"></div>
+                            <div class="w-6 h-6 rounded-full bg-omarchy-dracula-foreground opacity-80"></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-b-2xl">
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Dark theme with vibrant purple accents</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="py-20 bg-white dark:bg-gray-900">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+                Get System-Wide Theme Sync
+            </h2>
+            
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 shadow-xl max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mb-8">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Install Vortex FM</h3>
+                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg font-mono text-sm">
+                            <code class="text-gray-800 dark:text-gray-200">
+                                git clone {{ config.extra.github }}.git<br>
+                                cd vortex-fm<br>
+                                cargo build --release
+                            </code>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Enable System Sync</h3>
+                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg font-mono text-sm">
+                            <code class="text-gray-800 dark:text-gray-200">
+                                // Automatic system-wide sync<br>
+                                vortex --enable-system-themes<br><br>
+                                // All Cosmic apps will follow
+                            </code>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+                    <div class="flex items-center justify-center space-x-3 mb-3">
+                        <i class="fas fa-sync-alt text-blue-600 dark:text-blue-400 text-xl"></i>
+                        <h4 class="text-lg font-semibold text-blue-800 dark:text-blue-200">System-Wide Sync Active</h4>
+                    </div>
+                    <p class="text-blue-700 dark:text-blue-300">
+                        Once installed, Vortex FM automatically synchronizes themes with all Cosmic applications through the Omarchy theme system.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center sync-glow">
+                            <i class="fas fa-sync-alt text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold">{{ config.title }}</span>
+                    </div>
+                    <p class="text-gray-400">
+                        System-wide theme synchronization for the Cosmic desktop environment.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Omarchy System</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#sync" class="hover:text-white transition-colors">Theme Sync</a></li>
+                        <li><a href="#themes" class="hover:text-white transition-colors">Cosmic Integration</a></li>
+                        <li><a href="/wiki" class="hover:text-white transition-colors">API Documentation</a></li>
+                        <li><a href="{{ config.extra.github }}" class="hover:text-white transition-colors">Contribute Themes</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Applications</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#features" class="hover:text-white transition-colors">Vortex File Manager</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Cosmic Text Editor</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Cosmic Terminal</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Cosmic Settings</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Community</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{{ config.extra.github }}" class="hover:text-white transition-colors">GitHub</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Discord</a></li>
+                        <li><a href="#themes" class="hover:text-white transition-colors">Theme Showcase</a></li>
+                        <li><a href="{{ config.extra.github }}" class="hover:text-white transition-colors">Get Involved</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 {{ config.title }} with Omarchy Theme System. Licensed under GPLv3.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/js/theme-sync.js"></script>
+</body>
+</html>

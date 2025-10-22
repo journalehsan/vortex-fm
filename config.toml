@@ -1,0 +1,50 @@
+# Zola configuration for Vortex FM website
+title = "Vortex File Manager"
+description = "A modern, Windows Explorer-like file manager with system-wide theme synchronization for Linux systems"
+base_url = "https://journalehsan.github.io/vortex-fm"
+
+[extra]
+# Theme system configuration
+theme_system = "Omarchy"
+sync_enabled = true
+cosmic_integration = true
+
+# Social links
+github = "https://github.com/journalehsan/vortex-fm"
+author = "Ehsan Tork"
+author_url = "https://journalehsan.github.io"
+
+# Features
+features = [
+    "System-wide theme synchronization",
+    "Windows Explorer-like interface", 
+    "Quick Access sidebar",
+    "Modern Rust-based architecture",
+    "Cosmic desktop integration",
+    "Multiple theme support"
+]
+
+# Available themes
+themes = [
+    "Tokyo Night",
+    "Catppuccin", 
+    "Dracula",
+    "Everforest",
+    "Gruvbox",
+    "Kanagawa",
+    "Matte Black",
+    "Nord",
+    "Osaka Jade",
+    "Ristretto",
+    "Catppuccin Latte",
+    "Rose Pine"
+]
+
+[markdown]
+# Enable syntax highlighting
+highlight_code = true
+highlight_theme = "github"
+
+[build]
+# Build settings
+search_index = true
