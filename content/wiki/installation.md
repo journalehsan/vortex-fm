@@ -181,7 +181,7 @@ vortex-fm --enable-system-themes
 
 If you encounter issues:
 
-1. Check the [Troubleshooting Guide](@/wiki/troubleshooting.md)
+1. Check the [Troubleshooting Guide](#troubleshooting)
 2. Search existing [GitHub Issues](https://github.com/journalehsan/vortex-fm/issues)
 3. Create a new issue with detailed information about your system and the problem
 
@@ -189,6 +189,6 @@ If you encounter issues:
 
 Once installed, check out:
 
-- [First Steps](@/wiki/first-steps.md) - Getting started with Vortex FM
-- [Theme System](@/wiki/theme-system.md) - Understanding the Omarchy theme system
-- [Basic Usage](@/wiki/basic-usage.md) - Learning the interface
+- **First Steps** - Getting started with Vortex FM
+- **Theme System** - Understanding the Omarchy theme system
+- **Basic Usage** - Learning the interface

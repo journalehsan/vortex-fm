@@ -1,3 +1,9 @@
++++
+title = "README-OLD"
+date = 2024-01-15
+description = "Development journey and progress tracking"
++++
+
 # Vortex File Manager 🚀
 
 A modern, Windows Explorer-like file manager built with GTK4 and Rust for Linux systems.

@@ -32,10 +32,10 @@ Vortex File Manager started as a fork of [cosmic-files](https://github.com/pop-o
 
 Our development journey has been documented in detail:
 
-- [Progress Tracking](@/dev-journey/progress.md) - Ongoing development progress
-- [Testing Strategy](@/dev-journey/testing.md) - How we ensure quality
-- [Cosmic Palette Evolution](@/dev-journey/cosmic-palette.md) - The story of our color system
-- [Legacy Documentation](@/dev-journey/legacy.md) - Historical context
+- [Progress Tracking](progress.md) - Ongoing development progress
+- [Testing Strategy](testing.md) - How we ensure quality
+- [Cosmic Palette Evolution](cosmic-palette.md) - The story of our color system
+- [Legacy Documentation](legacy.md) - Historical context
 
 ## Challenges and Solutions
 
@@ -79,7 +79,7 @@ We welcome contributions to our development journey! Whether you're interested i
 - **Testing** - Help us find and fix bugs
 - **Feedback** - Share your ideas and suggestions
 
-Check out our [Contributing Guide](@/wiki/contributing.md) to get started!
+Check out our **Contributing Guide** to get started!
 
 ## The Story Continues
 

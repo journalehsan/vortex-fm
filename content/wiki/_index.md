@@ -9,26 +9,26 @@ Welcome to the Vortex File Manager wiki! This is your comprehensive guide to und
 
 ## Getting Started
 
-- [Installation Guide](@/wiki/installation.md)
-- [First Steps](@/wiki/first-steps.md)
-- [Basic Usage](@/wiki/basic-usage.md)
+- [Installation Guide](installation.md)
+- **First Steps**
+- **Basic Usage**
 
 ## Features
 
-- [Theme System](@/wiki/theme-system.md)
-- [File Operations](@/wiki/file-operations.md)
-- [Navigation](@/wiki/navigation.md)
-- [Search](@/wiki/search.md)
+- **Theme System**
+- **File Operations**
+- **Navigation**
+- **Search**
 
 ## Development
 
-- [Building from Source](@/wiki/building.md)
-- [Contributing](@/wiki/contributing.md)
-- [Architecture](@/wiki/architecture.md)
-- [API Reference](@/wiki/api-reference.md)
+- **Building from Source**
+- **Contributing**
+- **Architecture**
+- **API Reference**
 
 ## Troubleshooting
 
-- [Common Issues](@/wiki/troubleshooting.md)
-- [Performance Tips](@/wiki/performance.md)
-- [Debug Mode](@/wiki/debug.md)
+- **Common Issues**
+- **Performance Tips**
+- **Debug Mode**

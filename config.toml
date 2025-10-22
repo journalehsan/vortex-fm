@@ -43,7 +43,6 @@ themes = [
 [markdown]
 # Enable syntax highlighting
 highlight_code = true
-highlight_theme = "github"
 
 [build]
 # Build settings
