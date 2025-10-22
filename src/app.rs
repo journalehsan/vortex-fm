@@ -435,6 +435,10 @@ pub enum Message {
     Surface(surface::Action),
     CutPaths(Vec<PathBuf>),
     RibbonMessage(RibbonMessage),
+    TerminalToggle,
+    TerminalSync,
+    TerminalPositionToggle,
+    TerminalCommand(String),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -547,6 +551,8 @@ pub struct App {
     auto_scroll_speed: Option<i16>,
     file_dialog_opt: Option<Dialog<Message>>,
     ribbon_toolbar: RibbonToolbar,
+    terminal_panel: Option<crate::widgets::terminal_panel::TerminalPanel>,
+    terminal_visible: bool,
 }
 
 impl App {
@@ -2231,6 +2237,8 @@ impl Application for App {
             auto_scroll_speed: None,
             file_dialog_opt: None,
             ribbon_toolbar: RibbonToolbar::new(),
+            terminal_panel: None,
+            terminal_visible: false,
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             layer_sizes: HashMap::new(),
         };
@@ -5361,6 +5369,31 @@ impl Application for App {
                     log::debug!("📤 Emitting converted message");
                     return self.update(ribbon_msg.to_app_message());
                 }
+            }
+            Message::TerminalToggle => {
+                self.terminal_visible = !self.terminal_visible;
+                if self.terminal_visible && self.terminal_panel.is_none() {
+                    self.terminal_panel = Some(crate::widgets::terminal_panel::TerminalPanel::new());
+                }
+            }
+            Message::TerminalSync => {
+                if let Some(terminal) = &mut self.terminal_panel {
+                    let entity = self.tab_model.active();
+                    if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                        if let Some(path) = tab.location.path_opt() {
+                            let _ = terminal.sync_directory(&path.to_path_buf());
+                        }
+                    }
+                }
+            }
+            Message::TerminalPositionToggle => {
+                if let Some(terminal) = &mut self.terminal_panel {
+                    terminal.toggle_position();
+                }
+            }
+            Message::TerminalCommand(_command) => {
+                // Handle terminal command execution
+                // This would be implemented when the terminal panel is fully integrated
             }
         }
 
