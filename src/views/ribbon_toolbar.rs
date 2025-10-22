@@ -5,7 +5,7 @@ use cosmic::{
     Element,
     iced::{
         Alignment, Length, Padding,
-        widget::{button, container, row, Space},
+        widget::{button, container, row, Space, tooltip},
     },
     widget::icon,
 };
@@ -157,22 +157,35 @@ impl RibbonToolbar {
 
         // For now, we'll use a simple button. In a full implementation,
         // this would be a dropdown with New File and New Folder options
-        new_button.into()
+        tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom)
+            .into()
     }
 
     fn action_buttons(&self) -> Element<'_, Message> {
         row![
             // Cut button
-            button(icon::from_name("edit-cut").size(16))
-                .on_press(RibbonMessage::Cut.to_app_message()),
-            
+            tooltip(
+                button(icon::from_name("edit-cut").size(16))
+                    .on_press(RibbonMessage::Cut.to_app_message()),
+                "Cut (Ctrl+X)",
+                tooltip::Position::Bottom
+            ),
+
             // Copy button
-            button(icon::from_name("edit-copy").size(16))
-                .on_press(RibbonMessage::Copy.to_app_message()),
-            
+            tooltip(
+                button(icon::from_name("edit-copy").size(16))
+                    .on_press(RibbonMessage::Copy.to_app_message()),
+                "Copy (Ctrl+C)",
+                tooltip::Position::Bottom
+            ),
+
             // Paste button
-            button(icon::from_name("edit-paste").size(16))
-                .on_press(RibbonMessage::Paste.to_app_message()),
+            tooltip(
+                button(icon::from_name("edit-paste").size(16))
+                    .on_press(RibbonMessage::Paste.to_app_message()),
+                "Paste (Ctrl+V)",
+                tooltip::Position::Bottom
+            ),
         ]
         .spacing(4)
         .into()
@@ -181,29 +194,45 @@ impl RibbonToolbar {
     fn sort_dropdown(&self) -> Element<'_, Message> {
         // For now, we'll use a simple button. In a full implementation,
         // this would be a dropdown with sort options
-        button("Sort")
-            .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message())
-            .into()
+        tooltip(
+            button("Sort")
+                .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message()),
+            "Sort by Name",
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
     fn view_dropdown(&self) -> Element<'_, Message> {
         // For now, we'll use a simple button. In a full implementation,
         // this would be a dropdown with view options
-        button("View")
-            .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message())
-            .into()
+        tooltip(
+            button("View")
+                .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message()),
+            "View Mode",
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
     fn trash_button(&self) -> Element<'_, Message> {
-        button(icon::from_name("user-trash").size(16))
-            .on_press(RibbonMessage::MoveToTrash.to_app_message())
-            .into()
+        tooltip(
+            button(icon::from_name("user-trash").size(16))
+                .on_press(RibbonMessage::MoveToTrash.to_app_message()),
+            "Move to Trash (Delete)",
+            tooltip::Position::Bottom
+        )
+        .into()
     }
 
     fn terminal_button(&self) -> Element<'_, Message> {
-        button(icon::from_name("utilities-terminal").size(16))
-            .on_press(RibbonMessage::OpenTerminal.to_app_message())
-            .into()
+        tooltip(
+            button(icon::from_name("utilities-terminal").size(16))
+                .on_press(RibbonMessage::OpenTerminal.to_app_message()),
+            "Open Terminal",
+            tooltip::Position::Bottom
+        )
+        .into()
     }
-}
+   }
 
