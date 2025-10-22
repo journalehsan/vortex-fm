@@ -662,7 +662,7 @@ pub struct App {
     dialog_text_input: widget::Id,
     key_binds: HashMap<KeyBind, Action>,
     margin: HashMap<window::Id, (f32, f32, f32, f32)>,
-    mime_app_cache: MimeAppCache,
+    pub mime_app_cache: MimeAppCache,
     modifiers: Modifiers,
     mounter_items: HashMap<MounterKey, MounterItems>,
     must_save_sort_names: bool,
@@ -869,7 +869,7 @@ impl App {
             // First launch apps that can be launched directly
             if mime == "application/x-desktop" {
                 // Try opening desktop application
-                App::launch_desktop_entries(&paths);
+                crate::core::file_helpers::launch_desktop_entries(&paths);
                 continue;
             } else if mime == "application/x-executable" || mime == "application/vnd.appimage" {
                 // Try opening executable
@@ -896,14 +896,14 @@ impl App {
             }
 
             // Try mime apps, which should be faster than xdg-open
-            if self.launch_from_mime_cache(&mime, &paths) {
+            if crate::core::file_helpers::launch_from_mime_cache(self, &mime, &paths) {
                 continue;
             }
 
             // loop through subclasses if available
             if let Some(mime_sub_classes) = mime_icon::parent_mime_types(&mime) {
                 for sub_class in mime_sub_classes {
-                    if self.launch_from_mime_cache(&sub_class, &paths) {
+                    if crate::core::file_helpers::launch_from_mime_cache(self, &sub_class, &paths) {
                         continue 'outer;
                     }
                 }
