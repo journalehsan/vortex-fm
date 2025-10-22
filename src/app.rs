@@ -4086,9 +4086,31 @@ impl Application for App {
             Message::SelectColorScheme(scheme_name) => {
                 log::info!("🎨 Color scheme selected: {}", scheme_name);
                 log::info!("🎨 Current app theme before apply: {:?}", self.config.app_theme);
-                // Immediately apply the selected theme
+                
+                // Apply the trick: switch to adaptive then back to custom to force theme refresh
+                log::info!("🎨 Applying theme refresh trick: Custom -> Adaptive -> Custom");
+                
+                // First, apply the selected theme
                 self.apply_custom_theme(&scheme_name);
-                log::info!("🎨 Theme application completed");
+                
+                // Store the current custom theme name for restoration
+                let custom_theme_name = scheme_name.clone();
+                
+                // Temporarily switch to Adaptive to trigger theme refresh
+                log::info!("🎨 Step 1: Switching to Adaptive mode");
+                self.config.app_theme = AppTheme::Adaptive;
+                
+                // Schedule a message to switch back to Custom after a brief delay
+                return Task::perform(
+                    async move {
+                        // Small delay to ensure adaptive theme is applied
+                        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    },
+                    move |_| {
+                        log::info!("🎨 Step 2: Switching back to Custom mode with theme: {}", custom_theme_name);
+                        cosmic::Action::App(Message::AppTheme(AppTheme::Custom))
+                    },
+                );
             }
 
             Message::ApplyCustomTheme => {
