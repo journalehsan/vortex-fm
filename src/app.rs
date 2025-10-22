@@ -700,6 +700,67 @@ pub struct App {
 }
 
 impl App {
+    /// Get smart theme options based on desktop environment
+    fn get_smart_theme_options() -> Vec<String> {
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        match desktop {
+            crate::utils::desktop_theme::DesktopEnvironment::Cosmic => {
+                // Cosmic DE: show match-desktop, light, dark
+                vec![fl!("match-desktop"), fl!("dark"), fl!("light")]
+            }
+            crate::utils::desktop_theme::DesktopEnvironment::Hyprland | 
+            crate::utils::desktop_theme::DesktopEnvironment::Omarchy => {
+                // Window managers: show dark, light, adaptive, custom
+                vec![fl!("dark"), fl!("light"), fl!("adaptive"), "Custom".to_string()]
+            }
+            _ => {
+                // Other DEs (KDE, GNOME, etc.): show dark, light, adaptive
+                vec![fl!("dark"), fl!("light"), fl!("adaptive")]
+            }
+        }
+    }
+
+    /// Get the current theme index based on available options
+    fn get_theme_index_from_app_theme(&self) -> usize {
+        use crate::utils::desktop_theme::detect_desktop_environment;
+        let desktop = detect_desktop_environment();
+        
+        match desktop {
+            crate::utils::desktop_theme::DesktopEnvironment::Cosmic => {
+                // Cosmic DE: match-desktop(0), dark(1), light(2)
+                match self.config.app_theme {
+                    AppTheme::System => 0,    // "match-desktop"
+                    AppTheme::Dark => 1,      // "dark"
+                    AppTheme::Light => 2,     // "light"
+                    _ => 0, // Default to match-desktop for Cosmic
+                }
+            }
+            crate::utils::desktop_theme::DesktopEnvironment::Hyprland | 
+            crate::utils::desktop_theme::DesktopEnvironment::Omarchy => {
+                // Window managers: dark(0), light(1), adaptive(2), custom(3)
+                match self.config.app_theme {
+                    AppTheme::Dark => 0,      // "dark"
+                    AppTheme::Light => 1,     // "light"
+                    AppTheme::Adaptive => 2,  // "adaptive"
+                    AppTheme::Custom => 3,    // "custom"
+                    _ => 2, // Default to adaptive for window managers
+                }
+            }
+            _ => {
+                // Other DEs: dark(0), light(1), adaptive(2)
+                match self.config.app_theme {
+                    AppTheme::Dark => 0,      // "dark"
+                    AppTheme::Light => 1,     // "light"
+                    AppTheme::Adaptive => 2,  // "adaptive"
+                    _ => 2, // Default to adaptive for other DEs
+                }
+            }
+        }
+    }
+
+
     fn open_file(&mut self, paths: &[impl AsRef<Path>]) -> Task<Message> {
         let mut tasks = Vec::new();
 
@@ -1906,38 +1967,62 @@ impl App {
     fn settings(&self) -> Element<'_, Message> {
         let tab_config = self.config.tab;
 
+        // Get current theme index based on available options
+        let app_theme_selected = self.get_theme_index_from_app_theme();
+        let current_theme = self.config.app_theme;
+        
+        log::info!("🎨 Settings UI - Current theme: {:?} (index: {})", current_theme, app_theme_selected);
+        log::info!("🎨 Available themes: {:?}", self.app_themes);
+        
         // TODO: Should dialog be updated here too?
         widget::settings::view_column(vec![
             widget::settings::section()
                 .title(fl!("appearance"))
-                .add({
-                    let app_theme_selected = match self.config.app_theme {
-                        AppTheme::System => 0,    // "match-desktop"
-                        AppTheme::Dark => 1,     // "dark"
-                        AppTheme::Light => 2,    // "light"
-                        AppTheme::Adaptive => 3, // "adaptive"
-                        AppTheme::Custom => 4,   // "custom"
-                    };
-                    
-                    log::info!("🎨 Settings UI - Current theme: {:?} (index: {})", self.config.app_theme, app_theme_selected);
+                .add(
                     widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
                         &self.app_themes,
                         Some(app_theme_selected),
                         move |index| {
-                            let selected_theme = match index {
-                                0 => AppTheme::System,   // "match-desktop"
-                                1 => AppTheme::Dark,     // "dark"
-                                2 => AppTheme::Light,   // "light"
-                                3 => AppTheme::Adaptive, // "adaptive"
-                                4 => AppTheme::Custom,   // "custom"
-                                _ => AppTheme::Adaptive, // Default to adaptive
+                            use crate::utils::desktop_theme::detect_desktop_environment;
+                            let desktop = detect_desktop_environment();
+                            
+                            let selected_theme = match desktop {
+                                crate::utils::desktop_theme::DesktopEnvironment::Cosmic => {
+                                    // Cosmic DE: match-desktop(0), dark(1), light(2)
+                                    match index {
+                                        0 => AppTheme::System,   // "match-desktop"
+                                        1 => AppTheme::Dark,     // "dark"
+                                        2 => AppTheme::Light,    // "light"
+                                        _ => AppTheme::System,   // Default to match-desktop
+                                    }
+                                }
+                                crate::utils::desktop_theme::DesktopEnvironment::Hyprland | 
+                                crate::utils::desktop_theme::DesktopEnvironment::Omarchy => {
+                                    // Window managers: dark(0), light(1), adaptive(2), custom(3)
+                                    match index {
+                                        0 => AppTheme::Dark,     // "dark"
+                                        1 => AppTheme::Light,    // "light"
+                                        2 => AppTheme::Adaptive, // "adaptive"
+                                        3 => AppTheme::Custom,   // "custom"
+                                        _ => AppTheme::Adaptive, // Default to adaptive
+                                    }
+                                }
+                                _ => {
+                                    // Other DEs: dark(0), light(1), adaptive(2)
+                                    match index {
+                                        0 => AppTheme::Dark,     // "dark"
+                                        1 => AppTheme::Light,    // "light"
+                                        2 => AppTheme::Adaptive, // "adaptive"
+                                        _ => AppTheme::Adaptive, // Default to adaptive
+                                    }
+                                }
                             };
                             
                             log::info!("🎨 Settings UI - User selected theme index: {} -> {:?}", index, selected_theme);
                             Message::AppTheme(selected_theme)
                         },
                     ))
-                })
+                )
                 .into(),
             // Custom Color Picker Section - only show when Custom theme is selected
             if matches!(self.config.app_theme, AppTheme::Custom) {
@@ -2181,7 +2266,8 @@ impl Application for App {
             }
         }
 
-        let app_themes = vec![fl!("match-desktop"), fl!("dark"), fl!("light"), fl!("adaptive"), "Custom".to_string()];
+        // Smart theme selection based on desktop environment
+        let app_themes = Self::get_smart_theme_options();
 
         let key_binds = key_binds(&match flags.mode {
             Mode::App => tab::Mode::App,
