@@ -4392,7 +4392,9 @@ impl Application for App {
             }
 
             Message::TabMessage(entity_opt, tab_message) => {
+                log::debug!("📬 App::Message::TabMessage - entity_opt: {:?}, message: {:?}", entity_opt, tab_message);
                 let entity = entity_opt.unwrap_or_else(|| self.tab_model.active());
+                log::debug!("  📍 Using entity: {:?}", entity);
 
                 //TODO: move to Task?
                 if let tab::Message::ContextMenu(_point_opt, _) = tab_message {
@@ -4401,8 +4403,14 @@ impl Application for App {
                 }
 
                 let tab_commands = match self.tab_model.data_mut::<Tab>(entity) {
-                    Some(tab) => tab.update(tab_message, self.modifiers),
-                    _ => Vec::new(),
+                    Some(tab) => {
+                        log::debug!("  ✅ Tab found, calling tab.update()");
+                        tab.update(tab_message, self.modifiers)
+                    }
+                    _ => {
+                        log::warn!("  ⚠️  Tab not found for entity: {:?}", entity);
+                        Vec::new()
+                    }
                 };
 
                 let mut commands = Vec::new();
@@ -4663,14 +4671,21 @@ impl Application for App {
                 }
             }
             Message::TabView(entity_opt, view) => {
+                log::debug!("📌 App::Message::TabView - Changing view to: {:?}", view);
                 let entity = entity_opt.unwrap_or_else(|| self.tab_model.active());
                 if let Some(tab) = self.tab_model.data_mut::<Tab>(entity) {
+                    log::debug!("  ✅ Found tab entity: updating tab config view");
                     tab.config.view = view;
+                } else {
+                    log::warn!("  ⚠️  Tab entity not found!");
                 }
                 let mut config = self.config.tab;
+                log::debug!("  ✅ Updating app config view");
                 config.view = view;
                 // Sync ribbon toolbar with new view
+                log::debug!("  ✅ Syncing ribbon toolbar view");
                 self.ribbon_toolbar.set_view(view);
+                log::debug!("  📤 Recursing with Message::TabConfig");
                 return self.update(Message::TabConfig(config));
             }
             Message::CutPaths(paths) => {
@@ -5296,36 +5311,38 @@ impl Application for App {
                 return self.open_tab(location, false, None);
             }
             Message::RibbonMessage(ribbon_msg) => {
+                log::debug!("📥 App::update - Received RibbonMessage: {:?}", ribbon_msg);
+                
+                // Update the ribbon toolbar state FIRST
+                log::debug!("🔧 Calling ribbon_toolbar.update() with message: {:?}", ribbon_msg);
+                self.ribbon_toolbar.update(ribbon_msg.clone());
+                
                 // Handle specific ribbon messages that need special processing
                 let msg_to_handle = match &ribbon_msg {
                     RibbonMessage::ToggleView => {
-                        // Get the new view from the ribbon toolbar
-                        let new_view = match self.ribbon_toolbar.get_view() {
-                            crate::tab::View::Grid => crate::tab::View::List,
-                            crate::tab::View::List => crate::tab::View::Grid,
-                        };
+                        // Get the NEW view from the ribbon toolbar (after update)
+                        let new_view = self.ribbon_toolbar.get_view();
+                        log::debug!("✅ ToggleView handler: Creating Message::TabView(None, {:?})", new_view);
                         Some(Message::TabView(None, new_view))
                     }
                     RibbonMessage::ToggleSort => {
-                        // Get the new sort from the ribbon toolbar
-                        let new_sort = match self.ribbon_toolbar.get_sort() {
-                            crate::tab::HeadingOptions::Name => crate::tab::HeadingOptions::Modified,
-                            crate::tab::HeadingOptions::Modified => crate::tab::HeadingOptions::Size,
-                            crate::tab::HeadingOptions::Size => crate::tab::HeadingOptions::TrashedOn,
-                            crate::tab::HeadingOptions::TrashedOn => crate::tab::HeadingOptions::Name,
-                        };
+                        // Get the NEW sort from the ribbon toolbar (after update)
+                        let new_sort = self.ribbon_toolbar.get_sort();
+                        log::debug!("✅ ToggleSort handler: Creating Message::SetSort({:?}, false)", new_sort);
                         Some(Message::TabMessage(None, crate::tab::Message::SetSort(new_sort, false)))
                     }
-                    _ => None,
+                    _ => {
+                        log::debug!("ℹ️  RibbonMessage handler: Other message, converting normally");
+                        None
+                    }
                 };
 
-                // Update the ribbon toolbar state
-                self.ribbon_toolbar.update(ribbon_msg.clone());
-                
                 // If we have a special message, handle that; otherwise convert normally
                 if let Some(msg) = msg_to_handle {
+                    log::debug!("📤 Emitting message and recursing: {:?}", msg);
                     return self.update(msg);
                 } else {
+                    log::debug!("📤 Emitting converted message");
                     return self.update(ribbon_msg.to_app_message());
                 }
             }

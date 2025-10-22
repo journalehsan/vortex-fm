@@ -41,11 +41,11 @@ impl RibbonMessage {
             RibbonMessage::MoveToTrash => Message::Delete(None),
             RibbonMessage::OpenTerminal => Message::OpenTerminal(None),
             RibbonMessage::ToggleSort => {
-                // This will be handled in the app's update_ribbon
+                // This will be handled in the app's RibbonMessage handler
                 Message::None
             }
             RibbonMessage::ToggleView => {
-                // This will be handled in the app's update_ribbon
+                // This will be handled in the app's RibbonMessage handler
                 Message::None
             }
             RibbonMessage::ShowHidden(show) => {
@@ -98,29 +98,36 @@ impl RibbonToolbar {
     }
 
     pub fn get_view(&self) -> View {
+        log::debug!("📖 RibbonToolbar::get_view() = {:?}", self.current_view);
         self.current_view
     }
 
     pub fn get_sort(&self) -> HeadingOptions {
+        log::debug!("📖 RibbonToolbar::get_sort() = {:?}", self.current_sort);
         self.current_sort
     }
 
     pub fn update(&mut self, message: RibbonMessage) {
         match message {
             RibbonMessage::ShowHidden(show) => {
+                log::debug!("RibbonToolbar: ShowHidden = {}", show);
                 self.show_hidden = show;
             }
             RibbonMessage::FoldersFirst(folders_first) => {
+                log::debug!("RibbonToolbar: FoldersFirst = {}", folders_first);
                 self.folders_first = folders_first;
             }
             RibbonMessage::ToggleView => {
+                let old_view = self.current_view;
                 // Cycle through view modes
                 self.current_view = match self.current_view {
                     View::Grid => View::List,
                     View::List => View::Grid,
                 };
+                log::debug!("🔄 RibbonToolbar::ToggleView - OLD: {:?} -> NEW: {:?}", old_view, self.current_view);
             }
             RibbonMessage::ToggleSort => {
+                let old_sort = self.current_sort;
                 // Cycle through sort options
                 self.current_sort = match self.current_sort {
                     HeadingOptions::Name => HeadingOptions::Modified,
@@ -128,8 +135,11 @@ impl RibbonToolbar {
                     HeadingOptions::Size => HeadingOptions::TrashedOn,
                     HeadingOptions::TrashedOn => HeadingOptions::Name,
                 };
+                log::debug!("⇅ RibbonToolbar::ToggleSort - OLD: {:?} -> NEW: {:?}", old_sort, self.current_sort);
             }
-            _ => {}
+            _ => {
+                log::debug!("RibbonToolbar: Other message: {:?}", message);
+            }
         }
     }
 
@@ -295,7 +305,7 @@ impl RibbonToolbar {
                         style
                     })
             )
-            .on_press(RibbonMessage::ToggleView.to_app_message()),
+            .on_press(Message::RibbonMessage(RibbonMessage::ToggleView)),
             label,
             tooltip::Position::Bottom
         )
@@ -323,7 +333,7 @@ impl RibbonToolbar {
                         style
                     })
             )
-            .on_press(RibbonMessage::ToggleSort.to_app_message()),
+            .on_press(Message::RibbonMessage(RibbonMessage::ToggleSort)),
             widget::text(format!("{} (click to cycle)", sort_label)),
             tooltip::Position::Bottom
         )
