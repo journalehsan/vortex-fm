@@ -97,6 +97,12 @@ impl RibbonToolbar {
         self.current_sort = sort;
     }
 
+    pub fn sync_with_tab(&mut self, view: View, sort: HeadingOptions) {
+        log::debug!("🔄 RibbonToolbar::sync_with_tab - Syncing with tab state: view={:?}, sort={:?}", view, sort);
+        self.current_view = view;
+        self.current_sort = sort;
+    }
+
     pub fn get_view(&self) -> View {
         log::debug!("📖 RibbonToolbar::get_view() = {:?}", self.current_view);
         self.current_view

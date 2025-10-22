@@ -2272,6 +2272,14 @@ impl Application for App {
             }
         }
 
+        // Sync ribbon toolbar with the first tab's state after initialization
+        if let Some(entity) = app.tab_model.iter().next() {
+            if let Some(tab) = app.tab_model.data::<Tab>(entity) {
+                log::debug!("🔄 Init: Syncing ribbon toolbar with first tab state");
+                app.ribbon_toolbar.sync_with_tab(tab.config.view, tab.sort_name);
+            }
+        }
+
         (app, Task::batch(commands))
     }
 
@@ -4194,7 +4202,15 @@ impl Application for App {
                         let scroll = tab.scroll_opt.unwrap_or_default();
                         tasks.push(scrollable::scroll_to(tab.scrollable_id.clone(), scroll));
                     }
-                    self.activate_nav_model_location(&tab.location.clone());
+                    let location = tab.location.clone();
+                    let view = tab.config.view;
+                    let sort_name = tab.sort_name;
+                    
+                    self.activate_nav_model_location(&location);
+                    
+                    // Sync ribbon toolbar with the activated tab's state
+                    log::debug!("🔄 TabActivate: Syncing ribbon toolbar with tab state");
+                    self.ribbon_toolbar.sync_with_tab(view, sort_name);
                 }
                 tasks.push(self.update_title());
                 return Task::batch(tasks);
