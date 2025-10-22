@@ -112,5 +112,21 @@ pub fn handle_ribbon_message(message: RibbonMessage) -> Message {
                 Message::None
             }
         }
+        RibbonMessage::ToggleNewDropdown => {
+            println!("Toggle New Dropdown triggered!");
+            Message::None
+        },
+        RibbonMessage::ToggleSortDropdown => {
+            println!("Toggle Sort Dropdown triggered!");
+            Message::None
+        },
+        RibbonMessage::ToggleViewDropdown => {
+            println!("Toggle View Dropdown triggered!");
+            Message::None
+        },
+        RibbonMessage::CloseDropdowns => {
+            println!("Close Dropdowns triggered!");
+            Message::None
+        },
     }
 }

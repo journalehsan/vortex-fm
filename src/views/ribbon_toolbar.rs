@@ -26,6 +26,10 @@ pub enum RibbonMessage {
     ViewMode(String),
     ShowHidden(bool),
     FoldersFirst(bool),
+    ToggleNewDropdown,
+    ToggleSortDropdown,
+    ToggleViewDropdown,
+    CloseDropdowns,
 }
 
 impl RibbonMessage {
@@ -70,6 +74,10 @@ impl RibbonMessage {
                     Message::None
                 }
             }
+            RibbonMessage::ToggleNewDropdown => Message::None,
+            RibbonMessage::ToggleSortDropdown => Message::None,
+            RibbonMessage::ToggleViewDropdown => Message::None,
+            RibbonMessage::CloseDropdowns => Message::None,
         }
     }
 }
@@ -79,6 +87,9 @@ pub struct RibbonToolbar {
     view_options: Vec<String>,
     show_hidden: bool,
     folders_first: bool,
+    new_dropdown_open: bool,
+    sort_dropdown_open: bool,
+    view_dropdown_open: bool,
 }
 
 impl Default for RibbonToolbar {
@@ -102,6 +113,9 @@ impl RibbonToolbar {
             ],
             show_hidden: false,
             folders_first: false,
+            new_dropdown_open: false,
+            sort_dropdown_open: false,
+            view_dropdown_open: false,
         }
     }
 
@@ -112,6 +126,29 @@ impl RibbonToolbar {
             }
             RibbonMessage::FoldersFirst(folders_first) => {
                 self.folders_first = folders_first;
+            }
+            RibbonMessage::ToggleNewDropdown => {
+                self.new_dropdown_open = !self.new_dropdown_open;
+                // Close other dropdowns
+                self.sort_dropdown_open = false;
+                self.view_dropdown_open = false;
+            }
+            RibbonMessage::ToggleSortDropdown => {
+                self.sort_dropdown_open = !self.sort_dropdown_open;
+                // Close other dropdowns
+                self.new_dropdown_open = false;
+                self.view_dropdown_open = false;
+            }
+            RibbonMessage::ToggleViewDropdown => {
+                self.view_dropdown_open = !self.view_dropdown_open;
+                // Close other dropdowns
+                self.new_dropdown_open = false;
+                self.sort_dropdown_open = false;
+            }
+            RibbonMessage::CloseDropdowns => {
+                self.new_dropdown_open = false;
+                self.sort_dropdown_open = false;
+                self.view_dropdown_open = false;
             }
             _ => {}
         }
@@ -153,12 +190,24 @@ impl RibbonToolbar {
 
     fn new_dropdown(&self) -> Element<'_, Message> {
         let new_button = button("New")
-            .on_press(RibbonMessage::NewFile.to_app_message());
+            .on_press(RibbonMessage::ToggleNewDropdown.to_app_message());
 
-        // For now, we'll use a simple button. In a full implementation,
-        // this would be a dropdown with New File and New Folder options
-        tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom)
+        if self.new_dropdown_open {
+            row![
+                tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom),
+                Space::with_width(Length::Fixed(4.0)),
+                button("New File")
+                    .on_press(RibbonMessage::NewFile.to_app_message()),
+                Space::with_width(Length::Fixed(4.0)),
+                button("New Folder")
+                    .on_press(RibbonMessage::NewFolder.to_app_message()),
+            ]
+            .spacing(4)
             .into()
+        } else {
+            tooltip(new_button, "New (Ctrl+Shift+N)", tooltip::Position::Bottom)
+                .into()
+        }
     }
 
     fn action_buttons(&self) -> Element<'_, Message> {
@@ -192,27 +241,53 @@ impl RibbonToolbar {
     }
 
     fn sort_dropdown(&self) -> Element<'_, Message> {
-        // For now, we'll use a simple button. In a full implementation,
-        // this would be a dropdown with sort options
-        tooltip(
-            button("Sort")
-                .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message()),
-            "Sort by Name",
-            tooltip::Position::Bottom
-        )
-        .into()
+        let sort_button = button("Sort")
+            .on_press(RibbonMessage::ToggleSortDropdown.to_app_message());
+
+        if self.sort_dropdown_open {
+            row![
+                tooltip(sort_button, "Sort Options", tooltip::Position::Bottom),
+                Space::with_width(Length::Fixed(4.0)),
+                button("Name")
+                    .on_press(RibbonMessage::SortBy("name".to_string()).to_app_message()),
+                Space::with_width(Length::Fixed(4.0)),
+                button("Size")
+                    .on_press(RibbonMessage::SortBy("size".to_string()).to_app_message()),
+                Space::with_width(Length::Fixed(4.0)),
+                button("Date")
+                    .on_press(RibbonMessage::SortBy("date".to_string()).to_app_message()),
+                Space::with_width(Length::Fixed(4.0)),
+                button("Type")
+                    .on_press(RibbonMessage::SortBy("type".to_string()).to_app_message()),
+            ]
+            .spacing(4)
+            .into()
+        } else {
+            tooltip(sort_button, "Sort Options", tooltip::Position::Bottom)
+                .into()
+        }
     }
 
     fn view_dropdown(&self) -> Element<'_, Message> {
-        // For now, we'll use a simple button. In a full implementation,
-        // this would be a dropdown with view options
-        tooltip(
-            button("View")
-                .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message()),
-            "View Mode",
-            tooltip::Position::Bottom
-        )
-        .into()
+        let view_button = button("View")
+            .on_press(RibbonMessage::ToggleViewDropdown.to_app_message());
+
+        if self.view_dropdown_open {
+            row![
+                tooltip(view_button, "View Options", tooltip::Position::Bottom),
+                Space::with_width(Length::Fixed(4.0)),
+                button("List")
+                    .on_press(RibbonMessage::ViewMode("list".to_string()).to_app_message()),
+                Space::with_width(Length::Fixed(4.0)),
+                button("Grid")
+                    .on_press(RibbonMessage::ViewMode("grid".to_string()).to_app_message()),
+            ]
+            .spacing(4)
+            .into()
+        } else {
+            tooltip(view_button, "View Options", tooltip::Position::Bottom)
+                .into()
+        }
     }
 
     fn trash_button(&self) -> Element<'_, Message> {
