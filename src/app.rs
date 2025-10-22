@@ -2425,104 +2425,6 @@ impl Application for App {
         (app, Task::batch(commands))
     }
 
-    fn nav_bar(&self) -> Option<Element<'_, cosmic::Action<Self::Message>>> {
-        if !self.core.nav_bar_active() {
-            return None;
-        }
-
-        let nav_model = self.nav_model()?;
-
-        let mut nav = cosmic::widget::nav_bar(nav_model, |entity| {
-            cosmic::Action::Cosmic(cosmic::app::Action::NavBar(entity))
-        })
-        .drag_id(self.nav_drag_id)
-        .on_dnd_enter(|entity, _| cosmic::Action::App(Message::DndEnterNav(entity)))
-        .on_dnd_leave(|_| cosmic::Action::App(Message::DndExitNav))
-        .on_dnd_drop(|entity, data, action| {
-            cosmic::Action::App(Message::DndDropNav(entity, data, action))
-        })
-        .on_context(|entity| cosmic::Action::App(Message::NavBarContext(entity)))
-        .on_close(|entity| cosmic::Action::App(Message::NavBarClose(entity)))
-        .on_middle_press(|entity| {
-            cosmic::Action::App(Message::NavMenuAction(NavMenuAction::OpenInNewTab(entity)))
-        })
-        .context_menu(self.nav_context_menu(self.nav_bar_context_id))
-        .close_icon(icon::from_name("media-eject-symbolic").size(16).icon())
-        .into_container();
-
-        if !self.core.is_condensed() {
-            nav = nav.max_width(280);
-        }
-
-        Some(Element::from(
-            // XXX both must be shrink to avoid flex layout from ignoring it
-            nav.width(Length::Shrink).height(Length::Shrink),
-        ))
-    }
-
-    fn nav_context_menu(
-        &self,
-        entity: widget::nav_bar::Id,
-    ) -> Option<Vec<widget::menu::Tree<cosmic::Action<Self::Message>>>> {
-        let favorite_index_opt = self.nav_model.data::<FavoriteIndex>(entity);
-        let location_opt = self.nav_model.data::<Location>(entity);
-
-        let mut items = Vec::new();
-
-        if location_opt
-            .and_then(|x| x.path_opt())
-            .is_some_and(|x| x.is_file())
-        {
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("open"),
-                None,
-                NavMenuAction::Open(entity),
-            ));
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("menu-open-with"),
-                None,
-                NavMenuAction::OpenWith(entity),
-            ));
-        } else {
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("open-in-new-tab"),
-                None,
-                NavMenuAction::OpenInNewTab(entity),
-            ));
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("open-in-new-window"),
-                None,
-                NavMenuAction::OpenInNewWindow(entity),
-            ));
-        }
-        items.push(cosmic::widget::menu::Item::Divider);
-        if matches!(location_opt, Some(Location::Path(..))) {
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("show-details"),
-                None,
-                NavMenuAction::Preview(entity),
-            ));
-        }
-        items.push(cosmic::widget::menu::Item::Divider);
-        if favorite_index_opt.is_some() {
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("remove-from-sidebar"),
-                None,
-                NavMenuAction::RemoveFromSidebar(entity),
-            ));
-        }
-        if matches!(location_opt, Some(Location::Trash))
-            && !trash::os_limited::is_empty().unwrap_or(true)
-        {
-            items.push(cosmic::widget::menu::Item::Button(
-                fl!("empty-trash"),
-                None,
-                NavMenuAction::EmptyTrash,
-            ));
-        }
-
-        Some(cosmic::widget::menu::items(&HashMap::new(), items))
-    }
 
     fn nav_model(&self) -> Option<&segmented_button::SingleSelectModel> {
         match self.mode {
@@ -2682,6 +2584,485 @@ impl Application for App {
         }
 
         Task::none()
+    }
+
+    fn nav_bar(&self) -> Option<Element<'_, cosmic::Action<Self::Message>>> {
+        if !self.core.nav_bar_active() {
+            return None;
+        }
+
+        let nav_model = self.nav_model()?;
+
+        let mut nav = cosmic::widget::nav_bar(nav_model, |entity| {
+            cosmic::Action::Cosmic(cosmic::app::Action::NavBar(entity))
+        })
+        .drag_id(self.nav_drag_id)
+        .on_dnd_enter(|entity, _| cosmic::Action::App(Message::DndEnterNav(entity)))
+        .on_dnd_leave(|_| cosmic::Action::App(Message::DndExitNav))
+        .on_dnd_drop(|entity, data, action| {
+            cosmic::Action::App(Message::DndDropNav(entity, data, action))
+        })
+        .on_context(|entity| cosmic::Action::App(Message::NavBarContext(entity)))
+        .on_close(|entity| cosmic::Action::App(Message::NavBarClose(entity)))
+        .on_middle_press(|entity| {
+            cosmic::Action::App(Message::NavMenuAction(NavMenuAction::OpenInNewTab(entity)))
+        })
+        .context_menu(self.nav_context_menu(self.nav_bar_context_id))
+        .close_icon(icon::from_name("media-eject-symbolic").size(16).icon())
+        .into_container();
+
+        if !self.core.is_condensed() {
+            nav = nav.max_width(280);
+        }
+
+        Some(Element::from(
+            // XXX both must be shrink to avoid flex layout from ignoring it
+            nav.width(Length::Shrink).height(Length::Shrink),
+        ))
+    }
+
+    fn nav_context_menu(
+        &self,
+        entity: widget::nav_bar::Id,
+    ) -> Option<Vec<widget::menu::Tree<cosmic::Action<Self::Message>>>> {
+        let favorite_index_opt = self.nav_model.data::<FavoriteIndex>(entity);
+        let location_opt = self.nav_model.data::<Location>(entity);
+
+        let mut items = Vec::new();
+
+        if location_opt
+            .and_then(|x| x.path_opt())
+            .is_some_and(|x| x.is_file())
+        {
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("open"),
+                None,
+                NavMenuAction::Open(entity),
+            ));
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("menu-open-with"),
+                None,
+                NavMenuAction::OpenWith(entity),
+            ));
+        } else {
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("open-in-new-tab"),
+                None,
+                NavMenuAction::OpenInNewTab(entity),
+            ));
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("open-in-new-window"),
+                None,
+                NavMenuAction::OpenInNewWindow(entity),
+            ));
+        }
+        items.push(cosmic::widget::menu::Item::Divider);
+        if matches!(location_opt, Some(Location::Path(..))) {
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("show-details"),
+                None,
+                NavMenuAction::Preview(entity),
+            ));
+        }
+        items.push(cosmic::widget::menu::Item::Divider);
+        if favorite_index_opt.is_some() {
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("remove-from-sidebar"),
+                None,
+                NavMenuAction::RemoveFromSidebar(entity),
+            ));
+        }
+        if matches!(location_opt, Some(Location::Trash))
+            && !trash::os_limited::is_empty().unwrap_or(true)
+        {
+            items.push(cosmic::widget::menu::Item::Button(
+                fl!("empty-trash"),
+                None,
+                NavMenuAction::EmptyTrash,
+            ));
+        }
+
+        Some(cosmic::widget::menu::items(&HashMap::new(), items))
+    }
+
+    fn context_drawer(&self) -> Option<context_drawer::ContextDrawer<'_, Self::Message>> {
+        if !self.core.window.show_context {
+            return None;
+        }
+
+        Some(match &self.context_page {
+            ContextPage::About => context_drawer::about(
+                &self.about,
+                |url| Message::LaunchUrl(url.to_string()),
+                Message::ToggleContextPage(ContextPage::About),
+            ),
+            ContextPage::EditHistory => context_drawer::context_drawer(
+                self.edit_history(),
+                Message::ToggleContextPage(ContextPage::EditHistory),
+            )
+            .title(fl!("edit-history")),
+            ContextPage::NetworkDrive => {
+                let mut text_input =
+                    widget::text_input(fl!("enter-server-address"), &self.network_drive_input);
+                let button = if self.network_drive_connecting.is_some() {
+                    widget::button::standard(fl!("connecting"))
+                } else {
+                    text_input = text_input
+                        .on_input(Message::NetworkDriveInput)
+                        .on_submit(|_| Message::NetworkDriveSubmit);
+                    widget::button::standard(fl!("connect")).on_press(Message::NetworkDriveSubmit)
+                };
+                context_drawer::context_drawer(
+                    self.network_drive(),
+                    Message::ToggleContextPage(ContextPage::NetworkDrive),
+                )
+                .title(fl!("add-network-drive"))
+                .header(text_input)
+                .footer(widget::row::with_children(vec![
+                    widget::horizontal_space().into(),
+                    button.into(),
+                ]))
+            }
+            ContextPage::Preview(entity_opt, kind) => {
+                let mut actions = Vec::with_capacity(3);
+                let entity = entity_opt.unwrap_or_else(|| self.tab_model.active());
+                if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    if let Some(items) = tab.items_opt() {
+                        for item in items.iter() {
+                            if item.selected {
+                                actions.extend(item.preview_header().into_iter().map(|element| {
+                                    element.map(move |x| Message::TabMessage(Some(entity), x))
+                                }));
+                                break;
+                            }
+                        }
+                    }
+                };
+                context_drawer::context_drawer(
+                    self.preview(entity_opt, kind, true)
+                        .map(move |x| Message::TabMessage(Some(entity), x)),
+                    Message::ToggleContextPage(ContextPage::Preview(Some(entity), kind.clone())),
+                )
+                .header_actions(actions)
+            }
+            ContextPage::Settings => context_drawer::context_drawer(
+                self.settings(),
+                Message::ToggleContextPage(ContextPage::Settings),
+            )
+            .title(fl!("settings")),
+        })
+    }
+
+    fn footer(&self) -> Option<Element<'_, Self::Message>> {
+        if self.progress_operations.is_empty() {
+            return None;
+        }
+
+        let cosmic_theme::Spacing {
+            space_xs, space_s, ..
+        } = theme::active().cosmic().spacing;
+
+        let mut title = String::new();
+        let mut total_progress = 0.0;
+        let mut count = 0;
+        let mut all_paused = true;
+        for (_id, (op, controller)) in self.pending_operations.iter() {
+            if !controller.is_paused() {
+                all_paused = false;
+            }
+            if op.show_progress_notification() {
+                let progress = controller.progress();
+                if title.is_empty() {
+                    title = op.pending_text(progress, controller.state());
+                }
+                total_progress += progress;
+                count += 1;
+            }
+        }
+        let running = count;
+        // Adjust the progress bar so it does not jump around when operations finish
+        for id in self.progress_operations.iter() {
+            if self.complete_operations.contains_key(id) {
+                total_progress += 1.0;
+                count += 1;
+            }
+        }
+        let finished = count - running;
+        total_progress /= count as f32;
+        if running > 1 {
+            if finished > 0 {
+                title = fl!(
+                    "operations-running-finished",
+                    running = running,
+                    finished = finished,
+                    percent = ((total_progress * 100.0) as i32)
+                );
+            } else {
+                title = fl!(
+                    "operations-running",
+                    running = running,
+                    percent = ((total_progress * 100.0) as i32)
+                );
+            }
+        }
+
+        //TODO: get height from theme?
+        let progress_bar_height = Length::Fixed(4.0);
+        let progress_bar =
+            widget::progress_bar(0.0..=1.0, total_progress).height(progress_bar_height);
+
+        let container = widget::layer_container(widget::column::with_children(vec![
+            widget::row::with_children(vec![
+                progress_bar.into(),
+                if all_paused {
+                    widget::tooltip(
+                        widget::button::icon(icon::from_name("media-playback-start-symbolic"))
+                            .on_press(Message::PendingPauseAll(false))
+                            .padding(8),
+                        widget::text::body(fl!("resume")),
+                        widget::tooltip::Position::Top,
+                    )
+                    .into()
+                } else {
+                    widget::tooltip(
+                        widget::button::icon(icon::from_name("media-playback-pause-symbolic"))
+                            .on_press(Message::PendingPauseAll(true))
+                            .padding(8),
+                        widget::text::body(fl!("pause")),
+                        widget::tooltip::Position::Top,
+                    )
+                    .into()
+                },
+                widget::tooltip(
+                    widget::button::icon(icon::from_name("window-close-symbolic"))
+                        .on_press(Message::PendingCancelAll)
+                        .padding(8),
+                    widget::text::body(fl!("cancel")),
+                    widget::tooltip::Position::Top,
+                )
+                .into(),
+            ])
+            .align_y(Alignment::Center)
+            .into(),
+            widget::text::body(title).into(),
+            widget::Space::with_height(space_s).into(),
+            widget::row::with_children(vec![
+                widget::button::link(fl!("details"))
+                    .on_press(Message::ToggleContextPage(ContextPage::EditHistory))
+                    .padding(0)
+                    .trailing_icon(true)
+                    .into(),
+                widget::horizontal_space().into(),
+                widget::button::standard(fl!("dismiss"))
+                    .on_press(Message::PendingDismiss)
+                    .into(),
+            ])
+            .align_y(Alignment::Center)
+            .into(),
+        ]))
+        .padding([8, space_xs])
+        .layer(cosmic_theme::Layer::Primary);
+
+        Some(container.into())
+    }
+
+    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
+        vec![menu::menu_bar(
+            &self.core,
+            self.tab_model.active_data::<Tab>(),
+            &self.config,
+            &self.modifiers,
+            &self.key_binds,
+        )]
+    }
+
+    fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
+        let mut elements = Vec::with_capacity(2);
+
+        if let Some(term) = self.search_get() {
+            if self.core.is_condensed() {
+                elements.push(
+                    //TODO: selected state is not appearing different
+                    widget::button::icon(icon::from_name("system-search-symbolic"))
+                        .on_press(Message::SearchClear)
+                        .padding(8)
+                        .selected(true)
+                        .into(),
+                );
+            } else {
+                elements.push(
+                    widget::text_input::search_input("", term)
+                        .width(Length::Fixed(240.0))
+                        .id(self.search_id.clone())
+                        .on_clear(Message::SearchClear)
+                        .on_input(Message::SearchInput)
+                        .into(),
+                );
+            }
+        } else {
+            elements.push(
+                widget::button::icon(icon::from_name("system-search-symbolic"))
+                    .on_press(Message::SearchActivate)
+                    .padding(8)
+                    .into(),
+            );
+        }
+
+        elements
+    }
+
+    fn view(&self) -> Element<'_, Self::Message> {
+        let cosmic_theme::Spacing {
+            space_xxs, space_s, ..
+        } = theme::active().cosmic().spacing;
+
+        let mut tab_column = widget::column::with_capacity(4);
+
+        if self.core.is_condensed() {
+            if let Some(term) = self.search_get() {
+                tab_column = tab_column.push(
+                    widget::container(
+                        widget::text_input::search_input("", term)
+                            .width(Length::Fill)
+                            .id(self.search_id.clone())
+                            .on_clear(Message::SearchClear)
+                            .on_input(Message::SearchInput),
+                    )
+                    .padding(space_xxs),
+                )
+            }
+        }
+
+        if self.tab_model.iter().count() > 1 {
+            tab_column = tab_column.push(
+                widget::container(
+                    widget::tab_bar::horizontal(&self.tab_model)
+                        .button_height(32)
+                        .button_spacing(space_xxs)
+                        .on_activate(Message::TabActivate)
+                        .on_close(|entity| Message::TabClose(Some(entity)))
+                        .on_dnd_enter(|entity, _| Message::DndEnterTab(entity))
+                        .on_dnd_leave(|_| Message::DndExitTab)
+                        .on_dnd_drop(|entity, data, action| {
+                            Message::DndDropTab(entity, data, action)
+                        })
+                        .drag_id(self.tab_drag_id),
+                )
+                .class(style::Container::Background)
+                .width(Length::Fill)
+                .padding([0, space_s]),
+            );
+        }
+
+        let entity = self.tab_model.active();
+        match self.tab_model.data::<Tab>(entity) {
+            Some(tab) => {
+                let tab_view = if tab.location == tab::Location::QuickAccess {
+                    // Render QuickAccess view instead of regular tab view
+                    crate::views::quick_access::quick_access_view(
+                        &self.state.quick_access_state,
+                    )
+                    .map(move |message| message)
+                } else {
+                    tab
+                        .view(&self.key_binds)
+                        .map(move |message| Message::TabMessage(Some(entity), message))
+                };
+                tab_column = tab_column.push(tab_view);
+            }
+            None => {
+                //TODO
+            }
+        }
+
+        // The toaster is added on top of an empty element to ensure that it does not override context menus
+        tab_column = tab_column.push(widget::toaster(&self.toasts, widget::horizontal_space()));
+
+        let content: Element<_> = tab_column.into();
+
+        // Uncomment to debug layout:
+        //content.explain(cosmic::iced::Color::WHITE)
+        content
+    }
+
+    fn view_window(&self, id: WindowId) -> Element<'_, Self::Message> {
+        let content = match self.windows.get(&id) {
+            Some(WindowKind::ContextMenu(entity, id)) => {
+                match self.tab_model.data::<Tab>(*entity) {
+                    Some(tab) => {
+                        return widget::autosize::autosize(
+                            menu::context_menu(tab, &self.key_binds, &self.modifiers)
+                                .map(|x| Message::TabMessage(Some(*entity), x)),
+                            id.clone(),
+                        )
+                        .into();
+                    }
+                    None => widget::text("Unknown tab ID").into(),
+                }
+            }
+            Some(WindowKind::Desktop(entity)) => {
+                let mut tab_column = widget::column::with_capacity(3);
+
+                let tab_view = match self.tab_model.data::<Tab>(*entity) {
+                    Some(tab) => tab
+                        .view(&self.key_binds)
+                        .map(move |message| Message::TabMessage(Some(*entity), message)),
+                    None => widget::vertical_space().into(),
+                };
+
+                tab_column = tab_column.push(tab_view);
+
+                // The toaster is added on top of an empty element to ensure that it does not override context menus
+                tab_column =
+                    tab_column.push(widget::toaster(&self.toasts, widget::horizontal_space()));
+                return if let Some(margin) = self.margin.get(&id) {
+                    if margin.0 >= 0. || margin.2 >= 0. {
+                        tab_column = widget::column::with_children(vec![
+                            vertical_space().height(margin.0).into(),
+                            tab_column.into(),
+                            vertical_space().height(margin.2).into(),
+                        ])
+                    }
+                    if margin.1 >= 0. || margin.3 >= 0. {
+                        Element::from(widget::row::with_children(vec![
+                            horizontal_space().width(margin.1).into(),
+                            tab_column.into(),
+                            horizontal_space().width(margin.3).into(),
+                        ]))
+                    } else {
+                        tab_column.into()
+                    }
+                } else {
+                    tab_column.into()
+                };
+            }
+            Some(WindowKind::DesktopViewOptions) => self.desktop_view_options(),
+            Some(WindowKind::Dialogs(id)) => match self.dialog() {
+                Some(element) => return widget::autosize::autosize(element, id.clone()).into(),
+                None => widget::horizontal_space().into(),
+            },
+            Some(WindowKind::Preview(entity_opt, kind)) => self
+                .preview(entity_opt, kind, false)
+                .map(|x| Message::TabMessage(*entity_opt, x)),
+            Some(WindowKind::FileDialog(..)) => match &self.file_dialog_opt {
+                Some(dialog) => return dialog.view(id),
+                None => widget::text("Unknown window ID").into(),
+            },
+            None => {
+                //TODO: distinct views per monitor in desktop mode
+                return self.view_main().map(|message| match message {
+                    cosmic::Action::App(app) => app,
+                    cosmic::Action::Cosmic(cosmic) => Message::Cosmic(cosmic),
+                    cosmic::Action::None => Message::None,
+                });
+            }
+        };
+
+        widget::container(widget::scrollable(content))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .class(theme::Container::WindowBackground)
+            .into()
     }
 
     /// Handle application events here.
@@ -5064,73 +5445,6 @@ impl Application for App {
         Task::none()
     }
 
-    fn context_drawer(&self) -> Option<context_drawer::ContextDrawer<'_, Message>> {
-        if !self.core.window.show_context {
-            return None;
-        }
-
-        Some(match &self.context_page {
-            ContextPage::About => context_drawer::about(
-                &self.about,
-                |url| Message::LaunchUrl(url.to_string()),
-                Message::ToggleContextPage(ContextPage::About),
-            ),
-            ContextPage::EditHistory => context_drawer::context_drawer(
-                self.edit_history(),
-                Message::ToggleContextPage(ContextPage::EditHistory),
-            )
-            .title(fl!("edit-history")),
-            ContextPage::NetworkDrive => {
-                let mut text_input =
-                    widget::text_input(fl!("enter-server-address"), &self.network_drive_input);
-                let button = if self.network_drive_connecting.is_some() {
-                    widget::button::standard(fl!("connecting"))
-                } else {
-                    text_input = text_input
-                        .on_input(Message::NetworkDriveInput)
-                        .on_submit(|_| Message::NetworkDriveSubmit);
-                    widget::button::standard(fl!("connect")).on_press(Message::NetworkDriveSubmit)
-                };
-                context_drawer::context_drawer(
-                    self.network_drive(),
-                    Message::ToggleContextPage(ContextPage::NetworkDrive),
-                )
-                .title(fl!("add-network-drive"))
-                .header(text_input)
-                .footer(widget::row::with_children(vec![
-                    widget::horizontal_space().into(),
-                    button.into(),
-                ]))
-            }
-            ContextPage::Preview(entity_opt, kind) => {
-                let mut actions = Vec::with_capacity(3);
-                let entity = entity_opt.unwrap_or_else(|| self.tab_model.active());
-                if let Some(tab) = self.tab_model.data::<Tab>(entity) {
-                    if let Some(items) = tab.items_opt() {
-                        for item in items.iter() {
-                            if item.selected {
-                                actions.extend(item.preview_header().into_iter().map(|element| {
-                                    element.map(move |x| Message::TabMessage(Some(entity), x))
-                                }));
-                                break;
-                            }
-                        }
-                    }
-                };
-                context_drawer::context_drawer(
-                    self.preview(entity_opt, kind, true)
-                        .map(move |x| Message::TabMessage(Some(entity), x)),
-                    Message::ToggleContextPage(ContextPage::Preview(Some(entity), kind.clone())),
-                )
-                .header_actions(actions)
-            }
-            ContextPage::Settings => context_drawer::context_drawer(
-                self.settings(),
-                Message::ToggleContextPage(ContextPage::Settings),
-            )
-            .title(fl!("settings")),
-        })
-    }
 
     fn dialog(&self) -> Option<Element<'_, Message>> {
         //TODO: should gallery view just be a dialog?
@@ -5826,318 +6140,8 @@ impl Application for App {
         Some(dialog.into())
     }
 
-    fn footer(&self) -> Option<Element<'_, Message>> {
-        if self.progress_operations.is_empty() {
-            return None;
-        }
 
-        let cosmic_theme::Spacing {
-            space_xs, space_s, ..
-        } = theme::active().cosmic().spacing;
 
-        let mut title = String::new();
-        let mut total_progress = 0.0;
-        let mut count = 0;
-        let mut all_paused = true;
-        for (_id, (op, controller)) in self.pending_operations.iter() {
-            if !controller.is_paused() {
-                all_paused = false;
-            }
-            if op.show_progress_notification() {
-                let progress = controller.progress();
-                if title.is_empty() {
-                    title = op.pending_text(progress, controller.state());
-                }
-                total_progress += progress;
-                count += 1;
-            }
-        }
-        let running = count;
-        // Adjust the progress bar so it does not jump around when operations finish
-        for id in self.progress_operations.iter() {
-            if self.complete_operations.contains_key(id) {
-                total_progress += 1.0;
-                count += 1;
-            }
-        }
-        let finished = count - running;
-        total_progress /= count as f32;
-        if running > 1 {
-            if finished > 0 {
-                title = fl!(
-                    "operations-running-finished",
-                    running = running,
-                    finished = finished,
-                    percent = ((total_progress * 100.0) as i32)
-                );
-            } else {
-                title = fl!(
-                    "operations-running",
-                    running = running,
-                    percent = ((total_progress * 100.0) as i32)
-                );
-            }
-        }
-
-        //TODO: get height from theme?
-        let progress_bar_height = Length::Fixed(4.0);
-        let progress_bar =
-            widget::progress_bar(0.0..=1.0, total_progress).height(progress_bar_height);
-
-        let container = widget::layer_container(widget::column::with_children(vec![
-            widget::row::with_children(vec![
-                progress_bar.into(),
-                if all_paused {
-                    widget::tooltip(
-                        widget::button::icon(icon::from_name("media-playback-start-symbolic"))
-                            .on_press(Message::PendingPauseAll(false))
-                            .padding(8),
-                        widget::text::body(fl!("resume")),
-                        widget::tooltip::Position::Top,
-                    )
-                    .into()
-                } else {
-                    widget::tooltip(
-                        widget::button::icon(icon::from_name("media-playback-pause-symbolic"))
-                            .on_press(Message::PendingPauseAll(true))
-                            .padding(8),
-                        widget::text::body(fl!("pause")),
-                        widget::tooltip::Position::Top,
-                    )
-                    .into()
-                },
-                widget::tooltip(
-                    widget::button::icon(icon::from_name("window-close-symbolic"))
-                        .on_press(Message::PendingCancelAll)
-                        .padding(8),
-                    widget::text::body(fl!("cancel")),
-                    widget::tooltip::Position::Top,
-                )
-                .into(),
-            ])
-            .align_y(Alignment::Center)
-            .into(),
-            widget::text::body(title).into(),
-            widget::Space::with_height(space_s).into(),
-            widget::row::with_children(vec![
-                widget::button::link(fl!("details"))
-                    .on_press(Message::ToggleContextPage(ContextPage::EditHistory))
-                    .padding(0)
-                    .trailing_icon(true)
-                    .into(),
-                widget::horizontal_space().into(),
-                widget::button::standard(fl!("dismiss"))
-                    .on_press(Message::PendingDismiss)
-                    .into(),
-            ])
-            .align_y(Alignment::Center)
-            .into(),
-        ]))
-        .padding([8, space_xs])
-        .layer(cosmic_theme::Layer::Primary);
-
-        Some(container.into())
-    }
-
-    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
-        vec![menu::menu_bar(
-            &self.core,
-            self.tab_model.active_data::<Tab>(),
-            &self.config,
-            &self.modifiers,
-            &self.key_binds,
-        )]
-    }
-
-    fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
-        let mut elements = Vec::with_capacity(2);
-
-        if let Some(term) = self.search_get() {
-            if self.core.is_condensed() {
-                elements.push(
-                    //TODO: selected state is not appearing different
-                    widget::button::icon(icon::from_name("system-search-symbolic"))
-                        .on_press(Message::SearchClear)
-                        .padding(8)
-                        .selected(true)
-                        .into(),
-                );
-            } else {
-                elements.push(
-                    widget::text_input::search_input("", term)
-                        .width(Length::Fixed(240.0))
-                        .id(self.search_id.clone())
-                        .on_clear(Message::SearchClear)
-                        .on_input(Message::SearchInput)
-                        .into(),
-                );
-            }
-        } else {
-            elements.push(
-                widget::button::icon(icon::from_name("system-search-symbolic"))
-                    .on_press(Message::SearchActivate)
-                    .padding(8)
-                    .into(),
-            );
-        }
-
-        elements
-    }
-
-    /// Creates a view after each update.
-    fn view(&self) -> Element<'_, Self::Message> {
-        let cosmic_theme::Spacing {
-            space_xxs, space_s, ..
-        } = theme::active().cosmic().spacing;
-
-        let mut tab_column = widget::column::with_capacity(4);
-
-        if self.core.is_condensed() {
-            if let Some(term) = self.search_get() {
-                tab_column = tab_column.push(
-                    widget::container(
-                        widget::text_input::search_input("", term)
-                            .width(Length::Fill)
-                            .id(self.search_id.clone())
-                            .on_clear(Message::SearchClear)
-                            .on_input(Message::SearchInput),
-                    )
-                    .padding(space_xxs),
-                )
-            }
-        }
-
-        if self.tab_model.iter().count() > 1 {
-            tab_column = tab_column.push(
-                widget::container(
-                    widget::tab_bar::horizontal(&self.tab_model)
-                        .button_height(32)
-                        .button_spacing(space_xxs)
-                        .on_activate(Message::TabActivate)
-                        .on_close(|entity| Message::TabClose(Some(entity)))
-                        .on_dnd_enter(|entity, _| Message::DndEnterTab(entity))
-                        .on_dnd_leave(|_| Message::DndExitTab)
-                        .on_dnd_drop(|entity, data, action| {
-                            Message::DndDropTab(entity, data, action)
-                        })
-                        .drag_id(self.tab_drag_id),
-                )
-                .class(style::Container::Background)
-                .width(Length::Fill)
-                .padding([0, space_s]),
-            );
-        }
-
-        let entity = self.tab_model.active();
-        match self.tab_model.data::<Tab>(entity) {
-            Some(tab) => {
-                let tab_view = if tab.location == tab::Location::QuickAccess {
-                    // Render QuickAccess view instead of regular tab view
-                    crate::views::quick_access::quick_access_view(
-                        &self.state.quick_access_state,
-                    )
-                    .map(move |message| message)
-                } else {
-                    tab
-                        .view(&self.key_binds)
-                        .map(move |message| Message::TabMessage(Some(entity), message))
-                };
-                tab_column = tab_column.push(tab_view);
-            }
-            None => {
-                //TODO
-            }
-        }
-
-        // The toaster is added on top of an empty element to ensure that it does not override context menus
-        tab_column = tab_column.push(widget::toaster(&self.toasts, widget::horizontal_space()));
-
-        let content: Element<_> = tab_column.into();
-
-        // Uncomment to debug layout:
-        //content.explain(cosmic::iced::Color::WHITE)
-        content
-    }
-
-    fn view_window(&self, id: WindowId) -> Element<'_, Self::Message> {
-        let content = match self.windows.get(&id) {
-            Some(WindowKind::ContextMenu(entity, id)) => {
-                match self.tab_model.data::<Tab>(*entity) {
-                    Some(tab) => {
-                        return widget::autosize::autosize(
-                            menu::context_menu(tab, &self.key_binds, &self.modifiers)
-                                .map(|x| Message::TabMessage(Some(*entity), x)),
-                            id.clone(),
-                        )
-                        .into();
-                    }
-                    None => widget::text("Unknown tab ID").into(),
-                }
-            }
-            Some(WindowKind::Desktop(entity)) => {
-                let mut tab_column = widget::column::with_capacity(3);
-
-                let tab_view = match self.tab_model.data::<Tab>(*entity) {
-                    Some(tab) => tab
-                        .view(&self.key_binds)
-                        .map(move |message| Message::TabMessage(Some(*entity), message)),
-                    None => widget::vertical_space().into(),
-                };
-
-                tab_column = tab_column.push(tab_view);
-
-                // The toaster is added on top of an empty element to ensure that it does not override context menus
-                tab_column =
-                    tab_column.push(widget::toaster(&self.toasts, widget::horizontal_space()));
-                return if let Some(margin) = self.margin.get(&id) {
-                    if margin.0 >= 0. || margin.2 >= 0. {
-                        tab_column = widget::column::with_children(vec![
-                            vertical_space().height(margin.0).into(),
-                            tab_column.into(),
-                            vertical_space().height(margin.2).into(),
-                        ])
-                    }
-                    if margin.1 >= 0. || margin.3 >= 0. {
-                        Element::from(widget::row::with_children(vec![
-                            horizontal_space().width(margin.1).into(),
-                            tab_column.into(),
-                            horizontal_space().width(margin.3).into(),
-                        ]))
-                    } else {
-                        tab_column.into()
-                    }
-                } else {
-                    tab_column.into()
-                };
-            }
-            Some(WindowKind::DesktopViewOptions) => self.desktop_view_options(),
-            Some(WindowKind::Dialogs(id)) => match self.dialog() {
-                Some(element) => return widget::autosize::autosize(element, id.clone()).into(),
-                None => widget::horizontal_space().into(),
-            },
-            Some(WindowKind::Preview(entity_opt, kind)) => self
-                .preview(entity_opt, kind, false)
-                .map(|x| Message::TabMessage(*entity_opt, x)),
-            Some(WindowKind::FileDialog(..)) => match &self.file_dialog_opt {
-                Some(dialog) => return dialog.view(id),
-                None => widget::text("Unknown window ID").into(),
-            },
-            None => {
-                //TODO: distinct views per monitor in desktop mode
-                return self.view_main().map(|message| match message {
-                    cosmic::Action::App(app) => app,
-                    cosmic::Action::Cosmic(cosmic) => Message::Cosmic(cosmic),
-                    cosmic::Action::None => Message::None,
-                });
-            }
-        };
-
-        widget::container(widget::scrollable(content))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .class(theme::Container::WindowBackground)
-            .into()
-    }
 
     fn system_theme_update(
         &mut self,
