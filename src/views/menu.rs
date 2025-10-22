@@ -386,6 +386,7 @@ pub fn dialog_menu(
     tab: &Tab,
     key_binds: &HashMap<KeyBind, Action>,
     show_details: bool,
+    terminal_visible: bool,
 ) -> Element<'static, Message> {
     let (sort_name, sort_direction, _) = tab.sort_options();
     let sort_item = |label, sort, dir| {
@@ -432,6 +433,12 @@ pub fn dialog_menu(
                         None,
                         matches!(tab.config.view, tab::View::List),
                         Action::TabViewList,
+                    ),
+                    menu::Item::CheckBox(
+                        "Terminal Panel".to_string(),
+                        None,
+                        terminal_visible,
+                        Action::ToggleTerminal,
                     ),
                 ],
             ),

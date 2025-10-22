@@ -168,6 +168,7 @@ pub enum Action {
     ToggleFoldersFirst,
     ToggleShowHidden,
     ToggleSort(HeadingOptions),
+    ToggleTerminal,
     WindowClose,
     WindowNew,
     ZoomDefault,
@@ -243,6 +244,7 @@ impl Action {
             Action::ToggleSort(sort) => {
                 Message::TabMessage(entity_opt, tab::Message::ToggleSort(*sort))
             }
+            Action::ToggleTerminal => Message::TerminalToggle,
             Action::WindowClose => Message::WindowClose,
             Action::WindowNew => Message::WindowNew,
             Action::ZoomDefault => Message::ZoomDefault(entity_opt),

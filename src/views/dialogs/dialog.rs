@@ -1179,7 +1179,7 @@ impl Application for App {
             _ => false,
         };
         elements
-            .push(menu::dialog_menu(&self.tab, &self.key_binds, show_details).map(Message::from));
+            .push(menu::dialog_menu(&self.tab, &self.key_binds, show_details, false).map(Message::from));
 
         elements
     }

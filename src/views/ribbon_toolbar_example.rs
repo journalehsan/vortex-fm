@@ -80,6 +80,10 @@ pub fn handle_ribbon_message(message: RibbonMessage) -> Message {
             // Handle open terminal
             Message::OpenTerminal(None)
         }
+        RibbonMessage::ToggleTerminal => {
+            // Handle terminal panel toggle
+            Message::TerminalToggle
+        }
         RibbonMessage::ToggleView => {
             // Handle view toggle (cycles between Grid and List)
             // This is handled in the app.rs RibbonMessage handler
