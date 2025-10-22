@@ -388,3 +388,100 @@ pub fn get_theme_manager() -> Option<&'static Mutex<Option<ThemeManager>>> {
         None
     }
 }
+
+// Global state for custom theme name
+static CUSTOM_THEME_NAME: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+/// Set the custom theme name globally
+pub fn set_custom_theme_name(theme_name: String) {
+    if let Ok(mut name) = CUSTOM_THEME_NAME.lock() {
+        *name = Some(theme_name);
+        log::info!("🎨 Custom theme name set globally");
+        // Persist to disk so we can restore across restarts
+        if let Err(err) = save_custom_theme_name_to_disk(name.as_ref().cloned()) {
+            log::warn!("❌ Failed to persist custom theme name: {}", err);
+        }
+    }
+}
+
+/// Get the custom theme name globally
+pub fn get_custom_theme_name() -> Option<String> {
+    if let Ok(name) = CUSTOM_THEME_NAME.lock() {
+        name.clone()
+    } else {
+        None
+    }
+}
+
+/// Get custom theme info (similar to get_desktop_theme but for custom theme)
+pub fn get_custom_theme() -> Option<ThemeInfo> {
+    log::info!("🎨 get_custom_theme() called");
+    if let Some(theme_name) = get_custom_theme_name() {
+        log::info!("🎨 Getting custom theme: {}", theme_name);
+        
+        // Find the theme by name
+        use crate::utils::themes::omarchy::OMARCHY_THEMES;
+        if let Some(theme) = OMARCHY_THEMES.iter().find(|t| t.name == theme_name) {
+            log::info!("✅ Found custom theme: {} (light: {})", theme.name, theme.is_light);
+            
+            // Convert OmarchyTheme to ThemeInfo
+            let theme_info = ThemeInfo {
+                name: theme.name.to_string(),
+                is_light: theme.is_light,
+                window_background: theme.window_background,
+                view_background: theme.view_background,
+                accent_color: theme.accent_color,
+                foreground: theme.foreground,
+            };
+            
+            return Some(theme_info);
+        } else {
+            log::warn!("❌ Custom theme not found: {}", theme_name);
+            log::info!("📋 Available themes: {:?}", OMARCHY_THEMES.iter().map(|t| t.name).collect::<Vec<_>>());
+        }
+    } else {
+        log::warn!("❌ No custom theme name set");
+    }
+    None
+}
+
+// --- Persistence helpers for custom theme name ---
+fn config_dir() -> std::path::PathBuf {
+    // Prefer XDG_CONFIG_HOME, fallback to ~/.config
+    if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
+        return std::path::PathBuf::from(xdg).join("vortex-fm");
+    }
+    let home = std::env::var("HOME").unwrap_or_else(|_| String::from("."));
+    std::path::PathBuf::from(home).join(".config").join("vortex-fm")
+}
+
+pub fn load_custom_theme_name_from_disk() -> Option<String> {
+    let path = config_dir().join("custom_theme.txt");
+    match std::fs::read_to_string(&path) {
+        Ok(s) => {
+            let name = s.trim().to_string();
+            if name.is_empty() {
+                None
+            } else {
+                log::info!("📄 Loaded custom theme from disk: {}", name);
+                Some(name)
+            }
+        }
+        Err(err) => {
+            log::info!("ℹ️ No persisted custom theme found at {:?}: {}", path, err);
+            None
+        }
+    }
+}
+
+fn save_custom_theme_name_to_disk(name_opt: Option<String>) -> Result<(), String> {
+    let dir = config_dir();
+    if let Err(err) = std::fs::create_dir_all(&dir) {
+        return Err(format!("create_dir_all {:?}: {}", dir, err));
+    }
+    let path = dir.join("custom_theme.txt");
+    match name_opt {
+        Some(name) => std::fs::write(&path, name).map_err(|e| e.to_string()),
+        None => std::fs::remove_file(&path).map_err(|e| e.to_string()),
+    }
+}

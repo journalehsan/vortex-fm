@@ -57,7 +57,7 @@ pub const OMARCHY_THEMES: &[OmarchyTheme] = &[
         is_light: false,  // Dracula is a dark theme
         window_background: Color::from_rgb(0.100, 0.101, 0.150), //rgb(11, 11, 15)
         view_background: Color::from_rgb(0.16, 0.16, 0.20),   // #282A36
-        accent_color: Color::from_rgb(0.89, 0.56, 0.98),     // #E49BF8 -> will map to Cosmic purple
+        accent_color: Color::from_rgb(0.100, 0.20, 0.50),     // #E49BF8 -> will map to Cosmic purple
         foreground: Color::from_rgb(0.95, 0.95, 0.95),        // #F2F2F2
     },
     OmarchyTheme {

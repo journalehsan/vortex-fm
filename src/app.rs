@@ -655,6 +655,7 @@ pub struct App {
     state: State,
     mode: Mode,
     app_themes: Vec<String>,
+    selected_custom_theme: Option<String>,
     compio_tx: mpsc::Sender<Pin<Box<dyn Future<Output = ()> + Send>>>,
     context_page: ContextPage,
     dialog_pages: DialogPages,
@@ -760,6 +761,78 @@ impl App {
         }
     }
 
+    /// Create a simple theme selection dropdown for custom theme selection
+    fn create_theme_preview_grid(&self) -> Element<'_, Message> {
+        // Use a static list of theme names to avoid lifetime issues
+        const THEME_NAMES: &[&str] = &[
+            "catppuccin (Dark)",
+            "dracula (Dark)", 
+            "everforest (Dark)",
+            "gruvbox (Dark)",
+            "kanagawa (Dark)",
+            "matte-black (Dark)",
+            "nord (Dark)",
+            "osaka-jade (Dark)",
+            "ristretto (Dark)",
+            "tokyo-night (Dark)",
+            "catppuccin-latte (Light)",
+            "rose-pine (Light)",
+        ];
+        
+        log::info!("🎨 Creating theme preview grid with {} themes", THEME_NAMES.len());
+        log::info!("🎨 Available themes for custom selection: {:?}", THEME_NAMES);
+        
+        // Create a simple dropdown with theme names
+        widget::dropdown(
+            THEME_NAMES,
+            None, // No default selection
+            move |index| {
+                if let Some(theme_name) = THEME_NAMES.get(index) {
+                    // Extract the actual theme name (remove the light/dark suffix)
+                    let actual_name = theme_name.split(" (").next().unwrap_or(theme_name);
+                    log::info!("🎨 User selected theme: {} (index: {})", actual_name, index);
+                    Message::SelectColorScheme(actual_name.to_string())
+                } else {
+                    Message::None
+                }
+            },
+        )
+        .into()
+    }
+
+    /// Apply a custom theme by name using the same method as adaptive
+    fn apply_custom_theme(&mut self, theme_name: &str) {
+        use crate::utils::themes::omarchy::OMARCHY_THEMES;
+        use crate::utils::desktop_theme::apply_theme_to_cosmic;
+        
+        log::info!("🎨 Applying custom theme: {}", theme_name);
+        
+        // Store the selected custom theme name globally
+        crate::utils::desktop_theme::set_custom_theme_name(theme_name.to_string());
+        
+        // Find the theme by name
+        if let Some(theme) = OMARCHY_THEMES.iter().find(|t| t.name == theme_name) {
+            log::info!("✅ Found theme: {} (light: {})", theme.name, theme.is_light);
+            
+            // Convert OmarchyTheme to ThemeInfo (same as adaptive mode)
+            let theme_info = crate::utils::themes::ThemeInfo {
+                name: theme.name.to_string(),
+                is_light: theme.is_light,
+                window_background: theme.window_background,
+                view_background: theme.view_background,
+                accent_color: theme.accent_color,
+                foreground: theme.foreground,
+            };
+            
+            // Apply the theme using the same method as adaptive mode
+            log::info!("🎨 Applying custom theme using adaptive method");
+            let _cosmic_theme = apply_theme_to_cosmic(&theme_info);
+            log::info!("✅ Custom theme applied successfully using adaptive method");
+        } else {
+            log::warn!("❌ Theme not found: {}", theme_name);
+            log::info!("📋 Available themes: {:?}", OMARCHY_THEMES.iter().map(|t| t.name).collect::<Vec<_>>());
+        }
+    }
 
     fn open_file(&mut self, paths: &[impl AsRef<Path>]) -> Task<Message> {
         let mut tasks = Vec::new();
@@ -2024,73 +2097,25 @@ impl App {
                     ))
                 )
                 .into(),
-            // Custom Color Picker Section - only show when Custom theme is selected
-            if matches!(self.config.app_theme, AppTheme::Custom) {
-                widget::settings::section()
-                    .title("Custom Theme Colors")
-                    .add({
-                        widget::settings::item::builder("Color Scheme")
-                            .description("Select a color scheme")
-                            .control(widget::dropdown(
-                                &["catppuccin", "dracula", "everforest", "gruvbox", "kanagawa", "matte-black", "nord", "tokyo-night"],
-                                None, // No default selection
-                                move |index| {
-                                    let theme_names = ["catppuccin", "dracula", "everforest", "gruvbox", "kanagawa", "matte-black", "nord", "tokyo-night"];
-                                    if let Some(theme_name) = theme_names.get(index) {
-                                        Message::SelectColorScheme(theme_name.to_string())
-                                    } else {
-                                        Message::None
-                                    }
-                                },
-                            ))
-                    })
-                    .add({
-                        // Color palette buttons
-                        use crate::utils::themes::omarchy::OMARCHY_THEMES;
-                        
-                        let mut color_buttons = Vec::new();
-                        for theme in OMARCHY_THEMES.iter().take(8) { // Show first 8 themes
-                            let color = cosmic::iced::Color::from_rgb(
-                                theme.accent_color.r,
-                                theme.accent_color.g,
-                                theme.accent_color.b
-                            );
-                            
-                            color_buttons.push(
-                                widget::button::custom(
-                                    widget::container(widget::text(""))
-                                        .width(Length::Fixed(32.0))
-                                        .height(Length::Fixed(32.0))
-                                )
-                                .on_press(Message::CustomColor(color))
-                                .padding(4)
-                            );
-                        }
-                        
-                        widget::settings::item::builder("Color Palette")
-                            .description("Click a color to preview")
-                            .control(
-                                widget::row::with_children(
-                                    color_buttons.into_iter().map(Element::from).collect()
-                                )
-                                .spacing(8)
-                            )
-                    })
-                    .add({
-                        // Apply button
-                        widget::settings::item::builder("Apply Changes")
-                            .description("Apply the selected custom theme")
-                            .control(
-                                widget::button::standard("Apply")
-                                    .on_press(Message::ApplyCustomTheme)
-                            )
-                    })
-                    .into()
-            } else {
-                widget::settings::section()
-                    .title("")
-                    .into()
-            },
+            // Custom Theme Section - always show, but only show dropdown when Custom is selected
+            widget::settings::section()
+                .title("Custom Theme Selection")
+                .add({
+                    if matches!(self.config.app_theme, AppTheme::Custom) {
+                        log::info!("🎨 Showing custom theme dropdown - current theme: {:?}", self.config.app_theme);
+                        // Create theme preview grid
+                        let theme_previews = self.create_theme_preview_grid();
+                        widget::settings::item::builder("Choose Theme")
+                            .description("Select a theme from the dropdown below")
+                            .control(theme_previews)
+                    } else {
+                        log::info!("🎨 Showing custom theme info - current theme: {:?}", self.config.app_theme);
+                        widget::settings::item::builder("Custom Theme")
+                            .description("Select 'Custom' from the theme dropdown above to choose a specific theme")
+                            .control(widget::text("Select 'Custom' theme to see options"))
+                    }
+                })
+                .into(),
             widget::settings::section()
                 .title(fl!("type-to-search"))
                 .add(widget::radio(
@@ -2318,6 +2343,7 @@ impl Application for App {
             state: flags.state,
             mode: flags.mode,
             app_themes,
+            selected_custom_theme: None,
             compio_tx,
             context_page: ContextPage::Preview(None, PreviewKind::Selected),
             dialog_pages: DialogPages::new(),
@@ -4059,7 +4085,10 @@ impl Application for App {
 
             Message::SelectColorScheme(scheme_name) => {
                 log::info!("🎨 Color scheme selected: {}", scheme_name);
-                // Store the selected scheme for later application
+                log::info!("🎨 Current app theme before apply: {:?}", self.config.app_theme);
+                // Immediately apply the selected theme
+                self.apply_custom_theme(&scheme_name);
+                log::info!("🎨 Theme application completed");
             }
 
             Message::ApplyCustomTheme => {

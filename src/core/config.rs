@@ -69,34 +69,37 @@ impl AppTheme {
                 apply_theme_to_cosmic(&desktop_theme)
             }
             Self::Custom => {
-                log::info!("🎨 Using Custom theme - will show custom color picker");
-                log::info!("🎨 Custom theme: Checking for theme manager");
+                log::info!("🎨 Using Custom theme - getting custom theme info");
                 
-                // Try to get the theme manager and apply custom colors
-                use crate::utils::desktop_theme::{get_theme_manager, detect_desktop_environment};
-                use crate::utils::themes::manager::{ColorContext, ThemeStaged};
+                // Use apply_advanced_theme for custom themes to avoid switching back to adaptive
+                use crate::utils::desktop_theme::{
+                    get_custom_theme,
+                    apply_advanced_theme,
+                    load_custom_theme_name_from_disk,
+                    set_custom_theme_name,
+                };
                 
-                let desktop = detect_desktop_environment();
-                log::info!("🖥️  Desktop environment for Custom theme: {:?}", desktop);
-                
-                if let Some(theme_manager_mutex) = get_theme_manager() {
-                    log::info!("🔧 Theme manager available for Custom theme");
-                    let mut theme_manager_guard = theme_manager_mutex.lock().unwrap();
-                    if let Some(theme_manager) = theme_manager_guard.as_mut() {
-                        log::info!("🎨 Theme manager found, getting cosmic theme");
-                        let cosmic_theme = theme_manager.cosmic_theme();
-                        log::info!("✅ Returning custom cosmic theme");
-                        return cosmic_theme;
-                    } else {
-                        log::warn!("❌ Theme manager is None for Custom theme");
+                log::info!("🎨 Calling get_custom_theme()");
+                let mut custom_theme_result = get_custom_theme();
+                if custom_theme_result.is_none() {
+                    if let Some(saved) = load_custom_theme_name_from_disk() {
+                        log::info!("📄 Restoring saved custom theme: {}", saved);
+                        set_custom_theme_name(saved);
+                        custom_theme_result = get_custom_theme();
                     }
-                } else {
-                    log::warn!("❌ Theme manager not available for Custom theme on desktop: {:?}", desktop);
                 }
-                
-                log::info!("🎨 Falling back to system theme for Custom theme");
-                // For now, fall back to system theme until custom colors are applied
-                theme::system_preference()
+                log::info!(
+                    "🎨 get_custom_theme() returned: {:?}",
+                    custom_theme_result.is_some()
+                );
+                if let Some(custom_theme) = custom_theme_result {
+                    log::info!("✅ Found custom theme: {} (light: {})", custom_theme.name, custom_theme.is_light);
+                    // Apply the custom theme using advanced theme method to avoid mode switching
+                    apply_advanced_theme(&custom_theme)
+                } else {
+                    log::warn!("❌ No custom theme selected, falling back to system theme");
+                    theme::system_preference()
+                }
             }
         }
     }
