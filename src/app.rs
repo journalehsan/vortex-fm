@@ -154,6 +154,8 @@ pub enum Action {
     Rename,
     RestoreFromTrash,
     SearchActivate,
+    FilterActivate,
+    FilterClear,
     SelectFirst,
     SelectLast,
     SelectAll,
@@ -226,6 +228,8 @@ impl Action {
             Action::Rename => Message::Rename(entity_opt),
             Action::RestoreFromTrash => Message::RestoreFromTrash(entity_opt),
             Action::SearchActivate => Message::SearchActivate,
+            Action::FilterActivate => Message::FilterActivate,
+            Action::FilterClear => Message::FilterClear,
             Action::SelectAll => Message::TabMessage(entity_opt, tab::Message::SelectAll),
             Action::SelectFirst => Message::TabMessage(entity_opt, tab::Message::SelectFirst),
             Action::SelectLast => Message::TabMessage(entity_opt, tab::Message::SelectLast),
@@ -382,6 +386,9 @@ pub enum Message {
     SearchActivate,
     SearchClear,
     SearchInput(String),
+    FilterActivate,
+    FilterClear,
+    FilterInput(String),
     SetShowDetails(bool),
     SetTypeToSearch(TypeToSearch),
     SystemThemeModeChange,
@@ -538,6 +545,7 @@ pub struct App {
     failed_operations: BTreeMap<u64, (Operation, Controller, String)>,
     scrollable_id: widget::Id,
     search_id: widget::Id,
+    filter_id: widget::Id,
     size: Option<Size>,
     #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
     layer_sizes: HashMap<window::Id, Size>,
@@ -1307,6 +1315,12 @@ impl App {
             Location::Search(_, term, ..) => Some(term),
             _ => None,
         }
+    }
+
+    fn filter_get(&self) -> Option<&str> {
+        let entity = self.tab_model.active();
+        let tab = self.tab_model.data::<Tab>(entity)?;
+        tab.filter_term.as_deref()
     }
 
     fn search_set_active(&mut self, term_opt: Option<String>) -> Task<Message> {
@@ -2230,6 +2244,7 @@ impl Application for App {
             failed_operations: BTreeMap::new(),
             scrollable_id: widget::Id::unique(),
             search_id: widget::Id::unique(),
+            filter_id: widget::Id::unique(),
             size: None,
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             surface_ids: HashMap::new(),
@@ -2752,8 +2767,9 @@ impl Application for App {
     }
 
     fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
-        let mut elements = Vec::with_capacity(2);
+        let mut elements = Vec::with_capacity(3);
 
+        // Search functionality
         if let Some(term) = self.search_get() {
             if self.core.is_condensed() {
                 elements.push(
@@ -2778,6 +2794,35 @@ impl Application for App {
             elements.push(
                 widget::button::icon(icon::from_name("system-search-symbolic"))
                     .on_press(Message::SearchActivate)
+                    .padding(8)
+                    .into(),
+            );
+        }
+
+        // Filter functionality
+        if let Some(term) = self.filter_get() {
+            if self.core.is_condensed() {
+                elements.push(
+                    widget::button::icon(icon::from_name("view-filter-symbolic"))
+                        .on_press(Message::FilterClear)
+                        .padding(8)
+                        .selected(true)
+                        .into(),
+                );
+            } else {
+                elements.push(
+                    widget::text_input::search_input("", term)
+                        .width(Length::Fixed(200.0))
+                        .id(self.filter_id.clone())
+                        .on_clear(Message::FilterClear)
+                        .on_input(Message::FilterInput)
+                        .into(),
+                );
+            }
+        } else {
+            elements.push(
+                widget::button::icon(icon::from_name("view-filter-symbolic"))
+                    .on_press(Message::FilterActivate)
                     .padding(8)
                     .into(),
             );
@@ -4255,6 +4300,32 @@ impl Application for App {
                 
                 // Normal search behavior when terminal doesn't have focus
                 return self.search_set_active(Some(input));
+            }
+            Message::FilterActivate => {
+                let entity = self.tab_model.active();
+                if let Some(tab) = self.tab_model.data_mut::<Tab>(entity) {
+                    if tab.filter_term.is_none() {
+                        tab.filter_term = Some(String::new());
+                        return widget::text_input::focus(self.filter_id.clone());
+                    } else {
+                        return widget::text_input::focus(self.filter_id.clone());
+                    }
+                }
+                return Task::none();
+            }
+            Message::FilterClear => {
+                let entity = self.tab_model.active();
+                if let Some(tab) = self.tab_model.data_mut::<Tab>(entity) {
+                    tab.filter_term = None;
+                }
+                return Task::none();
+            }
+            Message::FilterInput(input) => {
+                let entity = self.tab_model.active();
+                if let Some(tab) = self.tab_model.data_mut::<Tab>(entity) {
+                    tab.filter_term = Some(input);
+                }
+                return Task::none();
             }
             Message::SetShowDetails(show_details) => {
                 config_set!(show_details, show_details);

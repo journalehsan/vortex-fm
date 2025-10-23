@@ -83,6 +83,7 @@ pub fn key_binds(mode: &tab::Mode) -> HashMap<KeyBind, Action> {
         bind!([], Key::Named(Named::Backspace), HistoryPrevious);
         bind!([Alt], Key::Named(Named::ArrowUp), LocationUp);
         bind!([Ctrl], Key::Character("f".into()), SearchActivate);
+        bind!([Ctrl], Key::Character("g".into()), FilterActivate);
     }
 
     key_binds

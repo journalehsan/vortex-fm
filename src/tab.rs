@@ -2450,6 +2450,7 @@ pub struct Tab {
     pub gallery: bool,
     pub(crate) parent_item_opt: Option<Item>,
     pub(crate) items_opt: Option<Vec<Item>>,
+    pub filter_term: Option<String>,
     pub dnd_hovered: Option<(Location, Instant)>,
     pub(crate) scrollable_id: widget::Id,
     select_focus: Option<usize>,
@@ -2570,6 +2571,7 @@ impl Tab {
             gallery: false,
             parent_item_opt: None,
             items_opt: None,
+            filter_term: None,
             scrollable_id,
             select_focus: None,
             select_range: None,
@@ -4015,6 +4017,16 @@ impl Tab {
             if sort { ord } else { ord.reverse() }
         };
         let mut items: Vec<_> = self.items_opt.as_ref()?.iter().enumerate().collect();
+        
+        // Apply filter if filter_term is set
+        if let Some(filter_term) = &self.filter_term {
+            if !filter_term.is_empty() {
+                items.retain(|(_, item)| {
+                    item.name.to_lowercase().contains(&filter_term.to_lowercase()) ||
+                    item.display_name.to_lowercase().contains(&filter_term.to_lowercase())
+                });
+            }
+        }
         let (sort_name, sort_direction, folders_first) = self.sort_options();
         match sort_name {
             HeadingOptions::Size => {
