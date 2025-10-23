@@ -32,6 +32,7 @@ pub enum TerminalMessage {
     SyncDirectory,
     ExecuteCommand(String),
     CommandInput(String),
+    CommandSubmit,
     OutputReceived(String),
     SessionStarted,
     SessionEnded,

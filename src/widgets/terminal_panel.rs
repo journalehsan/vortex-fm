@@ -5,7 +5,7 @@ use cosmic::{
     Element,
     iced::{
         Alignment, Length,
-        widget::{container, column, row, text, text_input, scrollable},
+        widget::{container, text, text_input, scrollable, column, row},
     },
     widget::{self},
 };
@@ -88,11 +88,28 @@ impl TerminalPanel {
     }
 
     pub fn view(&self) -> Element<'_, TerminalMessage> {
-        // Simple terminal widget for now
-        widget::text(format!("Terminal Panel - Current Dir: {}", self.current_dir.display()))
-            .size(14)
-            .into()
+        // Simple terminal panel with toolbar for now
+        widget::container(
+            widget::text(format!("🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button", self.current_dir.display(), self.position))
+                .size(14)
+                .font(cosmic::iced::Font::MONOSPACE)
+        )
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .padding(16)
+        .style(|_theme| {
+            let mut style = widget::container::Style::default();
+            style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.02, 0.02, 0.02)));
+            style.border = cosmic::iced::Border {
+                radius: 4.0.into(),
+                width: 1.0,
+                color: cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
+            };
+            style
+        })
+        .into()
     }
+
 
     pub fn get_current_dir(&self) -> &PathBuf {
         &self.current_dir
