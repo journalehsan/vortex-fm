@@ -441,6 +441,8 @@ pub enum Message {
     TerminalSync,
     TerminalPositionToggle,
     TerminalCommand(String),
+    TerminalToggleInputMode,
+    TerminalSetInputMode(crate::common::terminal_types::TerminalInputMode),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -5438,6 +5440,18 @@ impl Application for App {
             Message::TerminalCommand(_command) => {
                 // Handle terminal command execution
                 // This would be implemented when the terminal panel is fully integrated
+            }
+            Message::TerminalToggleInputMode => {
+                if let Some(terminal) = &mut self.terminal_panel {
+                    terminal.toggle_input_mode();
+                    log::debug!("🖥️ Terminal input mode toggled to: {:?}", terminal.get_input_mode());
+                }
+            }
+            Message::TerminalSetInputMode(mode) => {
+                if let Some(terminal) = &mut self.terminal_panel {
+                    terminal.set_input_mode(mode);
+                    log::debug!("🖥️ Terminal input mode set to: {:?}", mode);
+                }
             }
         }
 

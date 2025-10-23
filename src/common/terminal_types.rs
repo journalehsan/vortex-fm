@@ -16,6 +16,19 @@ impl Default for TerminalPosition {
     }
 }
 
+/// Input mode for terminal panel (similar to cosmic-files search modes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TerminalInputMode {
+    Command,  // Typing shell commands
+    Path,     // Navigating to directory paths
+}
+
+impl Default for TerminalInputMode {
+    fn default() -> Self {
+        Self::Command
+    }
+}
+
 /// Available terminal backends in order of preference
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TerminalBackend {
@@ -37,6 +50,11 @@ pub enum TerminalMessage {
     SessionStarted,
     SessionEnded,
     Error(String),
+    // New messages for input mode system
+    ToggleInputMode,
+    SetInputMode(TerminalInputMode),
+    PathInput(String),
+    PathSubmit,
 }
 
 /// Terminal session state

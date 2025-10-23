@@ -16,6 +16,7 @@ use tokio::sync::Mutex;
 
 use crate::common::terminal_types::{
     TerminalPosition, TerminalBackend, TerminalMessage, TerminalOutputLine,
+    TerminalInputMode,
 };
 use crate::core::terminal::{TerminalStrategy, TerminalStrategyFactory, TerminalSessionManager};
 use crate::utils::terminal_utils;
@@ -27,9 +28,11 @@ pub struct TerminalPanel {
     position: TerminalPosition,
     is_visible: bool,
     current_dir: PathBuf,
+    input_mode: TerminalInputMode,
     
     // Fallback terminal state
     command_input: String,
+    path_input: String,
     output_buffer: Vec<TerminalOutputLine>,
     scroll_offset: usize,
 }
@@ -51,7 +54,9 @@ impl TerminalPanel {
             position: TerminalPosition::Bottom,
             is_visible: false,
             current_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp")),
+            input_mode: TerminalInputMode::Command,
             command_input: String::new(),
+            path_input: String::new(),
             output_buffer: Vec::new(),
             scroll_offset: 0,
         }
@@ -90,7 +95,12 @@ impl TerminalPanel {
     pub fn view(&self) -> Element<'_, TerminalMessage> {
         // Simple terminal panel with toolbar for now
         widget::container(
-            widget::text(format!("🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button", self.current_dir.display(), self.position))
+            widget::text(format!(
+                "🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button\n\nInput Mode: {:?} | Toggle Mode Button", 
+                self.current_dir.display(), 
+                self.position,
+                self.input_mode
+            ))
                 .size(14)
                 .font(cosmic::iced::Font::MONOSPACE)
         )
@@ -113,6 +123,21 @@ impl TerminalPanel {
 
     pub fn get_current_dir(&self) -> &PathBuf {
         &self.current_dir
+    }
+
+    pub fn toggle_input_mode(&mut self) {
+        self.input_mode = match self.input_mode {
+            TerminalInputMode::Command => TerminalInputMode::Path,
+            TerminalInputMode::Path => TerminalInputMode::Command,
+        };
+    }
+
+    pub fn set_input_mode(&mut self, mode: TerminalInputMode) {
+        self.input_mode = mode;
+    }
+
+    pub fn get_input_mode(&self) -> TerminalInputMode {
+        self.input_mode
     }
 
     pub async fn execute_command(&mut self, command: &str) -> Result<(), String> {
