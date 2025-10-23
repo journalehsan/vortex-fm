@@ -87,6 +87,17 @@ impl TerminalPanel {
         };
     }
 
+    pub fn view(&self) -> Element<'_, TerminalMessage> {
+        // Simple terminal widget for now
+        widget::text(format!("Terminal Panel - Current Dir: {}", self.current_dir.display()))
+            .size(14)
+            .into()
+    }
+
+    pub fn get_current_dir(&self) -> &PathBuf {
+        &self.current_dir
+    }
+
     pub async fn execute_command(&mut self, command: &str) -> Result<(), String> {
         if !terminal_utils::validate_command(command) {
             return Err("Command validation failed".to_string());
@@ -103,16 +114,6 @@ impl TerminalPanel {
         Ok(())
     }
 
-    pub fn view(&self) -> Element<'_, TerminalMessage> {
-        if !self.is_visible {
-            return widget::text("Terminal not visible").into();
-        }
-
-        match self.strategy.backend_type() {
-            TerminalBackend::Fallback => self.fallback_terminal_view(),
-            _ => self.embedded_terminal_view(),
-        }
-    }
 
     fn fallback_terminal_view(&self) -> Element<'_, TerminalMessage> {
         let output_area = self.output_display();

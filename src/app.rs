@@ -2846,6 +2846,35 @@ impl Application for App {
             }
         }
 
+        // Add terminal panel if visible
+        if self.terminal_visible {
+            if let Some(terminal_panel) = &self.terminal_panel {
+                log::debug!("🖥️ Rendering terminal panel in view");
+                tab_column = tab_column.push(
+                    widget::container(
+                        widget::text(format!("Terminal Panel - Current Dir: {}", terminal_panel.get_current_dir().display()))
+                            .size(14)
+                    )
+                        .width(Length::Fill)
+                        .height(Length::Fixed(200.0)) // Fixed height for now
+                        .style(|_theme| {
+                            let mut style = widget::container::Style::default();
+                            style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.1, 0.1, 0.1)));
+                            style.border = cosmic::iced::Border {
+                                radius: 4.0.into(),
+                                width: 1.0,
+                                color: cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
+                            };
+                            style
+                        })
+                );
+            } else {
+                log::debug!("🖥️ Terminal panel is None but terminal_visible is true");
+            }
+        } else {
+            log::debug!("🖥️ Terminal panel is not visible");
+        }
+
         // The toaster is added on top of an empty element to ensure that it does not override context menus
         tab_column = tab_column.push(widget::toaster(&self.toasts, widget::horizontal_space()));
 
@@ -5373,9 +5402,22 @@ impl Application for App {
                 }
             }
             Message::TerminalToggle => {
+                log::debug!("🖥️ TerminalToggle message received!");
+                log::debug!("🖥️ Current terminal_visible: {}", self.terminal_visible);
+                log::debug!("🖥️ Current terminal_panel exists: {}", self.terminal_panel.is_some());
+                
                 self.terminal_visible = !self.terminal_visible;
+                
+                log::debug!("🖥️ New terminal_visible: {}", self.terminal_visible);
+                
                 if self.terminal_visible && self.terminal_panel.is_none() {
+                    log::debug!("🖥️ Creating new terminal panel...");
                     self.terminal_panel = Some(crate::widgets::terminal_panel::TerminalPanel::new());
+                    log::debug!("🖥️ Terminal panel created successfully!");
+                } else if self.terminal_visible {
+                    log::debug!("🖥️ Terminal panel already exists, just showing it");
+                } else {
+                    log::debug!("🖥️ Hiding terminal panel");
                 }
             }
             Message::TerminalSync => {
