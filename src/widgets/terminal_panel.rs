@@ -96,7 +96,7 @@ impl TerminalPanel {
         // Simple terminal panel with toolbar for now
         widget::container(
             widget::text(format!(
-                "🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button\n\nInput Mode: {:?} | Toggle Mode Button", 
+                "🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button\n\nInput Mode: {:?} | Toggle Mode Button\n\nFocus: Terminal has input priority - bypassing search/URL input", 
                 self.current_dir.display(), 
                 self.position,
                 self.input_mode

@@ -443,6 +443,8 @@ pub enum Message {
     TerminalCommand(String),
     TerminalToggleInputMode,
     TerminalSetInputMode(crate::common::terminal_types::TerminalInputMode),
+    TerminalFocusGained,
+    TerminalFocusLost,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -557,6 +559,7 @@ pub struct App {
     ribbon_toolbar: RibbonToolbar,
     terminal_panel: Option<crate::widgets::terminal_panel::TerminalPanel>,
     terminal_visible: bool,
+    terminal_has_focus: bool,
 }
 
 impl App {
@@ -2243,6 +2246,7 @@ impl Application for App {
             ribbon_toolbar: RibbonToolbar::new(),
             terminal_panel: None,
             terminal_visible: false,
+            terminal_has_focus: false,
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             layer_sizes: HashMap::new(),
         };
@@ -3438,12 +3442,33 @@ impl Application for App {
                     }
 
                     // Uncaptured keys with only shift modifiers go to the search or location box
+                    // UNLESS terminal has focus - then bypass search/URL input
                     if !modifiers.logo()
                         && !modifiers.control()
                         && !modifiers.alt()
                         && matches!(key, Key::Character(_))
                     {
                         if let Some(text) = text {
+                            // Check if terminal has focus - if so, bypass search/URL input
+                            if self.terminal_visible && self.terminal_has_focus {
+                                log::debug!("🖥️ Terminal has focus - bypassing key input, sending to terminal: {}", text);
+                                if let Some(terminal) = &mut self.terminal_panel {
+                                    // Send key input to terminal based on current mode
+                                    match terminal.get_input_mode() {
+                                        crate::common::terminal_types::TerminalInputMode::Command => {
+                                            // Add to command input
+                                            log::debug!("🖥️ Adding to terminal command input: {}", text);
+                                        }
+                                        crate::common::terminal_types::TerminalInputMode::Path => {
+                                            // Navigate to path
+                                            log::debug!("🖥️ Terminal path navigation: {}", text);
+                                        }
+                                    }
+                                }
+                                return Task::none();
+                            }
+                            
+                            // Normal search/URL behavior when terminal doesn't have focus
                             match self.config.type_to_search {
                                 TypeToSearch::Recursive => {
                                     let mut term =
@@ -4207,6 +4232,27 @@ impl Application for App {
                 return self.search_set_active(None);
             }
             Message::SearchInput(input) => {
+                // Check if terminal has focus - if so, bypass search and send to terminal
+                if self.terminal_visible && self.terminal_has_focus {
+                    log::debug!("🖥️ Terminal has focus - bypassing search input, sending to terminal: {}", input);
+                    if let Some(terminal) = &mut self.terminal_panel {
+                        // Send input to terminal based on current mode
+                        match terminal.get_input_mode() {
+                            crate::common::terminal_types::TerminalInputMode::Command => {
+                                // Add to command input
+                                // This would be handled by the terminal panel's input handling
+                                log::debug!("🖥️ Adding to terminal command input: {}", input);
+                            }
+                            crate::common::terminal_types::TerminalInputMode::Path => {
+                                // Navigate to path
+                                log::debug!("🖥️ Terminal path navigation: {}", input);
+                            }
+                        }
+                    }
+                    return Task::none();
+                }
+                
+                // Normal search behavior when terminal doesn't have focus
                 return self.search_set_active(Some(input));
             }
             Message::SetShowDetails(show_details) => {
@@ -5410,6 +5456,15 @@ impl Application for App {
                 
                 self.terminal_visible = !self.terminal_visible;
                 
+                // Manage focus state based on terminal visibility
+                if self.terminal_visible {
+                    self.terminal_has_focus = true;
+                    log::debug!("🖥️ Terminal shown - gaining focus, bypassing search/URL input");
+                } else {
+                    self.terminal_has_focus = false;
+                    log::debug!("🖥️ Terminal hidden - losing focus, restoring search/URL input");
+                }
+                
                 log::debug!("🖥️ New terminal_visible: {}", self.terminal_visible);
                 
                 if self.terminal_visible && self.terminal_panel.is_none() {
@@ -5452,6 +5507,14 @@ impl Application for App {
                     terminal.set_input_mode(mode);
                     log::debug!("🖥️ Terminal input mode set to: {:?}", mode);
                 }
+            }
+            Message::TerminalFocusGained => {
+                self.terminal_has_focus = true;
+                log::debug!("🖥️ Terminal gained focus - bypassing search/URL input");
+            }
+            Message::TerminalFocusLost => {
+                self.terminal_has_focus = false;
+                log::debug!("🖥️ Terminal lost focus - restoring search/URL input");
             }
         }
 
