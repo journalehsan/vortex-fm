@@ -41,7 +41,10 @@ impl RibbonMessage {
             RibbonMessage::Delete => Message::Delete(None),
             RibbonMessage::MoveToTrash => Message::Delete(None),
             RibbonMessage::OpenTerminal => Message::OpenTerminal(None),
-            RibbonMessage::ToggleTerminal => Message::TerminalToggle,
+            RibbonMessage::ToggleTerminal => {
+                log::debug!("🔄 RibbonMessage::to_app_message: Converting ToggleTerminal to TerminalToggle");
+                Message::TerminalToggle
+            }
             RibbonMessage::ToggleSort => {
                 // This will be handled in the app's RibbonMessage handler
                 Message::None
@@ -383,7 +386,10 @@ impl RibbonToolbar {
                         style
                     })
             )
-            .on_press(RibbonMessage::ToggleTerminal.to_app_message()),
+            .on_press({
+                log::debug!("🖱️ RibbonToolbar: Terminal button clicked!");
+                RibbonMessage::ToggleTerminal.to_app_message()
+            }),
             "Toggle Terminal Panel",
             tooltip::Position::Bottom
         )
