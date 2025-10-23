@@ -177,6 +177,7 @@ pub enum Action {
     ZoomIn,
     ZoomOut,
     Recents,
+    BulkRename,
 }
 
 impl Action {
@@ -226,6 +227,7 @@ impl Action {
             Action::Reload => Message::TabMessage(entity_opt, tab::Message::Reload),
             Action::RemoveFromRecents => Message::RemoveFromRecents(entity_opt),
             Action::Rename => Message::Rename(entity_opt),
+            Action::BulkRename => Message::BulkRenameOpen(vec![]), // Will be populated when dialog opens
             Action::RestoreFromTrash => Message::RestoreFromTrash(entity_opt),
             Action::SearchActivate => Message::SearchActivate,
             Action::FilterActivate => Message::FilterActivate,
@@ -453,6 +455,16 @@ pub enum Message {
     TerminalFocusGained,
     TerminalFocusLost,
     TerminalPanelMessage(crate::common::terminal_types::TerminalMessage),
+    // Bulk rename messages
+    BulkRenameOpen(Vec<String>),
+    BulkRenameClose,
+    BulkRenamePattern(String),
+    BulkRenameReplacement(String),
+    BulkRenameToggleRegex,
+    BulkRenameToggleCase,
+    BulkRenameToggleMatchAll,
+    BulkRenameApply,
+    BulkRenameCancel,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -569,6 +581,7 @@ pub struct App {
     terminal_panel: Option<crate::widgets::terminal_panel::TerminalPanel>,
     terminal_visible: bool,
     terminal_has_focus: bool,
+    bulk_rename_dialog: crate::widgets::bulk_rename_dialog::BulkRenameDialog,
 }
 
 impl App {
@@ -2263,6 +2276,7 @@ impl Application for App {
             terminal_panel: None,
             terminal_visible: false,
             terminal_has_focus: false,
+            bulk_rename_dialog: crate::widgets::bulk_rename_dialog::BulkRenameDialog::new(),
             #[cfg(all(feature = "wayland", feature = "desktop-applet"))]
             layer_sizes: HashMap::new(),
         };
@@ -5602,6 +5616,72 @@ impl Application for App {
                     log::debug!("🖥️ Terminal panel message processed");
                 }
             }
+            // Bulk rename messages
+            Message::BulkRenameOpen(_files) => {
+                // Get selected files from the current tab
+                let entity = self.tab_model.active();
+                let selected_files = if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    if let Some(items) = tab.items_opt() {
+                        items.iter()
+                            .filter(|item| item.selected)
+                            .map(|item| item.name.clone())
+                            .collect()
+                    } else {
+                        Vec::new()
+                    }
+                } else {
+                    Vec::new()
+                };
+                log::info!("🔧 Opening bulk rename dialog with {} files: {:?}", selected_files.len(), selected_files);
+                self.bulk_rename_dialog.open(selected_files);
+            }
+            Message::BulkRenameClose => {
+                self.bulk_rename_dialog.close();
+            }
+            Message::BulkRenamePattern(pattern) => {
+                self.bulk_rename_dialog.update_pattern(pattern);
+            }
+            Message::BulkRenameReplacement(replacement) => {
+                self.bulk_rename_dialog.update_replacement(replacement);
+            }
+            Message::BulkRenameToggleRegex => {
+                self.bulk_rename_dialog.toggle_regex();
+            }
+            Message::BulkRenameToggleCase => {
+                self.bulk_rename_dialog.toggle_case_sensitive();
+            }
+            Message::BulkRenameToggleMatchAll => {
+                self.bulk_rename_dialog.toggle_match_all();
+            }
+            Message::BulkRenameApply => {
+                // Get the selected files from the current tab
+                let entity = self.tab_model.active();
+                if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    let selected_files: Vec<String> = if let Some(items) = tab.items_opt() {
+                        items.iter()
+                            .filter(|item| item.selected)
+                            .map(|item| item.name.clone())
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+                    
+                    if !selected_files.is_empty() {
+                        // Apply the bulk rename operation
+                        let results = self.bulk_rename_dialog.preview_results.clone();
+                        for (original, new_name) in results {
+                            if original != new_name {
+                                log::info!("Renaming '{}' to '{}'", original, new_name);
+                                // TODO: Implement actual file system rename operation
+                            }
+                        }
+                    }
+                }
+                self.bulk_rename_dialog.close();
+            }
+            Message::BulkRenameCancel => {
+                self.bulk_rename_dialog.close();
+            }
         }
 
         Task::none()
@@ -6299,6 +6379,13 @@ impl Application for App {
                     widget::button::standard(fl!("keep")).on_press(Message::DialogCancel),
                 ),
         };
+        
+        // Show bulk rename dialog if open
+        if self.bulk_rename_dialog.is_open {
+            log::info!("🔧 Rendering bulk rename dialog");
+            return Some(self.bulk_rename_dialog.build());
+        }
+        
         Some(dialog.into())
     }
 

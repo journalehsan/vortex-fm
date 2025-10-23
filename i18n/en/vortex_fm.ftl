@@ -347,7 +347,8 @@ file = File
 new-tab = New tab
 new-window = New window
 reload-folder = Reload folder
-rename = Rename...
+rename = Rename
+bulk-rename = Bulk Rename...
 close-tab = Close tab
 quit = Quit
 

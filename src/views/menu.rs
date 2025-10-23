@@ -174,6 +174,9 @@ pub fn context_menu<'a>(
                 }
                 children.push(divider::horizontal::light().into());
                 children.push(menu_item(fl!("rename"), Action::Rename).into());
+                if selected > 1 {
+                    children.push(menu_item(fl!("bulk-rename"), Action::BulkRename).into());
+                }
                 children.push(menu_item(fl!("cut"), Action::Cut).into());
                 children.push(menu_item(fl!("copy"), Action::Copy).into());
                 // Should this simply bypass trash and remove the shortcut?
@@ -302,6 +305,9 @@ pub fn context_menu<'a>(
                 }
                 children.push(divider::horizontal::light().into());
                 children.push(menu_item(fl!("show-details"), Action::Preview).into());
+                if selected > 1 {
+                    children.push(menu_item(fl!("bulk-rename"), Action::BulkRename).into());
+                }
             } else {
                 if dialog_kind.save() {
                     children.push(menu_item(fl!("new-folder"), Action::NewFolder).into());
@@ -607,6 +613,7 @@ pub fn menu_bar<'a>(
                         ),
                         menu::Item::Divider,
                         menu_button_optional(fl!("rename"), Action::Rename, selected > 0),
+                        menu_button_optional(fl!("bulk-rename"), Action::BulkRename, selected > 1),
                         menu::Item::Divider,
                         menu::Item::Button(fl!("reload-folder"), None, Action::Reload),
                         menu::Item::Divider,
