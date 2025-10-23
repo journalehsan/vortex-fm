@@ -445,6 +445,7 @@ pub enum Message {
     TerminalSetInputMode(crate::common::terminal_types::TerminalInputMode),
     TerminalFocusGained,
     TerminalFocusLost,
+    TerminalPanelMessage(crate::common::terminal_types::TerminalMessage),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2856,16 +2857,16 @@ impl Application for App {
         if self.terminal_visible {
             if let Some(terminal_panel) = &self.terminal_panel {
                 log::debug!("🖥️ Rendering terminal panel in view");
+                let terminal_view = terminal_panel.view()
+                    .map(move |message| Message::TerminalPanelMessage(message));
+                
                 tab_column = tab_column.push(
-                    widget::container(
-                        widget::text(format!("Terminal Panel - Current Dir: {}", terminal_panel.get_current_dir().display()))
-                            .size(14)
-                    )
+                    widget::container(terminal_view)
                         .width(Length::Fill)
-                        .height(Length::Fixed(200.0)) // Fixed height for now
+                        .height(Length::Fixed(250.0)) // Fixed height for terminal
                         .style(|_theme| {
                             let mut style = widget::container::Style::default();
-                            style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.1, 0.1, 0.1)));
+                            style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.02, 0.02, 0.02)));
                             style.border = cosmic::iced::Border {
                                 radius: 4.0.into(),
                                 width: 1.0,
@@ -5515,6 +5516,12 @@ impl Application for App {
             Message::TerminalFocusLost => {
                 self.terminal_has_focus = false;
                 log::debug!("🖥️ Terminal lost focus - restoring search/URL input");
+            }
+            Message::TerminalPanelMessage(terminal_msg) => {
+                if let Some(terminal) = &mut self.terminal_panel {
+                    terminal.update(terminal_msg);
+                    log::debug!("🖥️ Terminal panel message processed");
+                }
             }
         }
 

@@ -224,28 +224,25 @@ pub struct TerminalStrategyFactory;
 
 impl TerminalStrategyFactory {
     /// Create the best available terminal strategy
+    /// Currently only returns Fallback for stability
     pub fn create_best_strategy() -> Box<dyn TerminalStrategy> {
-        // Try Wezterm first
-        let wezterm = WeztermStrategy::new();
-        if wezterm.is_available() {
-            return Box::new(wezterm);
-        }
-
-        // Try Alacritty second
-        let alacritty = AlacrittyStrategy::new();
-        if alacritty.is_available() {
-            return Box::new(alacritty);
-        }
-
-        // Fallback to text-based terminal
+        // For now, always use fallback to ensure text-based UI works properly
+        // TODO: In future, detect and embed Wezterm/Alacritty if available
+        log::debug!("📺 Using Fallback terminal strategy");
         Box::new(FallbackStrategy::new())
     }
 
     /// Create a specific strategy
     pub fn create_strategy(backend: TerminalBackend) -> Box<dyn TerminalStrategy> {
         match backend {
-            TerminalBackend::Wezterm => Box::new(WeztermStrategy::new()),
-            TerminalBackend::Alacritty => Box::new(AlacrittyStrategy::new()),
+            TerminalBackend::Wezterm => {
+                log::warn!("⚠️ Wezterm embedding not yet implemented, using Fallback");
+                Box::new(FallbackStrategy::new())
+            }
+            TerminalBackend::Alacritty => {
+                log::warn!("⚠️ Alacritty embedding not yet implemented, using Fallback");
+                Box::new(FallbackStrategy::new())
+            }
             TerminalBackend::Fallback => Box::new(FallbackStrategy::new()),
         }
     }

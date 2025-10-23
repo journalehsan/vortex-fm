@@ -15,11 +15,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::common::terminal_types::{
-    TerminalPosition, TerminalBackend, TerminalMessage, TerminalOutputLine,
+    TerminalPosition, TerminalMessage, TerminalOutputLine,
     TerminalInputMode,
 };
 use crate::core::terminal::{TerminalStrategy, TerminalStrategyFactory, TerminalSessionManager};
 use crate::utils::terminal_utils;
+use crate::widgets::terminal_toolbar::TerminalToolbar;
 
 /// Main terminal panel widget
 pub struct TerminalPanel {
@@ -29,6 +30,9 @@ pub struct TerminalPanel {
     is_visible: bool,
     current_dir: PathBuf,
     input_mode: TerminalInputMode,
+    
+    // Toolbar
+    toolbar: TerminalToolbar,
     
     // Fallback terminal state
     command_input: String,
@@ -47,14 +51,18 @@ impl TerminalPanel {
     pub fn new() -> Self {
         let strategy = TerminalStrategyFactory::create_best_strategy();
         let session_manager = Arc::new(Mutex::new(TerminalSessionManager::new()));
+        let mut toolbar = TerminalToolbar::new();
+        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp"));
+        toolbar.set_current_path(current_dir.display().to_string());
         
         Self {
             strategy,
             session_manager,
             position: TerminalPosition::Bottom,
             is_visible: false,
-            current_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp")),
+            current_dir,
             input_mode: TerminalInputMode::Command,
+            toolbar,
             command_input: String::new(),
             path_input: String::new(),
             output_buffer: Vec::new(),
@@ -64,6 +72,7 @@ impl TerminalPanel {
 
     pub fn set_position(&mut self, position: TerminalPosition) {
         self.position = position;
+        self.toolbar.set_position(position);
     }
 
     pub fn set_visible(&mut self, visible: bool) {
@@ -73,6 +82,8 @@ impl TerminalPanel {
     pub fn sync_directory(&mut self, path: &PathBuf) -> Result<(), String> {
         let safe_path = terminal_utils::get_safe_working_directory(path);
         self.current_dir = safe_path.clone();
+        self.toolbar.set_current_path(self.current_dir.display().to_string());
+        self.toolbar.set_synced(true);
         
         // Update session manager if it exists
         let session_manager = self.session_manager.clone();
@@ -93,30 +104,17 @@ impl TerminalPanel {
     }
 
     pub fn view(&self) -> Element<'_, TerminalMessage> {
-        // Simple terminal panel with toolbar for now
-        widget::container(
-            widget::text(format!(
-                "🖥️ Terminal Panel\n📁 Current Dir: {}\n\nTerminal output will appear here...\n\nToolbar: Position: {:?} | Sync Button\n\nInput Mode: {:?} | Toggle Mode Button\n\nFocus: Terminal has input priority - bypassing search/URL input", 
-                self.current_dir.display(), 
-                self.position,
-                self.input_mode
-            ))
-                .size(14)
-                .font(cosmic::iced::Font::MONOSPACE)
-        )
+        // Use fallback terminal view with toolbar
+        let toolbar = self.toolbar.view();
+        let terminal_content = self.fallback_terminal_view();
+        
+        column![
+            toolbar,
+            terminal_content,
+        ]
+        .spacing(0)
         .width(Length::Fill)
         .height(Length::Fill)
-        .padding(16)
-        .style(|_theme| {
-            let mut style = widget::container::Style::default();
-            style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.02, 0.02, 0.02)));
-            style.border = cosmic::iced::Border {
-                radius: 4.0.into(),
-                width: 1.0,
-                color: cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
-            };
-            style
-        })
         .into()
     }
 
@@ -170,6 +168,17 @@ impl TerminalPanel {
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
+            .padding(8)
+            .style(|_theme| {
+                let mut style = widget::container::Style::default();
+                style.background = Some(cosmic::iced::Background::Color(cosmic::iced::Color::from_rgb(0.02, 0.02, 0.02)));
+                style.border = cosmic::iced::Border {
+                    radius: 4.0.into(),
+                    width: 1.0,
+                    color: cosmic::iced::Color::from_rgb(0.3, 0.3, 0.3),
+                };
+                style
+            })
             .into()
     }
 
@@ -222,13 +231,15 @@ impl TerminalPanel {
                 .font(cosmic::iced::Font::MONOSPACE),
             text_input("Enter command...", &self.command_input)
                 .on_input(TerminalMessage::CommandInput)
-                .on_submit(TerminalMessage::ExecuteCommand(String::new()))
+                .on_submit(TerminalMessage::CommandSubmit)
                 .size(12)
                 .font(cosmic::iced::Font::MONOSPACE)
                 .width(Length::Fill),
         ]
         .align_y(Alignment::Center)
         .spacing(4)
+        .padding([4, 0])
+        .height(Length::Shrink)
         .into()
     }
 
@@ -237,7 +248,7 @@ impl TerminalPanel {
             TerminalMessage::CommandInput(input) => {
                 self.command_input = input;
             }
-            TerminalMessage::ExecuteCommand(_) => {
+            TerminalMessage::CommandSubmit => {
                 if !self.command_input.trim().is_empty() {
                     let command = self.command_input.clone();
                     self.command_input.clear();
@@ -256,11 +267,39 @@ impl TerminalPanel {
                     });
                 }
             }
+            TerminalMessage::ExecuteCommand(cmd) => {
+                if !cmd.is_empty() {
+                    self.output_buffer.push(TerminalOutputLine::new(
+                        format!("$ {}", cmd),
+                        false,
+                    ));
+
+                    let session_manager = self.session_manager.clone();
+                    tokio::spawn(async move {
+                        let mut manager = session_manager.lock().await;
+                        let _ = manager.execute_command(&cmd).await;
+                    });
+                }
+            }
             TerminalMessage::TogglePosition => {
                 self.toggle_position();
             }
             TerminalMessage::SyncDirectory => {
                 // This would be handled by the parent component
+            }
+            TerminalMessage::ToggleInputMode => {
+                self.toggle_input_mode();
+            }
+            TerminalMessage::SetInputMode(mode) => {
+                self.set_input_mode(mode);
+            }
+            TerminalMessage::OutputReceived(output) => {
+                for line in output.lines() {
+                    self.output_buffer.push(TerminalOutputLine::new(
+                        line.to_string(),
+                        false,
+                    ));
+                }
             }
             _ => {
                 // Handle other messages
