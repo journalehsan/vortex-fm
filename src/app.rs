@@ -4299,6 +4299,14 @@ impl Application for App {
                     // Sync ribbon toolbar with the activated tab's state
                     log::debug!("🔄 TabActivate: Syncing ribbon toolbar with tab state");
                     self.ribbon_toolbar.sync_with_tab(view, sort_name);
+                    
+                    // Auto-sync terminal with new tab directory
+                    if let Some(terminal) = &mut self.terminal_panel {
+                        if let Some(path) = location.path_opt() {
+                            log::debug!("🖥️ Auto-syncing terminal with tab directory: {}", path.display());
+                            let _ = terminal.sync_directory(&path.to_path_buf());
+                        }
+                    }
                 }
                 tasks.push(self.update_title());
                 return Task::batch(tasks);

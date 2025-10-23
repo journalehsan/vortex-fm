@@ -55,6 +55,14 @@ impl TerminalPanel {
         let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp"));
         toolbar.set_current_path(current_dir.display().to_string());
         
+        // Initialize session manager with a session
+        let session_manager_clone = session_manager.clone();
+        let current_dir_clone = current_dir.clone();
+        tokio::spawn(async move {
+            let mut manager = session_manager_clone.lock().await;
+            let _ = manager.start_session(current_dir_clone, crate::common::terminal_types::TerminalBackend::Fallback);
+        });
+        
         Self {
             strategy,
             session_manager,
@@ -101,6 +109,8 @@ impl TerminalPanel {
             TerminalPosition::Bottom => TerminalPosition::Right,
             TerminalPosition::Right => TerminalPosition::Bottom,
         };
+        // Update toolbar position when toggling
+        self.toolbar.set_position(self.position);
     }
 
     pub fn view(&self) -> Element<'_, TerminalMessage> {
@@ -138,20 +148,49 @@ impl TerminalPanel {
         self.input_mode
     }
 
+    /// Refresh output buffer with session manager's output
+    pub async fn refresh_output(&mut self) {
+        let session_manager = self.session_manager.clone();
+        let mut manager = session_manager.lock().await;
+        
+        // Get new output lines from session manager
+        let new_lines = manager.get_output_lines();
+        
+        // Add new lines that aren't already in our buffer
+        for line in new_lines {
+            if !self.output_buffer.iter().any(|existing| existing.content == line.content && existing.timestamp == line.timestamp) {
+                self.output_buffer.push(line.clone());
+            }
+        }
+        
+        // Keep only last 100 lines to prevent memory issues
+        if self.output_buffer.len() > 100 {
+            self.output_buffer.drain(0..self.output_buffer.len() - 100);
+        }
+    }
+
     pub async fn execute_command(&mut self, command: &str) -> Result<(), String> {
         if !terminal_utils::validate_command(command) {
             return Err("Command validation failed".to_string());
         }
 
+        // Add command to output buffer immediately
+        self.output_buffer.push(TerminalOutputLine::new(
+            format!("$ {}", command),
+            false,
+        ));
+
         let session_manager = self.session_manager.clone();
         let command = command.to_string();
         
-        tokio::spawn(async move {
-            let mut manager = session_manager.lock().await;
-            let _ = manager.execute_command(&command).await;
-        });
+        // Execute command and get results
+        let mut manager = session_manager.lock().await;
+        let result = manager.execute_command(&command).await;
+        
+        // Refresh output buffer with new results
+        self.refresh_output().await;
 
-        Ok(())
+        result
     }
 
 
@@ -259,11 +298,12 @@ impl TerminalPanel {
                         false,
                     ));
 
-                    // Execute command asynchronously
+                    // Execute command and get results
                     let session_manager = self.session_manager.clone();
+                    let command_clone = command.clone();
                     tokio::spawn(async move {
                         let mut manager = session_manager.lock().await;
-                        let _ = manager.execute_command(&command).await;
+                        let _ = manager.execute_command(&command_clone).await;
                     });
                 }
             }
