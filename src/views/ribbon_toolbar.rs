@@ -330,7 +330,7 @@ impl RibbonToolbar {
 
         tooltip(
             button(
-                container(icon::from_name("edit-rename-symbolic").size(16))
+                container(icon::from_name("sheet-symbolic").size(16))
                     .width(Length::Fixed(28.0))
                     .height(Length::Fixed(28.0))
                     .align_x(Alignment::Center)
