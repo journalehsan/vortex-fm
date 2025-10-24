@@ -315,11 +315,17 @@ impl RibbonToolbar {
     }
 
     fn bulk_rename_button(&self) -> Element<'_, Message> {
-        let is_enabled = self.can_bulk_rename();
-        let tooltip_text = if is_enabled {
-            format!("Bulk Rename ({} files selected)", self.selected_count)
+        let has_selection = self.selected_count > 0;
+        let is_multiple = self.selected_count > 1;
+        
+        let tooltip_text = if has_selection {
+            if is_multiple {
+                format!("Bulk Rename ({} files selected)", self.selected_count)
+            } else {
+                "Rename".to_string()
+            }
         } else {
-            "Bulk Rename (select multiple files)".to_string()
+            "Rename (select files)".to_string()
         };
 
         tooltip(
@@ -335,8 +341,14 @@ impl RibbonToolbar {
                         style
                     })
             )
-            .on_press_maybe(if is_enabled {
-                Some(RibbonMessage::BulkRename.to_app_message())
+            .on_press_maybe(if has_selection {
+                Some(
+                    if is_multiple {
+                        RibbonMessage::BulkRename.to_app_message()
+                    } else {
+                        Message::Rename(None)
+                    }
+                )
             } else {
                 None
             }),

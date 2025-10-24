@@ -4832,6 +4832,18 @@ impl Application for App {
                         }
                     }
                 }
+                
+                // Update selection count for bulk rename button
+                let entity = entity_opt.unwrap_or_else(|| self.tab_model.active());
+                if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    let selected_count = if let Some(items) = tab.items_opt() {
+                        items.iter().filter(|item| item.selected).count()
+                    } else {
+                        0
+                    };
+                    self.ribbon_toolbar.set_selected_count(selected_count);
+                }
+                
                 return Task::batch(commands);
             }
             Message::TabNew => {
