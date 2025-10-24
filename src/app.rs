@@ -5689,6 +5689,12 @@ impl Application for App {
 
 
     fn dialog(&self) -> Option<Element<'_, Message>> {
+        // Show bulk rename dialog if open (check this first)
+        if self.bulk_rename_dialog.is_open {
+            log::info!("🔧 Rendering bulk rename dialog");
+            return Some(self.bulk_rename_dialog.build());
+        }
+        
         //TODO: should gallery view just be a dialog?
         let entity = self.tab_model.active();
         if let Some(tab) = self.tab_model.data::<Tab>(entity) {
@@ -6379,12 +6385,6 @@ impl Application for App {
                     widget::button::standard(fl!("keep")).on_press(Message::DialogCancel),
                 ),
         };
-        
-        // Show bulk rename dialog if open
-        if self.bulk_rename_dialog.is_open {
-            log::info!("🔧 Rendering bulk rename dialog");
-            return Some(self.bulk_rename_dialog.build());
-        }
         
         Some(dialog.into())
     }
