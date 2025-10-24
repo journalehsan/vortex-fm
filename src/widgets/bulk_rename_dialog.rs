@@ -229,9 +229,6 @@ impl BulkRenameDialog {
         
         log::info!("🔧 Building bulk rename dialog with {} files", self.selected_files.len());
 
-        let title = widget::text("Bulk Rename Files")
-            .size(18);
-
         let pattern_input = widget::text_input("Pattern (use * for wildcard)", &self.pattern)
             .on_input(|text| Message::BulkRenamePattern(text))
             .width(Length::Fill);
@@ -304,23 +301,10 @@ impl BulkRenameDialog {
             .into()
         };
 
-        let action_buttons = widget::row::with_children(vec![
-            widget::button::standard("Cancel")
-                .on_press(Message::BulkRenameCancel)
-                .into(),
-            widget::button::standard("Apply")
-                .on_press(Message::BulkRenameApply)
-                .into(),
-        ])
-        .spacing(8)
-        .align_y(Alignment::Center);
-
         let help_text = widget::text("Patterns: * (wildcard), $date, $date-time, ${} (counter), ${padding=N} (padded counter)")
             .size(10);
 
         let content = widget::column::with_children(vec![
-            title.into(),
-            widget::Space::with_height(Length::Fixed(16.0)).into(),
             pattern_input.into(),
             widget::Space::with_height(Length::Fixed(8.0)).into(),
             replacement_input.into(),
@@ -332,17 +316,12 @@ impl BulkRenameDialog {
             preview_scroll,
             widget::Space::with_height(Length::Fixed(16.0)).into(),
             help_text.into(),
-            widget::Space::with_height(Length::Fixed(16.0)).into(),
-            action_buttons.into(),
         ])
         .spacing(8)
         .padding(16)
         .align_x(Alignment::Start);
 
-        widget::container(content)
-            .width(Length::Fixed(500.0))
-            .height(Length::Fixed(600.0))
-            .into()
+        content.into()
     }
 }
 

@@ -5692,7 +5692,20 @@ impl Application for App {
         // Show bulk rename dialog if open (check this first)
         if self.bulk_rename_dialog.is_open {
             log::info!("🔧 Rendering bulk rename dialog");
-            return Some(self.bulk_rename_dialog.build());
+            return Some(
+                widget::dialog()
+                    .title("Bulk Rename Files")
+                    .control(self.bulk_rename_dialog.build())
+                    .primary_action(
+                        widget::button::suggested("Apply")
+                            .on_press(Message::BulkRenameApply)
+                    )
+                    .secondary_action(
+                        widget::button::standard("Cancel")
+                            .on_press(Message::BulkRenameCancel)
+                    )
+                    .into()
+            );
         }
         
         //TODO: should gallery view just be a dialog?
