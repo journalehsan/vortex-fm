@@ -22,6 +22,7 @@ pub enum RibbonMessage {
     Paste,
     Delete,
     MoveToTrash,
+    BulkRename,  // Bulk rename multiple files
     OpenTerminal,
     ToggleTerminal,  // Toggle terminal panel
     ToggleSort,  // Cycles through sort options
@@ -40,6 +41,7 @@ impl RibbonMessage {
             RibbonMessage::Paste => Message::Paste(None),
             RibbonMessage::Delete => Message::Delete(None),
             RibbonMessage::MoveToTrash => Message::Delete(None),
+            RibbonMessage::BulkRename => Message::BulkRenameOpen(vec![]),
             RibbonMessage::OpenTerminal => Message::OpenTerminal(None),
             RibbonMessage::ToggleTerminal => {
                 log::debug!("🔄 RibbonMessage::to_app_message: Converting ToggleTerminal to TerminalToggle");
@@ -76,6 +78,7 @@ pub struct RibbonToolbar {
     current_sort: HeadingOptions,
     show_hidden: bool,
     folders_first: bool,
+    selected_count: usize,  // Number of selected files
 }
 
 impl Default for RibbonToolbar {
@@ -91,6 +94,7 @@ impl RibbonToolbar {
             current_sort: HeadingOptions::Name,
             show_hidden: false,
             folders_first: false,
+            selected_count: 0,
         }
     }
 
@@ -116,6 +120,15 @@ impl RibbonToolbar {
     pub fn get_sort(&self) -> HeadingOptions {
         log::debug!("📖 RibbonToolbar::get_sort() = {:?}", self.current_sort);
         self.current_sort
+    }
+
+    pub fn set_selected_count(&mut self, count: usize) {
+        log::debug!("📊 RibbonToolbar::set_selected_count({})", count);
+        self.selected_count = count;
+    }
+
+    pub fn can_bulk_rename(&self) -> bool {
+        self.selected_count > 1
     }
 
     pub fn update(&mut self, message: RibbonMessage) {
@@ -166,6 +179,10 @@ impl RibbonToolbar {
 
             // Cut, Copy, Paste buttons
             self.action_buttons(),
+            Space::with_width(Length::Fixed(12.0)),
+
+            // Bulk rename button (enabled when multiple files selected)
+            self.bulk_rename_button(),
             Space::with_width(Length::Fixed(12.0)),
 
             // View toggle (Grid/List)
@@ -294,6 +311,38 @@ impl RibbonToolbar {
             ),
         ]
         .spacing(4)
+        .into()
+    }
+
+    fn bulk_rename_button(&self) -> Element<'_, Message> {
+        let is_enabled = self.can_bulk_rename();
+        let tooltip_text = if is_enabled {
+            format!("Bulk Rename ({} files selected)", self.selected_count)
+        } else {
+            "Bulk Rename (select multiple files)".to_string()
+        };
+
+        tooltip(
+            button(
+                container(icon::from_name("edit-rename-symbolic").size(16))
+                    .width(Length::Fixed(28.0))
+                    .height(Length::Fixed(28.0))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center)
+                    .style(|_theme| {
+                        let mut style = widget::container::Style::default();
+                        style.background = None; // Transparent background
+                        style
+                    })
+            )
+            .on_press_maybe(if is_enabled {
+                Some(RibbonMessage::BulkRename.to_app_message())
+            } else {
+                None
+            }),
+            widget::text(tooltip_text),
+            tooltip::Position::Bottom
+        )
         .into()
     }
 

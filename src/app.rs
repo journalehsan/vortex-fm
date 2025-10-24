@@ -4379,11 +4379,19 @@ impl Application for App {
                     let view = tab.config.view;
                     let sort_name = tab.sort_name;
                     
+                    // Update selection count for bulk rename button
+                    let selected_count = if let Some(items) = tab.items_opt() {
+                        items.iter().filter(|item| item.selected).count()
+                    } else {
+                        0
+                    };
+                    
                     self.activate_nav_model_location(&location);
                     
                     // Sync ribbon toolbar with the activated tab's state
                     log::debug!("🔄 TabActivate: Syncing ribbon toolbar with tab state");
                     self.ribbon_toolbar.sync_with_tab(view, sort_name);
+                    self.ribbon_toolbar.set_selected_count(selected_count);
                     
                     // Auto-sync terminal with new tab directory
                     if let Some(terminal) = &mut self.terminal_panel {

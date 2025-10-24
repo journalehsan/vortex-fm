@@ -108,5 +108,9 @@ pub fn handle_ribbon_message(message: RibbonMessage) -> Message {
                 Message::None
             }
         }
+        RibbonMessage::BulkRename => {
+            // Handle bulk rename operation
+            Message::BulkRenameOpen(vec![])
+        }
     }
 }
